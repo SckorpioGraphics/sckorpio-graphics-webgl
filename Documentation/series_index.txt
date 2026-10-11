@@ -20,9 +20,9 @@ Ch 15: Scale
 Ch 16: Model matrix and transformation composition
 
 PHASE 3 — TEXTURE AND RENDERING FUNDAMENTALS
-Ch 17: Textures I
-Ch 18: Textures II
-Ch 19: Texture sampling
+Ch 17: Textures 
+Ch 18: Textures Mapping
+Ch 19: Textures sampling
 Ch 20: Blending
 Ch 21: Render order
 
