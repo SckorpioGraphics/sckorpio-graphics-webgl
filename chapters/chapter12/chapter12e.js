@@ -470,12 +470,12 @@ const keyEvent = {
                 case "ArrowRight":
                     camera.positionX += camera.panSpeed;
                     break;
-                case "I":
-                case "i":
+                case "+":
+                case "=":
                     camera.zoom += camera.zoomSpeed;
                     break;
-                case "O":
-                case "o":
+                case "-":
+                case "_":
                     camera.zoom = Math.max(0.1, camera.zoom - camera.zoomSpeed);
                     break;
                 default:

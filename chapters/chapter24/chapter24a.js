@@ -454,12 +454,12 @@ window.addEventListener("keydown", event => {
         case "ArrowRight":
             controls.panRight = true;
             break;
-        case "I":
-        case "i":
+        case "+":
+        case "=":
             controls.panZoomIn = true;
             break;
-        case "O":
-        case "o":
+        case "-":
+        case "_":
             controls.panZoomOut = true;
             break;
     }
@@ -479,12 +479,12 @@ window.addEventListener("keyup", event => {
         case "ArrowRight":
             controls.panRight = false;
             break;
-        case "I":
-        case "i":
+        case "+":
+        case "=":
             controls.panZoomIn = false;
             break;
-        case "O":
-        case "o":
+        case "-":
+        case "_":
             controls.panZoomOut = false;
             break;
     }

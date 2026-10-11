@@ -723,12 +723,12 @@ const keyEvent = {
                 case "ArrowRight":
                     camera.state.panRight = true;
                     break;
-                case "I":
-                case "i":
+                case "+":
+                case "=":
                     camera.state.zoomIn = true;
                     break;
-                case "O":
-                case "o":
+                case "-":
+                case "_":
                     camera.state.zoomOut = true;
                     break;
                 default:
@@ -749,12 +749,12 @@ const keyEvent = {
                 case "ArrowRight":
                     camera.state.panRight = false;
                     break;
-                case "I":
-                case "i":
+                case "+":
+                case "=":
                     camera.state.zoomIn = false;
                     break;
-                case "O":
-                case "o":
+                case "-":
+                case "_":
                     camera.state.zoomOut = false;
                     break;
                 default:
