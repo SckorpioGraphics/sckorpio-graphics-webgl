@@ -588,14 +588,7 @@ const yAxis = {
 const gui = {
     init(gl) {
         const gui = new lil.GUI();
-        const cameraFolder = gui.addFolder("Camera");
-        cameraFolder.add(camera.state, "panUp").name("↑ Up");
-        cameraFolder.add(camera.state, "panLeft").name("← Left");
-        cameraFolder.add(camera.state, "panDown").name("↓ Down");
-        cameraFolder.add(camera.state, "panRight").name("→ Right");
-        cameraFolder.add(camera.state, "zoomIn").name("Zoom In");
-        cameraFolder.add(camera.state, "zoomOut").name("Zoom Out");
-
+        
         // Rectangle
         const squareFolder = gui.addFolder("Square");
         squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
