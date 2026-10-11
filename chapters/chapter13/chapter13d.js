@@ -204,13 +204,13 @@ const letterF = {
         // Top bar
         40  ,  100,
         40  ,   60,
-        -100,   60,
+        -60,   60,
 
         // Middle bar
-        -100,  20,
+        -60,  20,
         0   ,  20,
         0   , -20,
-        -100, -20
+        -60, -20
     ]),
     indices: new Uint16Array([
         // LEFT COLUMN
