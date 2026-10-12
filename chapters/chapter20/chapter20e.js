@@ -1,10 +1,9 @@
 /* #############################################################
-   CHAPTER 20e: Using Transparent Textures
+   CHAPTER 20e: Using Opaque Textures
    Topics:
    - Creating a square
-   - Use transparent texture
-   - But it don't reflect
-   - Keep texture in renderable object
+   - Use Sckorpio textures
+   - See its opaque
    #############################################################
 */
 
@@ -161,7 +160,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 
 const sckorpioTexture = {
-    imagePath: "chapters/chapter20/assets/sckorpio_Texture_512_Transparent.png",
+    imagePath: "chapters/chapter20/assets/sckorpio_Texture_512.png",
 
     image: null,
     handle: null,

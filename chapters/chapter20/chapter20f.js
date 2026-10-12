@@ -1,9 +1,9 @@
 /* #############################################################
    CHAPTER 20f: Using Transparent Textures
    Topics:
-   - Blending is Enabled finally
    - Creating a square
-   - Use transparent textures
+   - Use transparent texture
+   - But it don't reflect
    - Keep texture in renderable object
    #############################################################
 */
@@ -751,11 +751,6 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
-    // Blending: Enable Alpha Blending
-    gl.enable(gl.BLEND);
-    // Set Blend Function
-    gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-    
     //GUI
     gui.init(gl);
 

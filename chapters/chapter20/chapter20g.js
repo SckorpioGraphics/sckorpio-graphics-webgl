@@ -1,8 +1,10 @@
 /* #############################################################
-   CHAPTER 20f: Using Transparent Textures
+   CHAPTER 20g: Using Transparent Textures
    Topics:
-   - Finally Ending with Sckorpio Mascot 
-   - And SCKOPRIO GRAPHICS TITLE
+   - Blending is Enabled finally
+   - Creating a square
+   - Use transparent textures
+   - Keep texture in renderable object
    #############################################################
 */
 
@@ -175,23 +177,6 @@ const sckorpioTexture = {
     }
 };
 
-const titleTexture = {
-    imagePath: "chapters/chapter20/assets/title_Texture_Transparent.png",
-
-    image: null,
-    handle: null,
-    loaded: false,
-
-    init(gl) {
-        createTexture(gl, this);
-    },
-
-    bind(gl, textureUnit = 0) {
-        gl.activeTexture(gl.TEXTURE0 + textureUnit);
-        gl.bindTexture(gl.TEXTURE_2D, this.handle);
-    }
-};
-
 function createTexture(gl, texture) {
     texture.handle = gl.createTexture();
 
@@ -330,104 +315,6 @@ const square = {
     ]),
 
     translationX: 100,
-    translationY: 100,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-
-    //GPU DATA
-    shader: null,
-    texture: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader, texture) {
-        // Connect shader to object
-        this.shader = shader;
-        this.texture = texture;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Texture coordinates: u, v
-        gl.enableVertexAttribArray(this.shader.attributes.texCoord);
-        gl.vertexAttribPointer(
-            this.shader.attributes.texCoord,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            2 * Float32Array.BYTES_PER_ELEMENT
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 6;
-    },
-    draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Modle Matrix
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        // Texture
-        this.texture.bind(gl, 0);
-        gl.uniform1i(this.shader.uniforms.texture, 0);
-        // vao
-        gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        // Position     // UV
-        -300, -100,     0, 0,
-        300, -100,      1, 0,
-        -300,  100,     0, 1,
-
-        -300,  100,     0, 1,
-        300, -100,      1, 0,
-        300,  100,      1, 1
-    ]),
-
-    translationX: 500,
     translationY: 100,
     rotation: 0,
     scaleX: 1.0,
@@ -714,14 +601,6 @@ const gui = {
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-
-        // Rectangle
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "translationX", -1000, 1000).name("translationX");
-        rectangleFolder.add(rectangle, "translationY", -1000, 1000).name("translationY");
-        rectangleFolder.add(rectangle, "rotation", 0, 360).name("rotation");
-        rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
-        rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
     }
 };
 
@@ -854,8 +733,7 @@ function render(gl) {
     yAxis.draw(gl);
     // Square
     square.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));
@@ -890,11 +768,9 @@ function main() {
 
     //Textures
     sckorpioTexture.init(gl);
-    titleTexture.init(gl);
 
     //Objects
     square.init(gl, textureShader, sckorpioTexture);
-    rectangle.init(gl, textureShader, titleTexture);
     grid.init(gl, basicShader);
     xAxis.init(gl, basicShader);
     yAxis.init(gl, basicShader);
