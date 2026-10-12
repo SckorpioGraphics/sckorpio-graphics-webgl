@@ -1,51 +1,50 @@
+SCKORPIO GRAPHICS — WEBGL FUNDAMENTALS
+======================================
+
+COMPLETED FOUNDATION
+--------------------
+Chapter 0: Series introduction
+
 PHASE 1 — WEBGL FOUNDATIONS
-Ch 0: Series introduction and goals
-Ch 1: First WebGL draw
-Ch 2: Lesson template and structured triangle setup
-Ch 3: Geometry and indexing
-Ch 4: Primitive topologies I
-Ch 5: Primitive topologies II
-Ch 6: Dynamic buffers
-Ch 7: Vertex data and color
-Ch 8: Uniforms
-Ch 9: Multiple objects
+Chapters 1–9: First draw, lesson structure, geometry and indexing, primitive
+topologies, dynamic geometry, vertex color, uniforms, and multiple objects.
 
-PHASE 2 — 2D COORDINATE AND TRANSFORMATION FUNDAMENTALS
-Ch 10: 2D camera / screen space to clip space
-Ch 11: Projection matrix
-Ch 12: View matrix and camera movement
-Ch 13: Translation
-Ch 14: Rotation
-Ch 15: Scale
-Ch 16: Model matrix and transformation composition
+PHASE 2 — 2D COORDINATES AND TRANSFORMATIONS
+Chapters 10–16: Pixel and world coordinates, projection and view matrices,
+camera controls, translation, rotation, scale, and model-matrix composition.
 
-PHASE 3 — TEXTURE AND RENDERING FUNDAMENTALS
-Ch 17: Textures 
-Ch 18: Textures Mapping
-Ch 19: Textures sampling
-Ch 20: Blending
-Ch 21: Render order
+PHASE 3 — TEXTURES AND ALPHA
+Chapters 17–20: Texture creation and reuse, UV mapping and wrapping, filtering
+and mipmaps, alpha, blending, and transparent textures.
 
-PHASE 4 — ANIMATION
-Ch 22: Time and animation
-Ch 23: Transform animation
-Ch 24: Color and alpha animation
-Ch 25: Texture animation
+Chapter 0 is the introduction; Chapters 1–20 are the completed instructional
+chapters. See series_episodes.txt for the lesson-by-lesson guide and the
+separately labeled roadmap beyond Chapter 20.
 
-PHASE 5 — INTERACTION
-Ch 26: Interaction
-Ch 27: Physics
-Ch 28: Collision
-Ch 29: Collision response
 
-PHASE 6 — WORLD BUILDING
-Ch 30: Building the 2D world and game scene
+LESSON CODE ORGANIZATION
+------------------------
+The early lessons introduce WebGL operations directly, then progressively
+organize related state and behavior into objects. The shared lesson pattern
+keeps:
 
-SPECIAL
-🦂 Sckorpio Game
+- shader state and program/location setup together
+- camera dimensions and transformation state together
+- geometry, GPU resources, and drawing behavior with their renderable objects
+- application setup and scene drawing in an understandable sequence
 
-LESSON TEMPLATE (used across Chapters 1–16)
-- shader object owns source, program creation, attributes, and uniforms
-- camera object owns viewport bounds, transforms, and matrices
-- scene objects own geometry, state, and render logic
-- the code pattern is object-centered: state + behavior together
+The core principle is OBJECT = STATE + BEHAVIOR. The Chapter 10 lesson-template
+notes in ../chapters/chapter10/chapter10a.js explain the convention and its
+purpose.
+
+
+RUNNING A LESSON
+----------------
+Serve the repository root over HTTP:
+
+    python3 -m http.server 8000
+
+Open http://localhost:8000. index.html currently loads
+chapters/chapter20/chapter20h.js. To run another lesson, change the module path
+in index.html to the desired chapter file. Some lessons also use the CDN-loaded
+Lil GUI or gl-matrix libraries declared in index.html.

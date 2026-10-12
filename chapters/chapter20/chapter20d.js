@@ -3,6 +3,7 @@
    Topics:
    - Blending is Enabled finally
    - Explain Render Order also
+   - C_out = alpha_s * C_s + (1-alpha_s) * C_d
    #############################################################
 */
 
