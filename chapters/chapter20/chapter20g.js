@@ -30,12 +30,12 @@ const basicShader = {
     fragmentShaderSource: `#version 300 es
     precision mediump float;
 
-    uniform vec3 u_color;
+    uniform vec4 u_color;
 
     out vec4 out_color;
 
     void main() {
-        out_color = vec4(u_color, 1.0);
+        out_color = u_color;
     }
 `,
     program: null,
@@ -406,7 +406,7 @@ const grid = {
     vertexData: new Float32Array(),
     spacing: 100,
     range: 10000,
-    color: [0.39, 0.33, 0.58], // Sckorpio Purple
+    color: [0.39, 0.33, 0.58, 1.0], // Sckorpio Purple
 
     //GPU DATA
     shader: null,
@@ -467,7 +467,7 @@ const grid = {
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform4fv(this.shader.uniforms.color,this.color);  
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
@@ -481,7 +481,7 @@ const xAxis = {
         -grid.range, 0,
         grid.range, 0
     ]),
-    color: [1.0, 0.0, 0.0], // Red
+    color: [1.0, 0.0, 0.0, 1.0], // Red
 
     //GPU DATA
     shader: null,
@@ -521,7 +521,7 @@ const xAxis = {
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform4fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
@@ -541,7 +541,7 @@ const yAxis = {
         0, -grid.range,
         0, grid.range
     ]),
-    color: [0.0, 1.0, 0.0], // Green
+    color: [0.0, 1.0, 0.0, 1.0], // Green
 
     //GPU DATA
     shader: null,
@@ -581,7 +581,7 @@ const yAxis = {
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform4fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
