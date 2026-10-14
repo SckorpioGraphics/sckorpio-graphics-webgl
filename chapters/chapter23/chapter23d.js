@@ -1,10 +1,9 @@
 /* #############################################################
-   CHAPTER 23f: Animation ALL MIXED
+   CHAPTER 23d: Animation Vertex Color
 
    Topics:
-   - Multiple animations
-   - Multiple Objects
-   - Translate, Rotate, Scale, Color, ALpha
+   - Animate color of rectangle
+   - But by vertex Color data
    #############################################################
 */
 
@@ -62,6 +61,62 @@ const shader = {
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
+    }
+};
+
+const colorVertexShader = {
+    vertexShaderSource: `#version 300 es
+    in vec2 a_position;
+    in vec4 a_color;
+
+    out vec4 v_color;
+
+    uniform mat3 u_modelMatrix;
+    uniform mat3 u_viewMatrix;
+    uniform mat3 u_projectionMatrix;
+
+    void main() {
+        vec3 localPosition = vec3(a_position, 1.0);
+        vec3 clipPosition = u_projectionMatrix * u_viewMatrix * u_modelMatrix * localPosition;
+        v_color = a_color;
+        gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+    }
+`,
+    fragmentShaderSource: `#version 300 es
+    precision mediump float;
+
+    in vec4 v_color;
+    out vec4 out_color;
+
+    void main() {
+        out_color = v_color;
+    }
+`,
+    program: null,
+    attributes: {
+        position: null,
+        color: null,
+    },
+    uniforms: {
+        modelMatrix: null,
+        viewMatrix: null,
+        projectionMatrix: null
+    },
+
+    //FUNCTIONS
+    init(gl) {
+        // Compile shaders
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        // Create shader program
+        this.program = createProgram(gl, vertexShader, fragmentShader);
+        // Attributes
+        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
+        this.attributes.color = gl.getAttribLocation(this.program, "a_color");
+        // uniforms
+        this.uniforms.modelMatrix = gl.getUniformLocation(this.program, "u_modelMatrix");
+        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
+        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
     }
 };
 
@@ -161,168 +216,6 @@ const camera = {
 // =============================================================
 // SCENE OBJECTS
 // =============================================================
-const triangle = {
-    //         v1
-    //         /\
-    //        /  \
-    //       /    \
-    //      /      \
-    //     /        \
-    //    v0--------v2
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        -100, -100,      // Left Bottom
-        0,  100,      // Middle Top
-        100,  -100,      // Right Bottom
-    ]),
-
-    baseTranslationX: 0,
-    baseTranslationY: 0,
-
-    translationX: 0,
-    translationY: 0,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-    color: [0.0, 1.0, 0.0, 1.0],
-
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        // Connect shader to object
-        this.shader = shader;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            0,          // stride: 0(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 3;
-    },
-    draw(gl) {
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        gl.uniform4fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const square = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        -100, -100,      // Left Bottom
-        100, -100,      // Right Bottom
-        -100, 100,      // Left Top
-
-        -100, 100,      // Left Top
-        100, -100,      // Right Bottom
-        100, 100       // Right Top
-    ]),
-
-    baseTranslationX: 0,
-    baseTranslationY: 200,
-
-    translationX: 0,
-    translationY: 200,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-    color: [1.0, 0.0, 0.0, 1.0],
-
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        // Connect shader to object
-        this.shader = shader;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            0,          // stride: 0(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 6;
-    },
-    draw(gl) {
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        gl.uniform4fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
 const rectangle = {
     //    v1--------v2
     //    | \        |
@@ -332,25 +225,22 @@ const rectangle = {
 
     // CPU DATA
     vertexData: new Float32Array([
-        -200, -100,      // Left Bottom
-        200, -100,      // Right Bottom
-        -200, 100,      // Left Top
+        -200,-100,      1.0, 0.0, 0.0, 1.0, // Left Bottom
+        200, -100,      0.0, 1.0, 0.0, 1.0, // Right Bottom
+        -200, 100,      1.0, 1.0, 0.0, 1.0, // Left Top
 
-        -200, 100,      // Left Top
-        200, -100,      // Right Bottom
-        200, 100       // Right Top
+        -200, 100,      1.0, 1.0, 0.0, 1.0, // Left Top
+        200, -100,      0.0, 1.0, 0.0, 1.0, // Right Bottom
+        200,  100,      0.0, 0.0, 1.0, 1.0, // Right Top
     ]),
 
-    baseTranslationX: 300,
-    baseTranslationY: 100,
-
-    translationX: 300,
-    translationY: 100,
+    translationX: 0,
+    translationY: 400,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
     modelMatrix: mat3.create(),
-    color: [0.0, 0.0, 1.0, 1.0],
+    color: [0.39, 0.33, 0.58, 1.0],     // Sckorpio Purple
 
     //GPU DATA
     shader: null,
@@ -368,26 +258,34 @@ const rectangle = {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
+        // Vertex Positions attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            0,          // stride: 0(tightly packed)
-            0           // offset: start of buffer
+            2,
+            gl.FLOAT,
+            false,
+            6 * Float32Array.BYTES_PER_ELEMENT, // Stride (x,y + r,g,b,a = 6)
+            0 * Float32Array.BYTES_PER_ELEMENT  // Offset (pos starts ar 0)
+        );
+
+        // Vertex Colors attrib
+        gl.enableVertexAttribArray(this.shader.attributes.color);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.vertexAttribPointer(
+            this.shader.attributes.color,
+            4,
+            gl.FLOAT,
+            false,
+            6 * Float32Array.BYTES_PER_ELEMENT, // Stride (x,y + r,g,b,a = 6)
+            2 * Float32Array.BYTES_PER_ELEMENT  // Offset (color start at 2)
         );
 
         // Draw data
@@ -395,10 +293,16 @@ const rectangle = {
         this.drawOffset = 0;
         this.drawCount = 6;
     },
+    update(gl){
+        console.log(this.vertexData);
+        gl.bindVertexArray(this.vao);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+    },
     draw(gl) {
+        gl.useProgram(this.shader.program);
         setupModelMatrix(this);
         gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        gl.uniform4fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
@@ -672,7 +576,7 @@ const clock = {
 
         // Log only once every second
         if (this.currentTime - this.lastLogTime >= 100) {
-            this.log();
+            //this.log();
             this.lastLogTime = this.currentTime;
         }
 
@@ -696,65 +600,28 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation1 = {
+const animation = {
     // Animation state
-    translationX: 0,
-    translationY: 0,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
-    color: [0.0, 0.0, 1.0, 1.0],
+    colorFrequency: 7,
+    colorAmplitude: 1,
+    channel: 0,
 
     update(elapsedTime) {
-        // Translation
-        this.translationX = Math.sin(elapsedTime) * 100;
-        let channel = (1.0 + Math.sin(elapsedTime * 4))/2.0;
-        this.color = [0.0, 0.0, 1.0, 1 - channel];
-    }
-};
-
-const animation2 = {
-    // Animation state
-    translationX: 0,
-    translationY: 0,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
-    color: [1.0, 1.0, 1.0, 1.0],
-    
-    update(elapsedTime) {
-        // Rotation
-        this.rotation = elapsedTime * 200;
-        let channel = (1.0 + Math.sin(elapsedTime * 4))/2.0;
-        this.color = [0.0, 1.0, 0.0, channel];
-    }
-};
-
-const animation3 = {
-    // Animation state
-    translationX: 0,
-    translationY: 0,
-    rotation: 0,
-    scaleX: 1,
-    scaleY: 1,
-    color: [1.0, 1.0, 1.0, 1.0],
-    
-    update(elapsedTime) {
-        // Scale
-        this.scaleX = 1 + Math.sin(elapsedTime * 3) * 0.3;
-        this.scaleY = 1 + Math.sin(elapsedTime * 3) * 0.3;
-        let channel = (1.0 + Math.sin(elapsedTime * 4))/2.0;
-        this.color = [1.0, 0.0, 0.0, channel];
+        this.channel = (1 + (Math.sin(elapsedTime * this.colorFrequency)))/2.0 * this.colorAmplitude;
     }
 };
 
 function applyAnimation(animation, object) {
-    object.translationX = object.baseTranslationX + animation.translationX;
-    object.translationY = object.baseTranslationY + animation.translationY;
-    object.rotation = animation.rotation;
-    object.scaleX = animation.scaleX;
-    object.scaleY = animation.scaleY;
-    object.color = animation.color;
+    const c = animation.channel;
+    object.vertexData = new Float32Array([
+        -200,-100,      c,    1-c,      1-c,    1.0, // Left Bottom
+        200, -100,    1-c,      c,      1-c,    1.0, // Right Bottom
+        -200, 100,      c,      c,      1-c,    1.0, // Left Top
+
+        -200, 100,      c,      c,      1-c,    1.0, // Left Top
+        200, -100,    1-c,      c,      1-c,    1.0, // Right Bottom
+        200,  100,    1-c,    1-c,        c,    1.0, // Right Top
+    ]);
 }
 
 // =============================================================
@@ -878,14 +745,11 @@ function render(gl, timeStamp) {
     clock.update(timeStamp);
 
     // animations
-    animation1.update(clock.elapsedTime);
-    animation2.update(clock.elapsedTime);
-    animation3.update(clock.elapsedTime);
+    animation.update(clock.elapsedTime);
+    applyAnimation(animation, rectangle);
 
-    applyAnimation(animation1, rectangle);
-    applyAnimation(animation2, triangle);
-    applyAnimation(animation3, square);
-
+    // Update Rectangle
+    rectangle.update(gl)
     
     // Canvas
     resizeCanvasToDisplaySize(gl.canvas);
@@ -909,6 +773,15 @@ function render(gl, timeStamp) {
     gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
     // Pass Model Matrix (Identity as default)
     gl.uniformMatrix3fv(shader.uniforms.modelMatrix,false,mat3.create());
+
+    // ColorVertexShader
+    gl.useProgram(colorVertexShader.program);
+    // Pass projection matrix to shader
+    gl.uniformMatrix3fv(colorVertexShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+    // Pass View matrix to shader
+    gl.uniformMatrix3fv(colorVertexShader.uniforms.viewMatrix,false,camera.viewMatrix);
+    // Pass Model Matrix (Identity as default)
+    gl.uniformMatrix3fv(colorVertexShader.uniforms.modelMatrix,false,mat3.create());
     
     // DRAW THINGS
     //---------------------------------------------------
@@ -918,10 +791,6 @@ function render(gl, timeStamp) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Triangle
-    triangle.draw(gl);
-    // Square
-    square.draw(gl);
     // Rectangle
     rectangle.draw(gl);
 
@@ -942,11 +811,6 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
-    // Blending: Enable Alpha Blending
-    gl.enable(gl.BLEND);
-    // Set Blend Function
-    gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
-    
     //GUI
     gui.init(gl);
 
@@ -955,14 +819,13 @@ function main() {
 
     //Shaders
     shader.init(gl);
+    colorVertexShader.init(gl);
 
     //Objects
     grid.init(gl, shader);
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);
-    triangle.init(gl, shader);
-    square.init(gl, shader);
-    rectangle.init(gl, shader);
+    rectangle.init(gl, colorVertexShader);
 
     //Render
     render(gl);
