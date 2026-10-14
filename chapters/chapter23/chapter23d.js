@@ -294,7 +294,6 @@ const rectangle = {
         this.drawCount = 6;
     },
     update(gl){
-        console.log(this.vertexData);
         gl.bindVertexArray(this.vao);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
@@ -576,7 +575,7 @@ const clock = {
 
         // Log only once every second
         if (this.currentTime - this.lastLogTime >= 100) {
-            //this.log();
+            this.log();
             this.lastLogTime = this.currentTime;
         }
 
