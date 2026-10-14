@@ -1,8 +1,9 @@
 /* #############################################################
-   CHAPTER 22a: Animation Color
+   CHAPTER 23a: Animation Color
 
    Topics:
    - Animate color of rectangle
+   - Using Uniform
    #############################################################
 */
 
