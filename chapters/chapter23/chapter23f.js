@@ -178,10 +178,10 @@ const triangle = {
     ]),
 
     baseTranslationX: 0,
-    baseTranslationY: 0,
+    baseTranslationY: 100,
 
     translationX: 0,
-    translationY: 0,
+    translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
@@ -260,10 +260,10 @@ const square = {
     ]),
 
     baseTranslationX: 0,
-    baseTranslationY: 200,
+    baseTranslationY: 300,
 
     translationX: 0,
-    translationY: 200,
+    translationY: 300,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
