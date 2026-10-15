@@ -17,9 +17,13 @@ PHASE 3 — TEXTURES AND ALPHA
 Chapters 17–20: Texture creation and reuse, UV mapping and wrapping, filtering
 and mipmaps, alpha, blending, and transparent textures.
 
-Chapter 0 is the introduction; Chapters 1–20 are the completed instructional
+PHASE 4 — ANIMATION AND SPRITE SHEETS
+Chapters 21–25: The render loop, delta time, clock objects, transform animation,
+animated color and alpha, texture scrolling, and sprite-sheet frame playback.
+
+Chapter 0 is the introduction; Chapters 1–25 are the completed instructional
 chapters. See series_episodes.txt for the lesson-by-lesson guide and the
-separately labeled roadmap beyond Chapter 20.
+separately labeled roadmap beyond Chapter 25.
 
 
 LESSON CODE ORGANIZATION
@@ -45,6 +49,6 @@ Serve the repository root over HTTP:
     python3 -m http.server 8000
 
 Open http://localhost:8000. index.html currently loads
-chapters/chapter20/chapter20h.js. To run another lesson, change the module path
+chapters/chapter25/chapter25g.js. To run another lesson, change the module path
 in index.html to the desired chapter file. Some lessons also use the CDN-loaded
 Lil GUI or gl-matrix libraries declared in index.html.

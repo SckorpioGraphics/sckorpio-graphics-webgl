@@ -2,8 +2,8 @@ WEBGL FUNDAMENTALS — EPISODE GUIDE
 ==================================
 
 This guide describes the lessons currently implemented in
-../chapters/chapter00 through ../chapters/chapter20. Chapter 0 is the series
-introduction; Chapters 1–20 are the twenty instructional chapters in the
+../chapters/chapter00 through ../chapters/chapter25. Chapter 0 is the series
+introduction; Chapters 1–25 are the twenty-five instructional chapters in the
 completed foundation.
 
 
@@ -174,21 +174,64 @@ CHAPTER 20 — ALPHA AND BLENDING
 20h - Finish with transparent Sckorpio mascot and title textures.
 
 
+PHASE 4 — ANIMATION AND SPRITE SHEETS
+"Bring the 2D world to life with time and frame data"
+=======================================================
+
+CHAPTER 21 — RENDER LOOP AND TIME
+----------------------------------
+21a - Understand requestAnimationFrame() and how often the render loop runs.
+21b - Measure elapsed time and inspect the time delta.
+21c - Build a clock object to track frame timing.
+21d - Refine the clock object and centralize timing logic.
+21e - Add FPS reporting to the clock object.
+21f - Create a reusable frame-update clock for animation work.
+21g - Continue the clock-object refinement for animations.
+21h - Connect the clock object with a rectangle animation.
+
+CHAPTER 22 — TRANSFORM ANIMATION
+---------------------------------
+22a - Animate translation over time.
+22b - Animate rotation with a time-driven angle.
+22c - Animate scale with a time-driven value.
+22d - Combine translation, rotation, and scale in a single animation.
+22e - Keep a base transform while animating the object.
+22f - Blend multiple transform motions into a richer animation sequence.
+
+CHAPTER 23 — COLOR AND VERTEX ANIMATION
+----------------------------------------
+23a - Animate color values over time.
+23b - Animate both color and alpha.
+23c - Continue the color/alpha animation experiment.
+23d - Animate vertex colors in the shader data.
+23e - Build a more advanced per-vertex color animation.
+23f - Mix color, alpha, and transform animation into one scene.
+
+CHAPTER 24 — TEXTURE SCROLLING AND MAPS
+----------------------------------------
+24a - Create a long rectangular texture and map it to an object.
+24b - Offset the texture UVs to study scrolling behavior.
+24c - Animate a scrolling texture across a long rectangle.
+24d - Apply the same idea to an Sckorpio banner texture.
+24e - Animate a wrapped texture across a square object.
+24f - Expand the mapping to a scaled and zoomed rectangular texture.
+
+CHAPTER 25 — SPRITE SHEET ANIMATION
+------------------------------------
+25a - Start with a basic sprite sheet and render it on a rectangle.
+25b - Advance the sprite sheet animation through texture picking usimg GUI.
+25c - Continue sprite-sheet playback with frame selection by clock animation
+25d - Create a running horse sprit sheet animation , White BG
+25e - Create a running horse sprit sheet animation , Transparent
+25f - Create a running sckoprio mascot sprit sheet animation , White BG
+25g - Create a running sckoprio mascot sprit sheet animation , Transparent
+
+
 BEYOND THE COMPLETED FOUNDATION — ROADMAP
 =========================================
 
 The following outline is a direction for future chapters, not part of the
-completed 0–20 episode set. Update it as those lessons are developed.
-
-CHAPTER 21 — RENDER ORDER
--------------------------
-Explore overlap, painter-style ordering, transparency ordering, and explicit
-render layers.
-
-CHAPTERS 22–25 — ANIMATION
--------------------------
-Time and delta time; transform, color, alpha, and texture animation; and
-frame-based sprite animation.
+completed 0–25 episode set. Update it as those lessons are developed.
 
 CHAPTERS 26–29 — INTERACTION AND PHYSICS
 ----------------------------------------
