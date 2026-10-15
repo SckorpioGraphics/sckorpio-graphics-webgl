@@ -163,7 +163,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // TEXTURE RESOURCE
 // =============================================================
 const texture = {
-    imagePath: "chapters/chapter25/assets/sprite_Sheet.png",
+    imagePath: "chapters/chapter25/assets/digits_Sprite_Sheet.png",
 
     image: null,
     handle: null,

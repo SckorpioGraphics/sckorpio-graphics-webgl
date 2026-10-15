@@ -163,7 +163,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // TEXTURE RESOURCE
 // =============================================================
 const texture = {
-    imagePath: "chapters/chapter25/assets/sckorpio_Actions.png",
+    imagePath: "chapters/chapter25/assets/sckorpio_Sprite_Sheet.png",
 
     image: null,
     handle: null,
