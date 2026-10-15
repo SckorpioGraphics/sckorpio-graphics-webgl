@@ -2,7 +2,7 @@
    CHAPTER 25b: Sprite Sheet Animation
    Topics:
    - Start with a basic sprite sheet 
-   - Chnage frames by GUI
+   - Render the rectangular Sprite texture on Square
    #############################################################
 */
 

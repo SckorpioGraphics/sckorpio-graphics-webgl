@@ -2,6 +2,7 @@
    CHAPTER 25c: Sprite Sheet Animation
    Topics:
    - Start with a basic sprite sheet animation
+   - Play the digits sprite sheet animation
    - Now connect with clock animation
    #############################################################
 */
