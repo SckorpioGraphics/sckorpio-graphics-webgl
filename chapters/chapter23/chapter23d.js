@@ -599,7 +599,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation = {
+const animationInfo = {
     // Animation state
     colorFrequency: 7,
     colorAmplitude: 1,
@@ -744,8 +744,8 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    animation.update(clock.elapsedTime);
-    animation.apply(rectangle);
+    animationInfo.update(clock.elapsedTime);
+    animationInfo.apply(rectangle);
 
     // Update Rectangle
     rectangle.update(gl)

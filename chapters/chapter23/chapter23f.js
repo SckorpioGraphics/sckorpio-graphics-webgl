@@ -696,7 +696,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation1 = {
+const animationInfo1 = {
     // Animation state
     translationX: 0,
     translationY: 0,
@@ -717,7 +717,7 @@ const animation1 = {
     }
 };
 
-const animation2 = {
+const animationInfo2 = {
     // Animation state
     translationX: 0,
     translationY: 0,
@@ -738,7 +738,7 @@ const animation2 = {
     }
 };
 
-const animation3 = {
+const animationInfo3 = {
     // Animation state
     translationX: 0,
     translationY: 0,
@@ -883,13 +883,13 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    animation1.update(clock.elapsedTime);
-    animation2.update(clock.elapsedTime);
-    animation3.update(clock.elapsedTime);
+    animationInfo1.update(clock.elapsedTime);
+    animationInfo2.update(clock.elapsedTime);
+    animationInfo3.update(clock.elapsedTime);
 
-    animation1.apply(rectangle);
-    animation2.apply(triangle);
-    animation3.apply(square);
+    animationInfo1.apply(rectangle);
+    animationInfo2.apply(triangle);
+    animationInfo3.apply(square);
     
     // CANVAS
     // ---------------------------------------

@@ -608,7 +608,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation1 = {
+const animationInfo1 = {
     // Animation state
     color: [1.0, 1.0, 1.0, 1.0],
     colorFrequency: 1,
@@ -623,7 +623,7 @@ const animation1 = {
     }
 };
 
-const animation2 = {
+const animationInfo2 = {
     // Animation state
     color: [1.0, 1.0, 1.0, 1.0],
     colorFrequency: 3,
@@ -760,10 +760,10 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    animation1.update(clock.elapsedTime);
-    animation2.update(clock.elapsedTime);
-    animation1.apply(rectangle);
-    animation2.apply(square);
+    animationInfo1.update(clock.elapsedTime);
+    animationInfo2.update(clock.elapsedTime);
+    animationInfo1.apply(rectangle);
+    animationInfo2.apply(square);
     
     // CANVAS
     // ---------------------------------------

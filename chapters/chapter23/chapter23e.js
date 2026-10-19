@@ -606,7 +606,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation = {
+const animationInfo = {
     // Animation state
     color: [1.0, 1.0, 1.0, 1.0],
     colorFrequency: 8,
@@ -743,8 +743,8 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    animation.update(clock.elapsedTime);
-    animation.apply(rectangle);
+    animationInfo.update(clock.elapsedTime);
+    animationInfo.apply(rectangle);
     
     // CANVAS
     // ---------------------------------------
