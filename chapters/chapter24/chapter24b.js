@@ -687,7 +687,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation = {
+const animationInfo = {
     update(elapsedTime) {
         
     }

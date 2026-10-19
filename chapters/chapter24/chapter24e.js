@@ -692,7 +692,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation = {
+const animationInfo = {
     offSetX: 0,
     speed: 0.5,
     update(elapsedTime) {
@@ -825,8 +825,8 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    animation.update(clock.elapsedTime);
-    animation.apply(square);
+    animationInfo.update(clock.elapsedTime);
+    animationInfo.apply(square);
     
     // Canvas
     resizeCanvasToDisplaySize(gl.canvas);
