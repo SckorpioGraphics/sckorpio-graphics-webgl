@@ -710,6 +710,10 @@ const animation1 = {
         this.translationX = Math.sin(elapsedTime) * 100;
         let channel = (1.0 + Math.sin(elapsedTime * 4))/2.0;
         this.color = [0.0, 0.0, 1.0, 1 - channel];
+    }, 
+    apply(object) {
+        object.translationX = object.baseTranslationX + this.translationX;
+        object.color = this.color;
     }
 };
 
@@ -727,6 +731,10 @@ const animation2 = {
         this.rotation = elapsedTime * 200;
         let channel = (1.0 + Math.sin(elapsedTime * 4))/2.0;
         this.color = [0.0, 1.0, 0.0, channel];
+    }, 
+    apply(object) {
+        object.rotation = this.rotation;
+        object.color = this.color;
     }
 };
 
@@ -745,17 +753,13 @@ const animation3 = {
         this.scaleY = 1 + Math.sin(elapsedTime * 3) * 0.3;
         let channel = (1.0 + Math.sin(elapsedTime * 4))/2.0;
         this.color = [1.0, 0.0, 0.0, channel];
+    }, 
+    apply(object) {
+        object.scaleX = this.scaleX;
+        object.scaleY = this.scaleY;
+        object.color = this.color;
     }
 };
-
-function applyAnimation(animation, object) {
-    object.translationX = object.baseTranslationX + animation.translationX;
-    object.translationY = object.baseTranslationY + animation.translationY;
-    object.rotation = animation.rotation;
-    object.scaleX = animation.scaleX;
-    object.scaleY = animation.scaleY;
-    object.color = animation.color;
-}
 
 // =============================================================
 // GUI 
@@ -874,20 +878,21 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation1.update(clock.elapsedTime);
     animation2.update(clock.elapsedTime);
     animation3.update(clock.elapsedTime);
 
-    applyAnimation(animation1, rectangle);
-    applyAnimation(animation2, triangle);
-    applyAnimation(animation3, square);
-
+    animation1.apply(rectangle);
+    animation2.apply(triangle);
+    animation3.apply(square);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 

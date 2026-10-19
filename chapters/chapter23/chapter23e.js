@@ -615,12 +615,11 @@ const animation = {
     update(elapsedTime) {
         let channel = (1.0 + Math.sin(elapsedTime * this.colorFrequency) * this.colorAmplitude) / 2.0;
         this.color = [channel, channel/2.0 , 1 - channel, 1.0];
+    },
+    apply(object) {
+        object.animationColor = this.color;
     }
 };
-
-function applyAnimation(animation, object) {
-    object.animationColor = animation.color;
-}
 
 // =============================================================
 // GUI 
@@ -739,14 +738,16 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    animation.apply(rectangle);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 

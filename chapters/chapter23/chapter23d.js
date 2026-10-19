@@ -607,21 +607,20 @@ const animation = {
 
     update(elapsedTime) {
         this.channel = (1 + (Math.sin(elapsedTime * this.colorFrequency)))/2.0 * this.colorAmplitude;
+    },
+    apply(object) {
+        const c = this.channel;
+        object.vertexData = new Float32Array([
+            -200,-100,      c,    1-c,      1-c,    1.0, // Left Bottom
+            200, -100,    1-c,      c,      1-c,    1.0, // Right Bottom
+            -200, 100,      c,      c,      1-c,    1.0, // Left Top
+
+            -200, 100,      c,      c,      1-c,    1.0, // Left Top
+            200, -100,    1-c,      c,      1-c,    1.0, // Right Bottom
+            200,  100,    1-c,    1-c,        c,    1.0, // Right Top
+        ]);
     }
 };
-
-function applyAnimation(animation, object) {
-    const c = animation.channel;
-    object.vertexData = new Float32Array([
-        -200,-100,      c,    1-c,      1-c,    1.0, // Left Bottom
-        200, -100,    1-c,      c,      1-c,    1.0, // Right Bottom
-        -200, 100,      c,      c,      1-c,    1.0, // Left Top
-
-        -200, 100,      c,      c,      1-c,    1.0, // Left Top
-        200, -100,    1-c,      c,      1-c,    1.0, // Right Bottom
-        200,  100,    1-c,    1-c,        c,    1.0, // Right Top
-    ]);
-}
 
 // =============================================================
 // GUI 
@@ -740,17 +739,19 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    animation.apply(rectangle);
 
     // Update Rectangle
     rectangle.update(gl)
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 

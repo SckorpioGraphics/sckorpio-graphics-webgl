@@ -533,23 +533,17 @@ const clock = {
 const animation = {
     // Animation state
     color: [1.0, 1.0, 1.0, 1.0],
-    colorFrequency: 2,
+    colorFrequency: 3,
     colorAmplitude: 1,
 
     update(elapsedTime) {
         let channel = (1.0 + Math.sin(elapsedTime * this.colorFrequency) * this.colorAmplitude) / 2.0;
-        this.color = [0.39, 0.33, 0.58, channel]
+        this.color = [0.39, 0.33, 0.58, channel];
+    },
+    apply(object) {
+        object.color = this.color;
     }
 };
-
-function applyAnimation(animation, object) {
-    // object.translationX = animation.translationX;
-    // object.translationY = animation.translationY;
-    //object.rotation = animation.rotation;
-    //object.scaleX = animation.scaleX;
-    //object.scaleY = animation.scaleY;
-    object.color = animation.color;
-}
 
 // =============================================================
 // GUI 
@@ -668,14 +662,16 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    animation.apply(rectangle);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 
