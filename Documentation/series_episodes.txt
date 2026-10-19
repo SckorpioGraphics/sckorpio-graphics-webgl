@@ -230,6 +230,56 @@ CHAPTER 25 — SPRITE SHEET ANIMATION
 BEYOND THE COMPLETED FOUNDATION — ROADMAP
 =========================================
 
+Chapter 26 — Movement & Basic Physics
+How objects move
+- 26a: Constant-velocity linear motion
+- 26b: Acceleration and changing velocity
+- 26c: Gravity and free fall
+- 26d: Projectile motion
+- 26e: Applying physics with delta time and a shared physics configuration
+Outcome: objects move naturally through the world.
+
+Chapter 27 — Collision Detection
+When objects meet
+- 27a: Collision concepts and collision shapes
+- 27b: Object bounds and AABBs
+- 27c: Rectangle–rectangle collision
+- 27d: Circle–circle collision
+- 27e: Object versus world boundaries
+- 27f: Detecting collisions between multiple objects
+- 27g: Visualizing collision shapes with debug rendering
+Outcome: the engine knows which objects are overlapping.
+
+Chapter 28 — Object Interactions
+What happens when they meet
+- 28a: Reacting to a collision — change an object's color
+- 28b: Change textures or switch sprite animations
+- 28c: Show, hide, or destroy an object after an interaction
+- 28d: Collision events — enter, stay, and exit
+- 28e: Trigger zones versus solid collisions
+- 28f: Object-specific interaction behavior and callbacks
+Outcome: collisions can trigger meaningful changes without putting all the logic inside the collision detector.
+
+Chapter 29 — Gameplay Mechanics
+How a world becomes playable
+- 29a: Player control and movement intent
+- 29b: Jumping, attacking, and action states
+- 29c: Attack hitboxes and receiving damage
+- 29d: Health, damage, and object destruction
+- 29e: Collectibles and interactive objects
+- 29f: Basic enemy behavior and state transitions
+- 29g: Coordinating gameplay state with sprite animations
+Outcome: individual mechanics work together to create simple gameplay systems.
+
+Chapter 30 — Building a Complete 2D World
+Bring everything together
+- 30a: Organize a world containing multiple objects
+- 30b: Build a level with ground, platforms, and obstacles
+- 30c: Integrate the player, camera, physics, and collisions
+- 30d: Add interactive objects and basic enemies
+- 30e: Connect animation, interactions, and gameplay mechanics
+- 30f: Assemble the complete scene and test the world end to end
+
 The following outline is a direction for future chapters, not part of the
 completed 0–25 episode set. Update it as those lessons are developed.
 
