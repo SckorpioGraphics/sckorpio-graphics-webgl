@@ -742,20 +742,12 @@ const animation = {
         this.scaleX += (this.targetScaleX - this.scaleX) * factor;
 
         this.scaleY += (this.targetScaleY - this.scaleY) * factor;
+    },
+    apply(object) {
+        object.texCoordOffset = [this.offsetX, this.offsetY];
+        object.texCoordScale = [this.scaleX, this.scaleY];
     }
 };
-
-function applyAnimation(animation, object) {
-    object.texCoordOffset = [
-        animation.offsetX,
-        animation.offsetY
-    ];
-
-    object.texCoordScale = [
-        animation.scaleX,
-        animation.scaleY
-    ];
-}
 
 // =============================================================
 // GUI 
@@ -874,12 +866,13 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, square);
+    animation.apply(square);
     
     // Canvas
     resizeCanvasToDisplaySize(gl.canvas);

@@ -697,12 +697,11 @@ const animation = {
     speed: 0.5,
     update(elapsedTime) {
         this.offSetX = elapsedTime * this.speed;
+    },
+    apply(object) {
+        object.texCoordOffset = [this.offSetX, 0];
     }
 };
-
-function applyAnimation(animation, object) {
-    object.texCoordOffset = [animation.offSetX, 0];
-}
 
 // =============================================================
 // GUI 
@@ -821,12 +820,13 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, square);
+    animation.apply(square);
     
     // Canvas
     resizeCanvasToDisplaySize(gl.canvas);

@@ -688,15 +688,10 @@ const clock = {
 // ANIMATIONS 
 // =============================================================
 const animation = {
-    
     update(elapsedTime) {
         
     }
 };
-
-function applyAnimation(animation, object) {
-    
-}
 
 // =============================================================
 // GUI 
@@ -815,14 +810,15 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
-    animation.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    // ANIMATIONS
+    // -------------------------------------
+
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 
