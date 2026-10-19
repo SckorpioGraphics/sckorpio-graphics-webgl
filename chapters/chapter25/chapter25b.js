@@ -711,13 +711,12 @@ const animation = {
             (index % this.columns) / this.columns,
             1.0 - (Math.floor(index / this.columns) + 1) / this.rows
         ];
+    },
+    apply(object) {
+        object.texCoordOffset = this.texCoordOffset;
+        object.texCoordScale = this.texCoordScale;
     }
 };
-
-function applyAnimation(animation, object) {
-    object.texCoordOffset = animation.texCoordOffset;
-    object.texCoordScale = animation.texCoordScale;
-}
 
 // =============================================================
 // GUI 
@@ -843,14 +842,16 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
-    //animation.update(clock.elapsedTime);
-    applyAnimation(animation, square);
+    // ANIMATIONS
+    // -------------------------------------
+    //animation.update(clock.elapsedTime); NOT YET!! Sprite Frame by GUI
+    animation.apply(square);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 

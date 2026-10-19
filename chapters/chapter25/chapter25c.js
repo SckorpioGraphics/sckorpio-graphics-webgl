@@ -717,14 +717,12 @@ const animation = {
     update(elapsedTime) {
         const frameNumber = Math.floor(elapsedTime * this.fps) % (this.columns * this.rows) + 1;
         this.selectFrame(frameNumber);
+    },
+    apply(object) {
+        object.texCoordOffset = this.texCoordOffset;
+        object.texCoordScale = this.texCoordScale;
     }
-
 };
-
-function applyAnimation(animation, object) {
-    object.texCoordOffset = animation.texCoordOffset;
-    object.texCoordScale = animation.texCoordScale;
-}
 
 // =============================================================
 // GUI 
@@ -843,14 +841,16 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, square);
+    animation.apply(square);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 
