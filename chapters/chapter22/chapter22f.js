@@ -709,6 +709,9 @@ const animation1 = {
     update(elapsedTime) {
         // Translation
         this.translationX = Math.sin(elapsedTime * this.translationFrequencyX) * this.translationAmplitudeX;
+    },
+    apply(object) {
+        object.translationX = object.baseTranslationX + this.translationX;
     }
 };
 
@@ -724,6 +727,9 @@ const animation2 = {
     update(elapsedTime) {
         // Rotation
         this.rotation = elapsedTime * this.rotationSpeed;
+    },
+    apply(object) {
+        object.rotation = this.rotation;
     }
 };
 
@@ -744,16 +750,12 @@ const animation3 = {
         // Scale
         this.scaleX = 1 + Math.sin(elapsedTime * this.scaleFrequencyX) * this.scaleAmplitudeX;
         this.scaleY = 1 + Math.sin(elapsedTime * this.scaleFrequencyY) * this.scaleAmplitudeY;
+    },
+    apply(object) {
+        object.scaleX = this.scaleX;
+        object.scaleY = this.scaleY;
     }
 };
-
-function applyAnimation(animation, object) {
-    object.translationX = object.baseTranslationX + animation.translationX;
-    object.translationY = object.baseTranslationY + animation.translationY;
-    object.rotation = animation.rotation;
-    object.scaleX = animation.scaleX;
-    object.scaleY = animation.scaleY;
-}
 
 // =============================================================
 // GUI 
@@ -872,20 +874,20 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation1.update(clock.elapsedTime);
     animation2.update(clock.elapsedTime);
     animation3.update(clock.elapsedTime);
-
-    applyAnimation(animation1, rectangle);
-    applyAnimation(animation2, triangle);
-    applyAnimation(animation3, square);
-
+    animation1.apply(rectangle);
+    animation2.apply(triangle);
+    animation3.apply(square);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 

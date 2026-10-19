@@ -574,16 +574,15 @@ const animation = {
         // 15e.3 — Scale
         this.scaleX = 1 + Math.sin(elapsedTime * this.scaleFrequencyX) * this.scaleAmplitudeX;
         //this.scaleY = 1 + Math.sin(elapsedTime * this.scaleFrequencyY) * this.scaleAmplitudeY;
+    },
+    apply(object) {
+        object.translationX = object.baseTranslationX + this.translationX;
+        object.translationY = object.baseTranslationY + this.translationY;
+        object.rotation = this.rotation;
+        object.scaleX = this.scaleX;
+        object.scaleY = this.scaleY;
     }
 };
-
-function applyAnimation(animation, object) {
-    object.translationX = object.baseTranslationX + animation.translationX;
-    object.translationY = object.baseTranslationY + animation.translationY;
-    object.rotation = animation.rotation;
-    object.scaleX = animation.scaleX;
-    object.scaleY = animation.scaleY;
-}
 
 // =============================================================
 // GUI 
@@ -614,9 +613,9 @@ const gui = {
 
 // =============================================================
 // KEY EVENTS 
-// =============================================================
+// ============================================================= 
 const keyEvent = {
-    init(render) {
+init(render) {
         window.addEventListener("keydown", event => {
             switch(event.key) {
                 case "ArrowUp":
@@ -702,14 +701,16 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    animation.apply(rectangle);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 

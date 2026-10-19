@@ -646,7 +646,7 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
     // animate the rectangle ( x = x0 + u * t)

@@ -551,16 +551,12 @@ const animation = {
         // 15d.2 — Oscillating Scale X + Y
         // this.scaleX = 1 + Math.sin(elapsedTime * this.scaleFrequencyX) * this.scaleAmplitudeX;
         // this.scaleY = 1 + Math.sin(elapsedTime * this.scaleFrequencyY) * this.scaleAmplitudeY;
+    },
+    apply(object) {
+        object.scaleX = this.scaleX;
+        object.scaleY = this.scaleY;
     }
 };
-
-function applyAnimation(animation, object) {
-    //object.translationX = animation.translationX;
-    //object.translationY = animation.translationY;
-    //object.rotation = animation.rotation;
-    object.scaleX = animation.scaleX;
-    object.scaleY = animation.scaleY;
-}
 
 // =============================================================
 // GUI 
@@ -679,14 +675,16 @@ function setupModelMatrix(object) {
 // RENDER
 // =============================================================
 function render(gl, timeStamp) {
-    // clock
+    // CLOCK
     clock.update(timeStamp);
 
-    // animations
+    // ANIMATIONS
+    // -------------------------------------
     animation.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    animation.apply(rectangle);
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 
