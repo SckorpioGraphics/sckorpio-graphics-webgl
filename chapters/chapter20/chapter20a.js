@@ -506,6 +506,33 @@ const yAxis = {
     }
 };
 
+function setupModelMatrix(object) {
+    const matrix = mat3.create();
+
+    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
+    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+
+    object.modelMatrix = matrix;
+}
+
+// =============================================================
+// HELPER FUNCS
+// =============================================================
+// Resize Canvas
+function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
+    const width = (canvas.clientWidth * multiplier) | 0;
+    const height = (canvas.clientHeight * multiplier) | 0;
+
+    if(canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        return true;
+    }
+
+    return false;
+}
+
 // =============================================================
 // GUI 
 // =============================================================
@@ -587,33 +614,6 @@ const keyEvent = {
         });
     }
 };
-
-// =============================================================
-// HELPER FUNCS
-// =============================================================
-// Resize Canvas
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
-
-    if(canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
-}
-
-function setupModelMatrix(object) {
-    const matrix = mat3.create();
-
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
-
-    object.modelMatrix = matrix;
-}
 
 // =============================================================
 // RENDER
