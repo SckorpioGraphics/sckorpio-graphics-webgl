@@ -112,23 +112,6 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 
 /**
- * Resizes the internal drawing buffer to match CSS display pixels.
- */
-
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
-
-    if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
-}
-
-/**
  * Uploads two 2D points to the active ARRAY_BUFFER.
  */
 
@@ -432,6 +415,23 @@ function main() {
 
     // Start render loop
     requestAnimationFrame(render);
+}
+
+/**
+ * Resizes the internal drawing buffer to match CSS display pixels.
+ */
+
+function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
+    const width = (canvas.clientWidth * multiplier) | 0;
+    const height = (canvas.clientHeight * multiplier) | 0;
+
+    if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        return true;
+    }
+
+    return false;
 }
 
 // =============================================================

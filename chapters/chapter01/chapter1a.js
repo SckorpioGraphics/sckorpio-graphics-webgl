@@ -112,25 +112,6 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
-// 2. Helper Functions
-// =============================================================
-/**
- * Resizes the internal drawing buffer to match screen CSS display pixels.
- */
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-  const width = (canvas.clientWidth * multiplier) | 0;
-  const height = (canvas.clientHeight * multiplier) | 0;
-
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-    return true;
-  }
-  return false;
-}
-
-
-// =============================================================
 // 3. Main Application Entry Point
 // =============================================================
 
@@ -260,6 +241,24 @@ function main() {
     // Listen for Window resize
     // when window get resized ... we render again
     window.addEventListener("resize", render);
+}
+
+// =============================================================
+// 2. Helper Functions
+// =============================================================
+/**
+ * Resizes the internal drawing buffer to match screen CSS display pixels.
+ */
+function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
+  const width = (canvas.clientWidth * multiplier) | 0;
+  const height = (canvas.clientHeight * multiplier) | 0;
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+    return true;
+  }
+  return false;
 }
 
 // Start app once DOM content is ready

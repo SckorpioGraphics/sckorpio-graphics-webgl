@@ -234,23 +234,6 @@ const rectangle = {
     }
 };
 
-// =============================================================
-// HELPER FUNCS
-// =============================================================
-// Resize Canvas
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
-
-    if(canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
-}
-
 function randomInt(range) {
     return Math.floor(Math.random() * range);
 }
@@ -306,6 +289,23 @@ function main() {
 
     //Resize
     window.addEventListener("resize", () => render(gl));
+}
+
+// =============================================================
+// HELPER FUNCS
+// =============================================================
+// Resize Canvas
+function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
+    const width = (canvas.clientWidth * multiplier) | 0;
+    const height = (canvas.clientHeight * multiplier) | 0;
+
+    if(canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+        return true;
+    }
+
+    return false;
 }
 
 // =============================================================
