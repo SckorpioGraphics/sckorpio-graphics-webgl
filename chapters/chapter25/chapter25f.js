@@ -690,7 +690,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation = {
+const animationInfo = {
     columns: 8,
     rows: 5,
     frameNumber: 1,
@@ -846,8 +846,8 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    animation.update(clock.elapsedTime);
-    animation.apply(square);
+    animationInfo.update(clock.elapsedTime);
+    animationInfo.apply(square);
     
     // CANVAS
     // ---------------------------------------

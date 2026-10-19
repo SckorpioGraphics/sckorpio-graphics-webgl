@@ -689,7 +689,7 @@ const clock = {
 // =============================================================
 // ANIMATIONS 
 // =============================================================
-const animation = {
+const animationInfo = {
     columns: 4,
     rows: 3,
     frameNumber: 1,
@@ -733,10 +733,10 @@ const gui = {
         rectangleFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
 
         const spriteSheetFolder = gui.addFolder("spriteSheet");
-        spriteSheetFolder.add(animation, "frameNumber", 1, 12, 1)
+        spriteSheetFolder.add(animationInfo, "frameNumber", 1, 12, 1)
         .name("frameNumber")
         .onChange((frameNumber) => {
-            animation.selectFrame(frameNumber);
+            animationInfo.selectFrame(frameNumber);
         });
 
         const animationFolder = gui.addFolder("clock");
@@ -847,8 +847,8 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-    //animation.update(clock.elapsedTime); NOT YET!! Sprite Frame by GUI
-    animation.apply(square);
+    //animationInfo.update(clock.elapsedTime); NOT YET!! Sprite Frame by GUI
+    animationInfo.apply(square);
     
     // CANVAS
     // ---------------------------------------
