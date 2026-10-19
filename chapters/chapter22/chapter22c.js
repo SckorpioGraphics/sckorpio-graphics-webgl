@@ -582,7 +582,7 @@ const gui = {
         rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
         rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
 
-        const animationFolder = gui.addFolder("clock");
+        const animationFolder = gui.addFolder("Clock");
         animationFolder.add(clock, "play");
         animationFolder.add(clock, "pause");
         animationFolder.add(clock, "reset");

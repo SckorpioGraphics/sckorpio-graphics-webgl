@@ -749,7 +749,7 @@ const gui = {
             animationInfo.selectFrame(frameNumber);
         });
 
-        const animationFolder = gui.addFolder("clock");
+        const animationFolder = gui.addFolder("Clock");
         animationFolder.add(clock, "play");
         animationFolder.add(clock, "pause");
         animationFolder.add(clock, "reset");
