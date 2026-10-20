@@ -1,9 +1,11 @@
 /* #############################################################
-   CHAPTER 26a: Basic Physics Kinematics
+   CHAPTER 26a: Animation Translate
 
    Topics:
-   - Start with a static rectangle placed
-   - Was using animations learnt already
+   - Explain all translation animations
+   - Use clock for elapsed time
+   - create animation object
+   - apply on the square
    #############################################################
 */
 
@@ -160,7 +162,7 @@ const camera = {
 // =============================================================
 // SCENE OBJECTS
 // =============================================================
-const rectangle = {
+const square = {
     //    v1--------v2
     //    | \        |
     //    |    \     |
@@ -169,13 +171,13 @@ const rectangle = {
 
     // CPU DATA
     vertexData: new Float32Array([
-        -200, -100,      // Left Bottom
-        200, -100,      // Right Bottom
-        -200, 100,      // Left Top
+        -100, -100,      // Left Bottom
+        100, -100,      // Right Bottom
+        -100, 100,      // Left Top
 
-        -200, 100,      // Left Top
-        200, -100,      // Right Bottom
-        200, 100       // Right Top
+        -100, 100,      // Left Top
+        100, -100,      // Right Bottom
+        100, 100       // Right Top
     ]),
 
     translationX: 0,
@@ -432,6 +434,16 @@ const yAxis = {
     }
 };
 
+function setupModelMatrix(object) {
+    const matrix = mat3.create();
+
+    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
+    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+
+    object.modelMatrix = matrix;
+}
+
 // =============================================================
 // CLOCK 
 // =============================================================
@@ -561,14 +573,14 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
 
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "translationX", -1000, 1000).name("translationX");
-        rectangleFolder.add(rectangle, "translationY", -1000, 1000).name("translationY");
-        rectangleFolder.add(rectangle, "rotation", 0, 360).name("rotation");
-        rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
-        rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
+        const rectangleFolder = gui.addFolder("Square");
+        rectangleFolder.add(square, "translationX", -1000, 1000).name("translationX");
+        rectangleFolder.add(square, "translationY", -1000, 1000).name("translationY");
+        rectangleFolder.add(square, "rotation", 0, 360).name("rotation");
+        rectangleFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
+        rectangleFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
 
-        const animationFolder = gui.addFolder("clock");
+        const animationFolder = gui.addFolder("Clock");
         animationFolder.add(clock, "play");
         animationFolder.add(clock, "pause");
         animationFolder.add(clock, "reset");
@@ -640,18 +652,6 @@ const keyEvent = {
     }
 };
 
-
-
-function setupModelMatrix(object) {
-    const matrix = mat3.create();
-
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
-
-    object.modelMatrix = matrix;
-}
-
 // =============================================================
 // RENDER
 // =============================================================
@@ -662,7 +662,10 @@ function render(gl, timeStamp) {
     // ANIMATIONS
     // -------------------------------------
     animationInfo.update(clock.elapsedTime);
-    animationInfo.apply(rectangle);
+    animationInfo.apply(square);
+
+    // ANIMATIONS
+    // -------------------------------------
     
     // CANVAS
     // ---------------------------------------
@@ -696,8 +699,8 @@ function render(gl, timeStamp) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+    // Square
+    square.draw(gl);
 
     //---------------------------------------------------
     // LOOP
@@ -729,7 +732,7 @@ function main() {
     grid.init(gl, shader);
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);
-    rectangle.init(gl, shader);
+    square.init(gl, shader);
 
     //Render
     render(gl);
