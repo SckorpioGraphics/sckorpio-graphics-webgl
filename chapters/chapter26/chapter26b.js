@@ -1,10 +1,12 @@
 /* #############################################################
-   CHAPTER 26b: Using Linear Velocity
+   CHAPTER 26b: Introducing PhysicsInfo
 
    Topics:
-   - Start with a static rectangle 
-   - Instead of animation use velocity
-   - A physics functions also to update all objects
+   - Apply 1-D Linear Motion on Square
+   - Instead of animation.. use physicsInfo
+   - Use clock for elapsed time
+   - create animation object
+   - apply on the square
    #############################################################
 */
 
@@ -161,7 +163,7 @@ const camera = {
 // =============================================================
 // SCENE OBJECTS
 // =============================================================
-const rectangle = {
+const square = {
     //    v1--------v2
     //    | \        |
     //    |    \     |
@@ -169,32 +171,23 @@ const rectangle = {
     //    v0--------v1
 
     // CPU DATA
-    // vertex data
     vertexData: new Float32Array([
-        -200, -100,      // Left Bottom
-        200, -100,      // Right Bottom
-        -200, 100,      // Left Top
+        -100, -100,      // Left Bottom
+        100, -100,      // Right Bottom
+        -100, 100,      // Left Top
 
-        -200, 100,      // Left Top
-        200, -100,      // Right Bottom
-        200, 100       // Right Top
+        -100, 100,      // Left Top
+        100, -100,      // Right Bottom
+        100, 100       // Right Top
     ]),
 
-    // transform data
-    baseTranslationX: 0,
-    baseTranslationY: 100,
     translationX: 0,
-    translationY: 100,
+    translationY: 0,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
     modelMatrix: mat3.create(),
-    
-    // physics data
-    velocityX: 0.0,
-
-    // material data
-    color: [0.39, 0.33, 0.58, 1.0],
+    color: [0.39, 0.33, 0.58, 1.0],     // Sckorpio Purple
 
     //GPU DATA
     shader: null,
@@ -442,6 +435,16 @@ const yAxis = {
     }
 };
 
+function setupModelMatrix(object) {
+    const matrix = mat3.create();
+
+    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
+    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+
+    object.modelMatrix = matrix;
+}
+
 // =============================================================
 // CLOCK 
 // =============================================================
@@ -479,6 +482,7 @@ const clock = {
         this.isPlaying = false;
         // Reset startTime
         this.startTime = 0;
+        this.deltaTime = 0;
     },
     reset() {
         // Reset all
@@ -538,48 +542,22 @@ const clock = {
 };
 
 // =============================================================
-// ANIMATIONS 
+// PHYSICS 
 // =============================================================
-const animationInfo = {
-    // Animation state
+const physicsInfo = {
+    // PhysicsBody position
     translationX: 0,
-    translationY: 0,
-
     // Translation params
-    translationSpeedX: 100,
-    translationSpeedY: 50,
-    translationAmplitudeX: 200,
-    translationAmplitudeY: 100,
-    translationFrequencyX: 1,
-    translationFrequencyY: 1,
+    velocityX: 50,
 
-    update(elapsedTime) {
-        
-        // 22a.1 — Linear X
-        // this.translationX = elapsedTime * this.translationParams.speedX;
+    update(deltaTime) {
+        this.translationX += deltaTime * this.velocityX;
+    },
 
-        // 22a.2 — Linear X + Y
-        this.translationX = elapsedTime * this.translationSpeedX;
-        this.translationY = elapsedTime * this.translationSpeedY;
-
-        // 22a.3 — Oscillating X
-        // this.translationX = Math.sin(elapsedTime * this.translationFrequencyX) * this.translationAmplitudeX;
-
-        // 22a.4 — Oscillating X + Y
-        // this.translationX = Math.sin(elapsedTime * this.translationFrequencyX) * this.translationAmplitudeX;
-        // this.translationY = Math.sin(elapsedTime * this.translationFrequencyY) * this.translationAmplitudeY;
+    apply(object) {
+        object.translationX = this.translationX;
     }
 };
-
-function applyPhysics(animation, object) {
-    object.translationX = object.baseTranslationX + animationInfo.translationX;
-    object.translationY = object.baseTranslationY + animationInfo.translationY;
-    //object.rotation = animationInfo.rotation;
-    //object.scaleX = animationInfo.scaleX;
-    //object.scaleY = animationInfo.scaleY;
-}
-
-
 
 // =============================================================
 // GUI 
@@ -588,14 +566,10 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
 
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "baseTranslationX", -1000, 1000).name("translationX");
-        rectangleFolder.add(rectangle, "baseTranslationY", -1000, 1000).name("translationY");
-        rectangleFolder.add(rectangle, "rotation", 0, 360).name("rotation");
-        rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
-        rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
-
-        const animationFolder = gui.addFolder("clock");
+        const physicsFolder = gui.addFolder("Physics");
+        physicsFolder.add(physicsInfo, "velocityX", -1000, 1000).name("velocityX");
+    
+        const animationFolder = gui.addFolder("Clock");
         animationFolder.add(clock, "play");
         animationFolder.add(clock, "pause");
         animationFolder.add(clock, "reset");
@@ -667,18 +641,6 @@ const keyEvent = {
     }
 };
 
-
-
-function setupModelMatrix(object) {
-    const matrix = mat3.create();
-
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
-
-    object.modelMatrix = matrix;
-}
-
 // =============================================================
 // RENDER
 // =============================================================
@@ -686,12 +648,17 @@ function render(gl, timeStamp) {
     // CLOCK
     clock.update(timeStamp);
 
- // ANIMATIONS
- // -------------------------------------
-    animationInfo.update(clock.elapsedTime);
-    applyAnimation(animation, rectangle);
+    // PHYSICS
+    // -------------------------------------
+    physicsInfo.update(clock.deltaTime);
+    physicsInfo.apply(square);
+
+    // ANIMATIONS
+    // -------------------------------------
+
     
-    // Canvas
+    // CANVAS
+    // ---------------------------------------
     resizeCanvasToDisplaySize(gl.canvas);
     gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
 
@@ -722,8 +689,8 @@ function render(gl, timeStamp) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+    // Square
+    square.draw(gl);
 
     //---------------------------------------------------
     // LOOP
@@ -755,7 +722,7 @@ function main() {
     grid.init(gl, shader);
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);
-    rectangle.init(gl, shader);
+    square.init(gl, shader);
 
     //Render
     render(gl);
