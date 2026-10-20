@@ -846,6 +846,9 @@ const physicsInfo = {
 
         this.translationX += deltaTime * this.velocityX;
         this.translationY += deltaTime * this.velocityY;
+
+        camera.positionX = this.translationX - 300;
+        camera.positionY = this.translationY - 200;
     },
 
     apply(object) {
