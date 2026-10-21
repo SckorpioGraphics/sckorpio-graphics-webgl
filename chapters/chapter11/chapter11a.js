@@ -119,7 +119,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const rectangle = {
     //    v1--------v2
@@ -149,7 +149,7 @@ const rectangle = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -214,7 +214,7 @@ function render(gl) {
     // Uniform: Pass camera bounds(w/h)
     gl.uniform2f(shader.uniforms.cameraBounds,camera.width,camera.height);
 
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Rectangle
     rectangle.draw(gl);

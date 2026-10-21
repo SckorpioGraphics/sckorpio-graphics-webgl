@@ -295,7 +295,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const square = {
     //    v1--------v2
@@ -335,7 +335,7 @@ const square = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -592,14 +592,14 @@ const yAxis = {
     }
 };
 
-function setupModelMatrix(object) {
+function setupModelMatrix(mesh) {
     const matrix = mat3.create();
 
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
+    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
 
-    object.modelMatrix = matrix;
+    mesh.modelMatrix = matrix;
 }
 
 // =============================================================
@@ -728,9 +728,9 @@ const animationInfo = {
         const frameNumber = Math.floor(elapsedTime * this.fps) % (this.columns * this.rows) + 1;
         this.selectFrame(frameNumber);
     },
-    apply(object) {
-        object.texCoordOffset = this.texCoordOffset;
-        object.texCoordScale = this.texCoordScale;
+    apply(mesh) {
+        mesh.texCoordOffset = this.texCoordOffset;
+        mesh.texCoordScale = this.texCoordScale;
     }
 };
 
@@ -861,7 +861,7 @@ function render(gl, timeStamp) {
     gl.uniformMatrix3fv(textureShader.uniforms.viewMatrix,false,camera.viewMatrix);
     gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
       
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);

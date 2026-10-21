@@ -95,7 +95,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const rectangle = {
     //    v1--------v2
@@ -125,7 +125,7 @@ const rectangle = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -188,7 +188,7 @@ function render(gl) {
     gl.uniform2f(shader.uniforms.resolution,gl.canvas.width,gl.canvas.height);
         
 
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Rectangle
     rectangle.draw(gl);

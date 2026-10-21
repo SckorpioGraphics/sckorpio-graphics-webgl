@@ -160,7 +160,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const rectangle = {
     //    v1--------v2
@@ -198,7 +198,7 @@ const rectangle = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -434,14 +434,14 @@ const yAxis = {
     }
 };
 
-function setupModelMatrix(object) {
+function setupModelMatrix(mesh) {
     const matrix = mat3.create();
 
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
+    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
 
-    object.modelMatrix = matrix;
+    mesh.modelMatrix = matrix;
 }
 
 // =============================================================
@@ -558,8 +558,8 @@ const animationInfo = {
         // 15c.2 — Oscillating Rotation
         // this.rotation = Math.sin(elapsedTime * this.rotationFrequency) * this.rotationAmplitude;
     },
-    apply(object) {
-        object.rotation = this.rotation;
+    apply(mesh) {
+        mesh.rotation = this.rotation;
     }
 };
 
@@ -685,7 +685,7 @@ function render(gl, timeStamp) {
     // Pass Model Matrix (Identity as default)
     gl.uniformMatrix3fv(shader.uniforms.modelMatrix,false,mat3.create());
     
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);

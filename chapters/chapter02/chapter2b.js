@@ -81,7 +81,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const triangle = {
     //         v2
@@ -109,7 +109,7 @@ const triangle = {
 
     //Functions
     init(gl, shader) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -156,7 +156,7 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);

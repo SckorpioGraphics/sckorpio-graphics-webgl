@@ -154,7 +154,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const letterF = {
     /*
@@ -572,7 +572,7 @@ function render(gl) {
     // Pass View matrix to shader
     gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
     
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);

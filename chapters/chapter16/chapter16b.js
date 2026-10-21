@@ -163,7 +163,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const letterF = {
     /*
@@ -461,17 +461,15 @@ const yAxis = {
     }
 };
 
-function setupModelMatrix(object) {
+function setupModelMatrix(mesh) {
     const matrix = mat3.create();
 
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
+    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
 
-    object.modelMatrix = matrix;
+    mesh.modelMatrix = matrix;
 }
-
-
 
 // =============================================================
 // GUI 
@@ -575,7 +573,7 @@ function render(gl) {
     // Pass Model Matrix (Identity as default)
     gl.uniformMatrix3fv(shader.uniforms.modelMatrix,false,mat3.create());
     
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);

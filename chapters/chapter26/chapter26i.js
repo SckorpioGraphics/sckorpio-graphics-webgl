@@ -308,7 +308,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const bow = {
     //    v1--------v2
@@ -347,7 +347,7 @@ const bow = {
 
     //FUNCTIONS
     init(gl, shader, texture) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
         this.texture = texture;
 
@@ -445,7 +445,7 @@ const arrow = {
 
     //FUNCTIONS
     init(gl, shader, texture) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
         this.texture = texture;
 
@@ -700,14 +700,14 @@ const yAxis = {
     }
 };
 
-function setupModelMatrix(object) {
+function setupModelMatrix(mesh) {
     const matrix = mat3.create();
 
-    mat3.translate(matrix, matrix, [object.translationX, object.translationY]);
-    mat3.rotate(matrix, matrix, object.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [object.scaleX, object.scaleY]);
+    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
+    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
 
-    object.modelMatrix = matrix;
+    mesh.modelMatrix = matrix;
 }
 
 // =============================================================
@@ -811,7 +811,7 @@ const clock = {
 // =============================================================
 const physicsInfo = {
     // Object connected
-    object: null,
+    mesh: null,
     // Speed
     speed: 100,
     // Angle(Unit Vector)
@@ -823,8 +823,8 @@ const physicsInfo = {
     accelerationX: 0,
     accelerationY: -98, // mimic gravity
 
-    init(object) {
-        this.object = object;
+    init(mesh) {
+        this.mesh = mesh;
         this.velocityX = this.speed * Math.cos(this.angle);
         this.velocityY = this.speed * Math.sin(this.angle);
     },
@@ -838,9 +838,9 @@ const physicsInfo = {
         this.velocityY += deltaTime * this.accelerationY;
         this.angle = Math.atan(this.velocityY/this.velocityX) * 180 / Math.PI;
 
-        this.object.translationX += deltaTime * this.velocityX;
-        this.object.translationY += deltaTime * this.velocityY;
-        this.object.rotation = this.angle;
+        this.mesh.translationX += deltaTime * this.velocityX;
+        this.mesh.translationY += deltaTime * this.velocityY;
+        this.mesh.rotation = this.angle;
     }
 };
 
@@ -979,7 +979,7 @@ function render(gl, timeStamp) {
     gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
         
 
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);

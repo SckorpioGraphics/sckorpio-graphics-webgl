@@ -134,7 +134,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const rectangle = {
     //    v1--------v2
@@ -164,7 +164,7 @@ const rectangle = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to object
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -232,7 +232,7 @@ function render(gl) {
     gl.uniform4f(shader.uniforms.clipBounds,camera.clipLeft,camera.clipRight,camera.clipBottom,camera.clipTop);
     
 
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Rectangle
     rectangle.draw(gl);

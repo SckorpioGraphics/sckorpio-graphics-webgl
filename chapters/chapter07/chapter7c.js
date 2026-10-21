@@ -90,7 +90,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const triangle = {
     //         v2
@@ -260,7 +260,7 @@ function render(gl) {
     //---------------------------------------------------
     triangle.updateData(gl);
 
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);

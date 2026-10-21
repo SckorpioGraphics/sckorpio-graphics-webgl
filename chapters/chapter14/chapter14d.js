@@ -221,7 +221,7 @@ const camera = {
 };
 
 // =============================================================
-// SCENE OBJECTS
+// MESHES
 // =============================================================
 const letterF = {
     /*
@@ -696,7 +696,7 @@ function render(gl) {
     gl.uniform1f(shader.uniforms.pivotX, 0);
     gl.uniform1f(shader.uniforms.pivotY, 0);
     
-    // DRAW THINGS
+    // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);
