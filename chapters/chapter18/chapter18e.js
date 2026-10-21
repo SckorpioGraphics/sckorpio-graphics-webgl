@@ -1,7 +1,9 @@
 /* #############################################################
-   CHAPTER 18e: GUI Connected with UVs & Wrapping
+   CHAPTER 18e: Using UVs 
    Topics:
-   - Creating a square
+   - Creating a square and rectangle
+   - Use different textures
+   - Keep texture in renderable object
    #############################################################
 */
 
@@ -158,6 +160,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 const texture = {
     imagePath: "chapters/chapter18/assets/sckorpio_Texture.png",
+
     image: null,
     handle: null,
     loaded: false,
@@ -197,19 +200,32 @@ function createTexture(gl, texture) {
         0,
         gl.RGBA,
         gl.UNSIGNED_BYTE,
-        new Uint8Array([0, 255, 255, 255])
+        new Uint8Array([82, 161, 171, 255])
     );
 
-    // Create Image
+    // ---------------------------------------------------------
+    // TEXTURE FILTERING
+    // ---------------------------------------------------------
+    // No mipmaps yet.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+
+    // ---------------------------------------------------------
+    // TEXTURE WRAPPING
+    // ---------------------------------------------------------
+    // Repeat the texture horizontally.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+
+    // ---------------------------------------------------------
+    // LOAD TEXTURE IMAGE
+    // ---------------------------------------------------------
     texture.image = new Image();
 
-    // On load
     texture.image.onload = () => {
-        // Bind
         gl.bindTexture(gl.TEXTURE_2D, texture.handle);
-        // Y-Flip
+
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        // Load Image data
+
         gl.texImage2D(
             gl.TEXTURE_2D,
             0,
@@ -218,14 +234,9 @@ function createTexture(gl, texture) {
             gl.UNSIGNED_BYTE,
             texture.image
         );
-        // Generate mipmap levels from the loaded texture
-        gl.generateMipmap(gl.TEXTURE_2D);
-        // Min Filtering
-        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
-        // Mag Filtering
-        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-        // set flag
+
         texture.loaded = true;
+
         console.log("Texture loaded:", texture.imagePath);
     };
 
@@ -247,7 +258,7 @@ const camera = {
     width: 0,
     height: 0,
     positionX: -300,
-    positionY: -300,
+    positionY: -200,
     zoom: 1.0,
     panSpeed: 20,
     zoomSpeed: 0.1,
@@ -316,25 +327,20 @@ const square = {
     // CPU DATA
     vertexData: new Float32Array([
         // Position     // UV
-        -200, -200,     0, 0,
-        200, -200,      1, 0,
-        -200,  200,     0, 1,
+        -100, -100,     -1, -1,
+        100, -100,      3, -1,
+        -100,  100,     -1, 3,
 
-        -200,  200,     0, 1,
-        200, -200,      1, 0,
-        200,  200,      1, 1
+        -100,  100,     -1, 3,
+        100, -100,      3, -1,
+        100,  100,      3, 3
     ]),
 
-    translationX: 200,
-    translationY: 200,
+    translationX: 100,
+    translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
-
-    uMin: 0,
-    vMin: 0,
-    uMax: 1,
-    vMax: 1,
     modelMatrix: mat3.create(),
 
     //GPU DATA
@@ -355,7 +361,7 @@ const square = {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
@@ -390,24 +396,6 @@ const square = {
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
         this.drawCount = 6;
-
-        // Update once
-        this.update(gl);
-    },
-    update(gl){
-        this.vertexData = new Float32Array([
-            // Position     // UV
-            -200, -200,     this.uMin, this.vMin,
-            200, -200,      this.uMax, this.vMin,
-            -200,  200,     this.uMin, this.vMax,
-
-            -200,  200,     this.uMin, this.vMax,
-            200, -200,      this.uMax, this.vMin,
-            200,  200,      this.uMax, this.vMax
-        ]);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
     },
     draw(gl) {
         // Shader
@@ -640,21 +628,20 @@ const gui = {
     },
     init(gl) {
         const gui = new lil.GUI();
-    
+        
+        // Square
         const squareFolder = gui.addFolder("Square");
         squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
         squareFolder.add(square, "translationY", -1000, 1000).name("translationY");
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-        squareFolder.add(square, "uMin", -3.0, 3.0).name("uMin");
-        squareFolder.add(square, "vMin", -3.0, 3.0).name("vMin");
-        squareFolder.add(square, "uMax", -3.0, 3.0).name("uMax");
-        squareFolder.add(square, "vMax", -3.0, 3.0).name("vMax");
 
         // Texture Wrap
         const wrappingFolder = gui.addFolder("Texture Wrapping");
+        // Horizontal wrapping
         wrappingFolder.add(texture, "wrapS", this.wrapModes).name("Wrap S (U)").onChange(() => {texture.setWrapping(gl);});
+        // Vertical wrapping
         wrappingFolder.add(texture, "wrapT", this.wrapModes).name("Wrap T (V)").onChange(() => {texture.setWrapping(gl);});
     }
 };
@@ -750,10 +737,6 @@ function render(gl) {
     gl.uniformMatrix3fv(textureShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
     gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
         
-    // UPDATE UVs
-    //---------------------------------------------------
-    square.update(gl);
-
     
     // DRAW THINGS
     //---------------------------------------------------
@@ -764,9 +747,8 @@ function render(gl) {
     // Y-Axis
     yAxis.draw(gl);
    
-    // All Squares
+    // Square
     square.draw(gl);
-    
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));

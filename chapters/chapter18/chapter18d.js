@@ -1,8 +1,9 @@
 /* #############################################################
-   CHAPTER 18d: Using UVs 
+   CHAPTER 18d: Using UVs beyond 0-1
    Topics:
-   - Creating a square and rectangle
-   - Use different textures
+   - Creating a square
+   - Use F textures
+   - Wrapping and Repeat
    - Keep texture in renderable object
    #############################################################
 */
@@ -159,24 +160,15 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // TEXTURE RESOURCE
 // =============================================================
 const texture = {
-    imagePath: "chapters/chapter18/assets/sckorpio_Texture.png",
+    imagePath: "chapters/chapter18/assets/letterF_Texture.png",
 
     image: null,
     handle: null,
     loaded: false,
-
-    // Texture wrapping state
-    wrapS: "REPEAT",
-    wrapT: "REPEAT",
+    
 
     init(gl) {
         createTexture(gl, this);
-    },
-
-    setWrapping(gl) {
-        this.bind(gl);
-        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl[this.wrapS]);
-        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl[this.wrapT]);
     },
 
     bind(gl, textureUnit = 0) {
@@ -214,6 +206,7 @@ function createTexture(gl, texture) {
     // ---------------------------------------------------------
     // Repeat the texture horizontally.
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+    // Repeat the texture vertically.
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
 
     // ---------------------------------------------------------
@@ -327,12 +320,12 @@ const square = {
     // CPU DATA
     vertexData: new Float32Array([
         // Position     // UV
-        -100, -100,     -1, -1,
-        100, -100,      3, -1,
-        -100,  100,     -1, 3,
+        -100, -100,     -2, -2,
+        100, -100,      3, -2,
+        -100,  100,     -2, 3,
 
-        -100,  100,     -1, 3,
-        100, -100,      3, -1,
+        -100,  100,     -2, 3,
+        100, -100,      3, -2,
         100,  100,      3, 3
     ]),
 
@@ -621,11 +614,6 @@ function setupModelMatrix(object) {
 // GUI 
 // =============================================================
 const gui = {
-    wrapModes : {
-        "Repeat": "REPEAT",
-        "Clamp To Edge": "CLAMP_TO_EDGE",
-        "Mirrored Repeat": "MIRRORED_REPEAT"
-    },
     init(gl) {
         const gui = new lil.GUI();
         
@@ -636,13 +624,6 @@ const gui = {
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-
-        // Texture Wrap
-        const wrappingFolder = gui.addFolder("Texture Wrapping");
-        // Horizontal wrapping
-        wrappingFolder.add(texture, "wrapS", this.wrapModes).name("Wrap S (U)").onChange(() => {texture.setWrapping(gl);});
-        // Vertical wrapping
-        wrappingFolder.add(texture, "wrapT", this.wrapModes).name("Wrap T (V)").onChange(() => {texture.setWrapping(gl);});
     }
 };
 
