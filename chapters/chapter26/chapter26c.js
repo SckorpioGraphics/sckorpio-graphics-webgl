@@ -545,22 +545,18 @@ const clock = {
 // PHYSICS 
 // =============================================================
 const physicsInfo = {
-    // PhysicsBody position
-    translationX: 0,
-    translationY: 0,
+    // Object connected
+    object: null,
+    // Velocity
+    velocityX: 100,
+    velocityY: 50,
 
-    // Translation params
-    velocityX: 50,
-    velocityY: 0,
-
-    update(deltaTime) {
-        this.translationX += deltaTime * this.velocityX;
-        this.translationY += deltaTime * this.velocityY;
+    init(object) {
+        this.object = object;
     },
-
-    apply(object) {
-        object.translationX = this.translationX;
-        object.translationY = this.translationY;
+    update(deltaTime) {
+        this.object.translationX += deltaTime * this.velocityX;
+        this.object.translationY += deltaTime * this.velocityY;
     }
 };
 
@@ -657,7 +653,6 @@ function render(gl, timeStamp) {
     // PHYSICS
     // -------------------------------------
     physicsInfo.update(clock.deltaTime);
-    physicsInfo.apply(square);
 
     // ANIMATIONS
     // -------------------------------------
@@ -728,6 +723,9 @@ function main() {
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);
     square.init(gl, shader);
+
+    //PhysicsInfos
+    physicsInfo.init(square);
 
     //Render
     render(gl);

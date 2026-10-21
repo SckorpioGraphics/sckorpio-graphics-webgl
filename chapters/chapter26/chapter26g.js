@@ -184,7 +184,7 @@ const square = {
     ]),
 
     translationX: 0,
-    translationY: 0,
+    translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
@@ -622,43 +622,34 @@ const clock = {
 // PHYSICS 
 // =============================================================
 const physicsInfo = {
-    // PhysicsBody position
-    translationX: 0,
-    translationY: 100,
-    groundY: 100,
-
+    // Object connected
+    object: null,
     // Speed
     speed: 100,
-
+    // Angle(Unit Vector)
+    angle: 0,
     // Velocity
-    velocityX: 100,
-    velocityY: 100,  
-
+    velocityX: 0,
+    velocityY: 0,
     // Acceleration
-    accelerationX: 0,   // initialised as 0 for projectile motion
+    accelerationX: 0,
     accelerationY: -98, // mimic gravity
 
-    init() {
-        const angle = triangle.rotation;
-        this.velocityX = this.speed * Math.cos(angle);
-        this.velocityY = this.speed * Math.sin(angle);
+    init(object) {
+        this.object = object;
+        this.velocityX = this.speed * Math.cos(this.angle);
+        this.velocityY = this.speed * Math.sin(this.angle);
     },
     updateVelocity() {
-        const angle = triangle.rotation * Math.PI / 180;
-        this.velocityX = this.speed * Math.cos(angle);
-        this.velocityY = this.speed * Math.sin(angle);
+        this.angle = triangle.rotation * Math.PI / 180;
+        this.velocityX = this.speed * Math.cos(this.angle);
+        this.velocityY = this.speed * Math.sin(this.angle);
     },
     update(deltaTime) {
         this.velocityX += deltaTime * this.accelerationX;
         this.velocityY += deltaTime * this.accelerationY;
-
-        this.translationX += deltaTime * this.velocityX;
-        this.translationY += deltaTime * this.velocityY;
-    },
-
-    apply(object) {
-        object.translationX = this.translationX;
-        object.translationY = this.translationY;
+        this.object.translationX += deltaTime * this.velocityX;
+        this.object.translationY += deltaTime * this.velocityY;
     }
 };
 
@@ -759,7 +750,6 @@ function render(gl, timeStamp) {
     // PHYSICS
     // -------------------------------------
     physicsInfo.update(clock.deltaTime);
-    physicsInfo.apply(square);
 
     // ANIMATIONS
     // -------------------------------------
@@ -841,7 +831,7 @@ function main() {
     triangle.init(gl, shader);
 
     // Physics
-    physicsInfo.init();
+    physicsInfo.init(square);
 
     //Render
     render(gl);

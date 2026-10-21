@@ -810,51 +810,37 @@ const clock = {
 // PHYSICS 
 // =============================================================
 const physicsInfo = {
-    // PhysicsBody position
-    translationX: 0,
-    translationY: 0,
-
+    // Object connected
+    object: null,
     // Speed
     speed: 100,
-
+    // Angle(Unit Vector)
+    angle: 0,
     // Velocity
     velocityX: 0,
-    velocityY: 0,  
-
-    // Angle
-    angle: 0,
-
+    velocityY: 0,
     // Acceleration
-    accelerationX: 0,   // initialised as 0 for projectile motion
+    accelerationX: 0,
     accelerationY: -98, // mimic gravity
 
-    init() {
-        const angle = bow.rotation * Math.PI / 180;
-        this.velocityX = this.speed * Math.cos(angle);
-        this.velocityY = this.speed * Math.sin(angle);
+    init(object) {
+        this.object = object;
+        this.velocityX = this.speed * Math.cos(this.angle);
+        this.velocityY = this.speed * Math.sin(this.angle);
     },
     updateVelocity() {
-        const angle = bow.rotation * Math.PI / 180;
-        this.velocityX = this.speed * Math.cos(angle);
-        this.velocityY = this.speed * Math.sin(angle);
+        this.angle = bow.rotation * Math.PI / 180;
+        this.velocityX = this.speed * Math.cos(this.angle);
+        this.velocityY = this.speed * Math.sin(this.angle);
     },
     update(deltaTime) {
         this.velocityX += deltaTime * this.accelerationX;
         this.velocityY += deltaTime * this.accelerationY;
+        this.angle = Math.atan(this.velocityY/this.velocityX) * 180 / Math.PI;
 
-        this.rotation = Math.atan(this.velocityY/this.velocityX) * 180 / Math.PI;
-
-        this.translationX += deltaTime * this.velocityX;
-        this.translationY += deltaTime * this.velocityY;
-
-        camera.positionX = this.translationX - 300;
-        camera.positionY = this.translationY - 200;
-    },
-
-    apply(object) {
-        object.translationX = this.translationX;
-        object.translationY = this.translationY;
-        object.rotation = this.rotation;
+        this.object.translationX += deltaTime * this.velocityX;
+        this.object.translationY += deltaTime * this.velocityY;
+        this.object.rotation = this.angle;
     }
 };
 
@@ -958,7 +944,6 @@ function render(gl, timeStamp) {
     // PHYSICS
     // -------------------------------------
     physicsInfo.update(clock.deltaTime);
-    physicsInfo.apply(arrow);
 
     // ANIMATIONS
     // -------------------------------------
@@ -974,6 +959,8 @@ function render(gl, timeStamp) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Camera 
+    camera.positionX = arrow.translationX - 300;
+    camera.positionY = arrow.translationY - 200;
     camera.updateProjectionMatrix(gl);
     camera.updateViewMatrix(gl);
 
@@ -1050,7 +1037,7 @@ function main() {
 
 
     // Physics
-    physicsInfo.init();
+    physicsInfo.init(arrow);
 
     //Render
     render(gl);
