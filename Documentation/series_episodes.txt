@@ -228,7 +228,7 @@ CHAPTER 25 — SPRITE SHEET ANIMATION
 
 
 PHASE 5 — MOVEMENT AND BASIC PHYSICS
-"Give objects velocity, gravity, and projectile motion"
+"Give objects velocity, gravity, projectile motion, collisions.."
 =======================================================
 
 CHAPTER 26 — MOVEMENT AND BASIC PHYSICS
