@@ -2,8 +2,8 @@
    CHAPTER 27a: Showing No Collision
 
    Topics:
-   - Apply 1-D Linear Motion on Square & rectangle
-   - Observe it doesnt get collided with the rectangle
+   - Apply 1-D Linear Motion on Rectangle & square
+   - Observe it doesnt get collided with the square
    #############################################################
 */
 
@@ -160,6 +160,84 @@ const camera = {
 // =============================================================
 // MESHES
 // =============================================================
+const rectangle = {
+    //    v1--------v2
+    //    | \        |
+    //    |    \     |
+    //    |       \  |
+    //    v0--------v1
+
+    // CPU DATA
+    vertexData: new Float32Array([
+        -200, -100,     // Left Bottom
+        200, -100,      // Right Bottom
+        -200, 100,      // Left Top
+
+        -200, 100,      // Left Top
+        200, -100,      // Right Bottom
+        200, 100        // Right Top
+    ]),
+
+    translationX: 0,
+    translationY: 0,
+    rotation: 0,
+    scaleX: 1.0,
+    scaleY: 1.0,
+    modelMatrix: mat3.create(),
+    color: [1.0, 0.0, 0.0, 0.3],
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        // Connect shader to mesh
+        this.shader = shader;
+
+        // Vertex Buffer
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+
+        // Vertex Array
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        // Enable position attribute
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+
+        // Bind Vertex Buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+        // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                  // size: 2 components (X, Y)
+            gl.FLOAT,                           // type: 32-bit float
+            false,                              // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT, // stride: 0(tightly packed)
+            0                                   // offset: start of buffer
+        );
+
+        // Draw data
+        this.drawMode = gl.TRIANGLES;
+        this.drawOffset = 0;
+        this.drawCount = 6;
+    },
+    draw(gl) {
+        setupModelMatrix(this);
+        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
+        gl.uniform4fv(this.shader.uniforms.color,this.color);
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
 const square = {
     //    v1--------v2
     //    | \        |
@@ -178,91 +256,13 @@ const square = {
         100, 100       // Right Top
     ]),
 
-    translationX: 0,
-    translationY: 0,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-    color: [1.0, 0.0, 0.0, 0.6],     // Sckorpio Purple
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        // Connect shader to mesh
-        this.shader = shader;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            0,          // stride: 0(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 6;
-    },
-    draw(gl) {
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        gl.uniform4fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        -200, -100,      // Left Bottom
-        200, -100,      // Right Bottom
-        -200, 100,      // Left Top
-
-        -200, 100,      // Left Top
-        200, -100,      // Right Bottom
-        200, 100       // Right Top
-    ]),
-
     translationX: 800,
     translationY: 0,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
     modelMatrix: mat3.create(),
-    color: [0.0, 0.0, 1.0, 0.6],     // Sckorpio Purple
+    color: [0.0, 1.0, 0.0, 0.3],
 
     //GPU DATA
     shader: null,
@@ -295,11 +295,11 @@ const rectangle = {
         // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            0,          // stride: 0(tightly packed)
-            0           // offset: start of buffer
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         // Draw data
@@ -374,13 +374,14 @@ const grid = {
         // Attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+       // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         //Draw Data
@@ -429,13 +430,14 @@ const xAxis = {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
+       // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         this.drawMode = gl.LINES;
@@ -489,13 +491,14 @@ const yAxis = {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
+       // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         this.drawMode = gl.LINES;
@@ -619,11 +622,11 @@ const clock = {
 // =============================================================
 // PHYSICS 
 // =============================================================
-const physicsInfo1 = {
+const physicsInfoRectangle = {
     // Object
     mesh: null,
     // Velocity
-    velocityX: 100,
+    velocityX: 200,
 
     init(mesh) {
         this.mesh = mesh;
@@ -633,11 +636,11 @@ const physicsInfo1 = {
     }
 };
 
-const physicsInfo2 = {
+const physicsInfoSquare = {
     // Object
     mesh: null,
     // Velocity
-    velocityX: -70,
+    velocityX: -100,
 
     init(mesh) {
         this.mesh = mesh;
@@ -654,11 +657,11 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
 
-        const physicsFolder1 = gui.addFolder("Physics Square");
-        physicsFolder1.add(physicsInfo1, "velocityX", -1000, 1000).name("velocityX");
+        const physicsFolder1 = gui.addFolder("Physics Rectangle");
+        physicsFolder1.add(physicsInfoRectangle, "velocityX", -1000, 1000).name("velocityX");
 
-        const physicsFolder2 = gui.addFolder("Physics Rectangle");
-        physicsFolder2.add(physicsInfo2, "velocityX", -1000, 1000).name("velocityX");
+        const physicsFolder2 = gui.addFolder("Physics Square");
+        physicsFolder2.add(physicsInfoSquare, "velocityX", -1000, 1000).name("velocityX");
     
         const animationFolder = gui.addFolder("Clock");
         animationFolder.add(clock, "play");
@@ -741,8 +744,8 @@ function render(gl, timeStamp) {
 
     // PHYSICS
     // -------------------------------------
-    physicsInfo1.update(clock.deltaTime);
-    physicsInfo2.update(clock.deltaTime);
+    physicsInfoRectangle.update(clock.deltaTime);
+    physicsInfoSquare.update(clock.deltaTime);
 
     // ANIMATIONS
     // -------------------------------------
@@ -780,10 +783,10 @@ function render(gl, timeStamp) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Square
-    square.draw(gl);
     // Rectangle
     rectangle.draw(gl);
+    // Square
+    square.draw(gl);
 
     //---------------------------------------------------
     // LOOP
@@ -820,12 +823,12 @@ function main() {
     grid.init(gl, shader);
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);
-    square.init(gl, shader);
     rectangle.init(gl, shader);
+    square.init(gl, shader);
 
     // Physics
-    physicsInfo1.init(square);
-    physicsInfo2.init(rectangle);
+    physicsInfoRectangle.init(rectangle);
+    physicsInfoSquare.init(square);
 
     //Render
     render(gl);
