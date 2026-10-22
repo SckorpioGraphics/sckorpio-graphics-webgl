@@ -2,8 +2,9 @@
 
 A hands-on WebGL 2 curriculum progressing from the first draw through a
 camera-based 2D rendering pipeline, then into animation and sprite-sheet driven
-rendering. The completed foundation covers Chapters 1–25, with Chapter 0
-introducing the series. Later topics and the Sckorpio game remain on the roadmap.
+rendering, movement, physics, and collision detection. Chapters 1–27 are
+currently implemented, with Chapter 0 introducing the series. Later topics
+and the Sckorpio game remain on the roadmap.
 
 The lessons progressively organize related state and behavior into objects:
 
@@ -26,6 +27,6 @@ python3 -m http.server 8000
 ```
 
 Open `http://localhost:8000`. The page currently loads
-`chapters/chapter25/chapter25g.js`; change the module path in `index.html` to
+`chapters/chapter27/chapter27j.js`; change the module path in `index.html` to
 select another lesson. Lil GUI and gl-matrix are loaded from CDNs in
 `index.html`.
