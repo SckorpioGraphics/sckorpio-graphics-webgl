@@ -1,24 +1,14 @@
 # Sckorpio Graphics: WebGL Fundamentals
 
-A hands-on WebGL 2 curriculum progressing from the first draw through a
-camera-based 2D rendering pipeline, then into animation and sprite-sheet driven
-rendering, movement, physics, and collision detection. Chapters 1–27 are
-currently implemented, with Chapter 0 introducing the series. Later topics
-and the Sckorpio game remain on the roadmap.
+This repository contains the WebGL 2 foundation curriculum, from the series
+introduction through Chapter 20: geometry, cameras and transformations,
+textures, and alpha blending.
 
-The lessons progressively organize related state and behavior into objects:
+The optional `chapterExtra` folder contains supplemental pixel-space and
+render-loop experiments.
 
-- shader objects group shader source, program creation, and attribute/uniform
-  locations
-- camera objects group viewport or world bounds and transformation state
-- renderable objects group geometry, GPU resources, and draw behavior
-- scene setup and rendering stay visible as the series introduces more concepts
-
-The pattern is introduced in Chapter 2 and documented in the Chapter 10 lesson
-template. The guiding idea is **object = state + behavior**.
-
-See the [series overview](documentation/series_index.txt) and
-[episode guide](documentation/series_episodes.txt).
+Chapters 21 and later now continue in the
+[Sckorpio Real-Time WebGL repository](https://github.com/SckorpioGraphics/sckorpio-real-time-webgl).
 
 To run a lesson, serve this folder over HTTP:
 
@@ -26,7 +16,10 @@ To run a lesson, serve this folder over HTTP:
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000`. The page currently loads
-`chapters/chapter27/chapter27j.js`; change the module path in `index.html` to
-select another lesson. Lil GUI and gl-matrix are loaded from CDNs in
-`index.html`.
+Open <http://localhost:8000>. The page loads
+`chapters/chapter20/chapter20h.js` by default. Change the module path in
+`index.html` to select another lesson. Lil GUI and gl-matrix are loaded from
+CDNs in `index.html`.
+
+See the [series overview](Documentation/series_index.txt) and
+[episode guide](Documentation/series_episodes.txt).
