@@ -1,10 +1,11 @@
 /* #############################################################
-   CHAPTER 15b: 2D Transformations — Scale Matrix
+   CHAPTER 15b: Model Matrix — Pass a Matrix as a Uniform
 
    Topics:
-   - Uniform and non-uniform scaling
-   - Using a Scale Matrix
-   - Object scaling
+   - Building a Model Matrix(passing as Uniform)
+   - Translation, Rotation and Scaling
+   - Passing the Model Matrix as a uniform
+   - Model → View → Projection
    #############################################################
 */
 
@@ -17,37 +18,13 @@ const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
 
+    uniform mat3 u_modelMatrix;
     uniform mat3 u_viewMatrix;
     uniform mat3 u_projectionMatrix;
-    uniform float u_translationX;
-    uniform float u_translationY;
-    uniform float u_rotation;
-    uniform float u_scaleX;
-    uniform float u_scaleY;
 
     void main() {
-        vec3 localPosition = vec3(a_position, 1.0);
-
-        mat3 scaleMatrix = mat3(
-            u_scaleX, 0.0,     0.0,
-            0.0,     u_scaleY, 0.0,
-            0.0,      0.0,     1.0
-        );
-
-        mat3 rotationMatrix = mat3(
-            cos(radians(u_rotation)),  sin(radians(u_rotation)),    0.0,
-           -sin(radians(u_rotation)),  cos(radians(u_rotation)),    0.0,
-            0.0,                        0.0,                        1.0
-        );
-
-        mat3 translationMatrix = mat3(
-            1.0,            0.0,            0.0,
-            0.0,            1.0,            0.0,
-            u_translationX, u_translationY, 1.0
-        );
-
-        vec3 worldPosition = translationMatrix * rotationMatrix * scaleMatrix * localPosition;
-        vec3 viewPosition = u_viewMatrix * worldPosition;
+        vec3 modelPosition = u_modelMatrix * vec3(a_position, 1.0);
+        vec3 viewPosition = u_viewMatrix * modelPosition;
         vec3 clipPosition = u_projectionMatrix * viewPosition;
 
         gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
@@ -69,11 +46,7 @@ const shader = {
         position: null
     },
     uniforms: {
-        translationX: null,
-        translationY: null,
-        rotation: null,
-        scaleX: null,
-        scaleY: null,
+        modelMatrix: null,
         viewMatrix: null,
         projectionMatrix: null,
         color: null
@@ -89,11 +62,7 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
-        this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
-        this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
-        this.uniforms.scaleX = gl.getUniformLocation(this.program, "u_scaleX");
-        this.uniforms.scaleY = gl.getUniformLocation(this.program, "u_scaleY");
+        this.uniforms.modelMatrix = gl.getUniformLocation(this.program, "u_modelMatrix");
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
@@ -244,11 +213,13 @@ const letterF = {
         7, 10, 9,
         7, 9, 8
     ]),
+
     translationX: 200,
     translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
+    modelMatrix: mat3.create(),
     color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
@@ -291,21 +262,10 @@ const letterF = {
         this.drawType = gl.UNSIGNED_SHORT;
     },
     draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Pass translation
-        gl.uniform1f(this.shader.uniforms.translationX, this.translationX);
-        gl.uniform1f(this.shader.uniforms.translationY, this.translationY);
-        // Pass Rotation
-        gl.uniform1f(this.shader.uniforms.rotation, this.rotation);
-        // Pass Scale
-        gl.uniform1f(this.shader.uniforms.scaleX, this.scaleX);
-        gl.uniform1f(this.shader.uniforms.scaleY, this.scaleY);
-        // Pass Color
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        // VAO
+        setupModelMatrix(this);
+        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
+        gl.uniform3f(this.shader.uniforms.color,0.39, 0.33, 0.58);   // Sckorpio Purple
         gl.bindVertexArray(this.vao);
-        // draw call
         gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
     }
 };
@@ -319,7 +279,7 @@ const grid = {
     //    |--|--|--|--|--|
     //    v0------------v1
 
-    // CPU DATA
+    // CPU DATA (In Pixel Space)
     vertexData: new Float32Array(),
     spacing: 100,
     range: 10000,
@@ -392,7 +352,8 @@ const grid = {
 
 const xAxis = {
     //    -x------0------+x
-    // CPU DATA
+
+    // CPU DATA (In Pixel Space)
     vertexData: new Float32Array([
         -grid.range, 0,
         grid.range, 0
@@ -452,7 +413,7 @@ const yAxis = {
     //      |
     //      -y
 
-    // CPU DATA
+    // CPU DATA (In Pixel Space)
     vertexData: new Float32Array([
         0, -grid.range,
         0, grid.range
@@ -502,6 +463,16 @@ const yAxis = {
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
+
+function setupModelMatrix(mesh) {
+    const matrix = mat3.create();
+
+    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
+    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
+
+    mesh.modelMatrix = matrix;
+}
 
 // =============================================================
 // GUI 
@@ -602,12 +573,8 @@ function render(gl) {
     gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
     // Pass View matrix to shader
     gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
-    // Use default translateX/Y & Rotations
-    gl.uniform1f(shader.uniforms.translationX, 0);
-    gl.uniform1f(shader.uniforms.translationY, 0);
-    gl.uniform1f(shader.uniforms.rotation, 0);
-    gl.uniform1f(shader.uniforms.scaleX, 1.0);
-    gl.uniform1f(shader.uniforms.scaleY, 1.0);
+    // Pass Model Matrix (Identity as default)
+    gl.uniformMatrix3fv(shader.uniforms.modelMatrix,false,mat3.create());
     
     // RENDER MESHES
     //---------------------------------------------------

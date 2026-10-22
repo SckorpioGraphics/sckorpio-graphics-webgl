@@ -1,14 +1,11 @@
 /* #############################################################
-CHAPTER 10a: 2D Space
+CHAPTER 10a: 2D Projection Matrix
 
 Topics:
-- Creating a basic rectangle
-- Vertex data in pixel space
-- Uniforms for screen-space data
-- Pixel space to clip space conversion
+- Creating a projection matrix in GLSL Shader itself
+- Camera space -> clip space
 ###############################################################
 */
-
 
 // =============================================================
 // SHADER OBJECTS
@@ -17,20 +14,29 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
-
-    uniform vec2 u_resolution;
+    uniform vec2 u_cameraBounds;
 
     void main() {
-        // Pixel space to [0, 1]
-        vec2 zeroToOne = a_position / u_resolution;
 
-        // [0, 1] to [0, 2]
-        vec2 zeroToTwo = zeroToOne * 2.0;
+        float width  = u_cameraBounds.x;
+        float height = u_cameraBounds.y;
 
-        // [0, 2] to [-1, 1]
-        vec2 clipPostion = zeroToTwo - 1.0;
+        // ---------------------------------------------------------
+        // Projection Matrix
+        // ---------------------------------------------------------
 
-        gl_Position = vec4(clipPostion, 0.0, 1.0);
+        mat3 projectionMatrix = mat3(
+            2.0 / width,  0.0,          0.0,
+            0.0,          2.0 / height, 0.0,
+           -1.0,         -1.0,          1.0
+        );
+
+        // ---------------------------------------------------------
+        // Camera Space -> Clip Space
+        // ---------------------------------------------------------
+
+        vec3 clipPosition = projectionMatrix * vec3(a_position, 1.0);
+        gl_Position = vec4(clipPosition.xy,0.0,1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
@@ -47,21 +53,21 @@ const shader = {
         position: null
     },
     uniforms: {
-        resolution: null
+        cameraBounds: null
     },
 
     //FUNCTIONS
 
     init(gl) {
         // Compile shaders
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, shader.vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, shader.fragmentShaderSource);
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
         // Create shader program
         this.program = createProgram(gl, vertexShader, fragmentShader);
         // Attributes
-        this.attributes.position = gl.getAttribLocation(shader.program, "a_position");
+        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.resolution = gl.getUniformLocation(shader.program, "u_resolution");
+        this.uniforms.cameraBounds = gl.getUniformLocation(this.program, "u_cameraBounds");
     }
 };
 
@@ -95,6 +101,24 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
+// CAMERA
+// =============================================================
+const camera = {
+    width: 0,
+    height: 0,
+    // Camera bounds
+    // [left = 0, right = width, bottom = 0, top = height]
+    // Clip space is fixed to [-1,1]
+
+    // FUNCTIONs
+    update(gl) {
+        // Match the camera's viewing region
+        this.width = gl.canvas.width;
+        this.height = gl.canvas.height;
+    }
+};
+
+// =============================================================
 // MESHES
 // =============================================================
 const rectangle = {
@@ -106,13 +130,13 @@ const rectangle = {
 
     // CPU DATA (In Pixel Space)
     vertexData: new Float32Array([
-        20, 20,       // Left Bottom
-        200, 20,      // Right Bottom
-        20, 100,      // Left Top
+        100, 100,      // Left Bottom
+        300, 100,      // Right Bottom
+        100, 200,      // Left Top
 
-        20, 100,      // Left Top
-        200, 20,      // Right Bottom
-        200, 100      // Right Top
+        100, 200,      // Left Top
+        300, 100,      // Right Bottom
+        300, 200       // Right Top
     ]),
 
     //GPU DATA
@@ -161,9 +185,9 @@ const rectangle = {
     draw(gl) {
         // Shader
         gl.useProgram(this.shader.program);
-        // vao
+        // Vao
         gl.bindVertexArray(this.vao);
-        // draw call
+        // draw calls
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
@@ -180,13 +204,15 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // Camera 
+    camera.update(gl);
+
     // COMMON UNIFORMS
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-    // Uniform: canvas resolution 
-    gl.uniform2f(shader.uniforms.resolution,gl.canvas.width,gl.canvas.height);
-        
+    // Uniform: Pass camera bounds(w/h)
+    gl.uniform2f(shader.uniforms.cameraBounds,camera.width,camera.height);
 
     // RENDER MESHES
     //---------------------------------------------------

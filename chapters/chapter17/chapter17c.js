@@ -1,9 +1,8 @@
 /* #############################################################
-   CHAPTER 17c: Using multiple Textures
+   CHAPTER 17c: UV coords in circle
    Topics:
-   - Creating a square and rectangle
-   - Use different textures
-   - Keep texture in renderable object
+   - Making a circle
+   - Add a circular texture 
    #############################################################
 */
 
@@ -156,28 +155,10 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
-// TEXTURE OBJECTS
+// TEXTURE RESOURCE
 // =============================================================
-
-const sckorpioTexture = {
-    imagePath: "chapters/chapter17/assets/sckorpio_Texture.png",
-
-    image: null,
-    handle: null,
-    loaded: false,
-
-    init(gl) {
-        createTexture(gl, this);
-    },
-
-    bind(gl, textureUnit = 0) {
-        gl.activeTexture(gl.TEXTURE0 + textureUnit);
-        gl.bindTexture(gl.TEXTURE_2D, this.handle);
-    }
-};
-
-const titleTexture = {
-    imagePath: "chapters/chapter17/assets/title_Texture.png",
+const texture = {
+    imagePath: "chapters/chapter17/assets/football_Texture.png",
 
     image: null,
     handle: null,
@@ -361,20 +342,18 @@ const square = {
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
         // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
-        // Vertex data format
+        // Position corrds: x, y
+        gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
+            2,                                  // size: 2 components (X, Y)
+            gl.FLOAT,                           // type: 32-bit float
+            false,                              // normalize
             4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
+            0                                   // offset: start of buffer
         );
 
         // Texture coordinates: u, v
@@ -409,40 +388,37 @@ const square = {
     }
 };
 
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
+const circle = {
+    /*
+             v6---v5
+           /   \ /   \
+         v1     v0    v4
+           \         /
+             v2---v3
+    */
 
-    // CPU DATA
-    vertexData: new Float32Array([
-        // Position     // UV
-        -300, -100,     0, 0,
-        300, -100,      1, 0,
-        -300,  100,     0, 1,
+    points: 100,
+    radius: 100,
+    vertexData: null,
+    indices: null,
 
-        -300,  100,     0, 1,
-        300, -100,      1, 0,
-        300,  100,      1, 1
-    ]),
-
-    translationX: 600,
+    translationX: 400,
     translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
     modelMatrix: mat3.create(),
+    color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
-    //GPU DATA
+    // GPU DATA
     shader: null,
-    texture: null,
     vao: null,
     vbo: null,
+    ibo: null,
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
+    drawType: null,
 
     //FUNCTIONS
     init(gl, shader, texture) {
@@ -450,29 +426,69 @@ const rectangle = {
         this.shader = shader;
         this.texture = texture;
 
+        // Allocate CPU vertex data
+        // 1 center + points perimeter vertices
+        this.vertexData = new Float32Array((this.points + 1) * 4);
+        this.indices = new Uint16Array(this.points + 2);
+
+        // Center vertex
+        this.vertexData[0] = 0.0;
+        this.vertexData[1] = 0.0;
+        this.vertexData[2] = 0.5;
+        this.vertexData[3] = 0.5;
+        this.indices[0] = 0;
+
+        // Perimeter vertices
+        for (let i = 0; i < this.points; i++) {
+            const angle = (i / this.points) * (2 * Math.PI);
+
+            const pX = this.radius * Math.cos(angle);
+            const pY = this.radius * Math.sin(angle);
+
+            const u = 0.5 + 0.5 * Math.cos(angle);
+            const v = 0.5 + 0.5 * Math.sin(angle);
+
+            const vertex = i + 1;
+
+            this.vertexData[vertex * 4] = pX;
+            this.vertexData[vertex * 4 + 1] = pY;
+            this.vertexData[vertex * 4 + 2] = u;
+            this.vertexData[vertex * 4 + 3] = v;
+            this.indices[vertex] = vertex;
+        }
+
+        // Repeat First one again
+        this.indices[this.points + 1] = 1;
+
+        console.log(this.vertexData);
+        console.log(this.indices);
+
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
 
+        // Index Buffer
+        this.ibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
         // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
-        // Vertex data format
+        // Position corrds: x, y
+        gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
+            2,                                  // size: 2 components (X, Y)
+            gl.FLOAT,                           // type: 32-bit float
+            false,                              // normalize
             4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
+            0                                   // offset: start of buffer
         );
 
         // Texture coordinates: u, v
@@ -486,10 +502,14 @@ const rectangle = {
             2 * Float32Array.BYTES_PER_ELEMENT
         );
 
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
+        // Bind Index Buffer
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+
+        // Draw Data
+        this.drawMode = gl.TRIANGLE_FAN;
         this.drawOffset = 0;
-        this.drawCount = 6;
+        this.drawCount = this.indices.length;
+        this.drawType = gl.UNSIGNED_SHORT;
     },
     draw(gl) {
         // Shader
@@ -502,8 +522,7 @@ const rectangle = {
         gl.uniform1i(this.shader.uniforms.texture, 0);
         // vao
         gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
     }
 };
 
@@ -534,11 +553,11 @@ const grid = {
     init(gl, shader) {
         this.shader = shader;
 
-        const positions = [];
+        const vertexData = [];
     
         // Vertical lines
         for(let x = -this.range; x <= this.range; x += this.spacing) {
-            positions.push(
+            vertexData.push(
                 x, -this.range,
                 x, this.range
             );
@@ -546,13 +565,13 @@ const grid = {
 
         // Horizontal lines
         for(let y = -this.range; y <= this.range; y += this.spacing) {
-            positions.push(
+            vertexData.push(
                 -this.range, y,
                 this.range, y
             );
         }
 
-        this.vertexData = new Float32Array(positions);
+        this.vertexData = new Float32Array(vertexData);
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -578,7 +597,7 @@ const grid = {
         //Draw Data
         this.drawMode = gl.LINES;
         this.drawOffset = 0;
-        this.drawCount = positions.length / 2;
+        this.drawCount = vertexData.length / 2;
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
@@ -721,6 +740,14 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
         
+        // LetterF
+        const circleFolder = gui.addFolder("Circle");
+        circleFolder.add(circle, "translationX", -1000, 1000).name("translationX");
+        circleFolder.add(circle, "translationY", -1000, 1000).name("translationY");
+        circleFolder.add(circle, "rotation", 0, 360).name("rotation");
+        circleFolder.add(circle, "scaleX", 0.1, 3.0).name("scaleX");
+        circleFolder.add(circle, "scaleY", 0.1, 3.0).name("scaleY");
+
         // Square
         const squareFolder = gui.addFolder("Square");
         squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
@@ -728,14 +755,6 @@ const gui = {
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-
-        // Rectangle
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "translationX", -1000, 1000).name("translationX");
-        rectangleFolder.add(rectangle, "translationY", -1000, 1000).name("translationY");
-        rectangleFolder.add(rectangle, "rotation", 0, 360).name("rotation");
-        rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
-        rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
     }
 };
 
@@ -839,10 +858,11 @@ function render(gl) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
+   
     // Square
     square.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+    // Circle
+    circle.draw(gl);
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));
@@ -871,12 +891,11 @@ function main() {
     textureShader.init(gl);
 
     //Textures
-    sckorpioTexture.init(gl);
-    titleTexture.init(gl);
+    texture.init(gl);
 
     //Objects
-    square.init(gl, textureShader, sckorpioTexture);
-    rectangle.init(gl, textureShader, titleTexture);
+    square.init(gl, textureShader, texture);
+    circle.init(gl, textureShader, texture);
     grid.init(gl, basicShader);
     xAxis.init(gl, basicShader);
     yAxis.init(gl, basicShader);

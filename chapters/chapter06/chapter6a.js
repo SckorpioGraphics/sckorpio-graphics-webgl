@@ -1,9 +1,10 @@
 /* #############################################################
-CHAPTER 6a: Dynamic Triangle
+CHAPTER 6a: Varying Vertex Color
 
 Topics:
+- Using Vertex data itself for Vertex Color
 - Adding a basic UI to manipulate
-- Vertex positions
+- Vertex vertexData
 ###############################################################
 */
 
@@ -14,18 +15,21 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
+    out vec4 v_color;
 
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
+        v_color = gl_Position * 0.5 + 0.5;
     }
 `,
 
     fragmentShaderSource: `#version 300 es
-    precision mediump float;
-    out vec4 out_Color;
+    precision highp float;
+    in vec4 v_color;
+    out vec4 out_color;
 
     void main() {
-        out_Color = vec4(0.39, 0.33, 0.58, 1.0); // Sckorpio Purple
+        out_color = v_color;
     }
     `,
 
@@ -94,9 +98,9 @@ const triangle = {
     //    v0--------v1
 
     // CPU DATA
-    positions: new Float32Array([
-        -0.5,  0.0,   // v0
-        0.5, 0.0,   // v1
+    vertexData: new Float32Array([
+        -0.5,  0.0,  // v0
+        0.5, 0.0,    // v1
         0.0,  0.5,   // v2
     ]),
 
@@ -148,7 +152,7 @@ const triangle = {
         gl.bindVertexArray(triangle.vao);
 
         // Vertex data CPU side
-        this.positions = new Float32Array([
+        this.vertexData = new Float32Array([
             gui.state.aX, gui.state.aY, // Point A
             gui.state.bX, gui.state.bY, // Point B
             gui.state.cX, gui.state.cY  // Point C
@@ -156,7 +160,7 @@ const triangle = {
 
         // Update vertex data on the GPU
         gl.bindBuffer(gl.ARRAY_BUFFER, triangle.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
     }
 };
 

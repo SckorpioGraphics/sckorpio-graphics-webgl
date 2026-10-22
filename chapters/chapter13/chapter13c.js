@@ -1,11 +1,12 @@
 /* #############################################################
-   CHAPTER 13c: 2D Transformations — Translation
+   CHAPTER 13c: 2D Transformations — Transform Order
 
    Topics:
-   - Translating a letterF
+   - Rotating a letterF around the origin
    - GUI camera controls
-   - Using translate X,Y Uniform in Shader
-   - Object translation
+   - Using Rotation Matrix
+   - BUT Changing order of Translation & rotation matrix
+   - Object rotation
    #############################################################
 */
 
@@ -14,20 +15,32 @@
 // =============================================================
 //Shader Object1
 const shader = {
-    vertexShaderSource: `#version 300 es
+vertexShaderSource: `#version 300 es
     in vec2 a_position;
 
     uniform mat3 u_viewMatrix;
     uniform mat3 u_projectionMatrix;
     uniform float u_translationX;
     uniform float u_translationY;
+    uniform float u_rotation;
 
     void main() {
-        vec2 position = a_position;
-        position.x += u_translationX;
-        position.y += u_translationY;
+        vec3 localPosition = vec3(a_position, 1.0);
 
-        vec3 viewPosition = u_viewMatrix * vec3(position, 1.0);
+        mat3 rotationMatrix = mat3(
+            cos(radians(u_rotation)),  sin(radians(u_rotation)), 0.0,
+           -sin(radians(u_rotation)),  cos(radians(u_rotation)), 0.0,
+            0.0,                       0.0,                      1.0
+        );
+
+        mat3 translationMatrix = mat3(
+            1.0,            0.0,            0.0,
+            0.0,            1.0,            0.0,
+            u_translationX, u_translationY, 1.0
+        );
+
+        vec3 worldPosition = rotationMatrix * translationMatrix * localPosition;
+        vec3 viewPosition = u_viewMatrix * worldPosition;
         vec3 clipPosition = u_projectionMatrix * viewPosition;
 
         gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
@@ -51,6 +64,7 @@ const shader = {
     uniforms: {
         translationX: null,
         translationY: null,
+        rotation: null,
         viewMatrix: null,
         projectionMatrix: null,
         color: null
@@ -68,6 +82,7 @@ const shader = {
         // uniforms
         this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
         this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
+        this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
@@ -220,6 +235,7 @@ const letterF = {
     ]),
     translationX: 200,
     translationY: 100,
+    rotation: 0,
     color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
@@ -235,7 +251,7 @@ const letterF = {
         // Shader
         this.shader = shader;
 
-        // Vertex Buffer (...will be changed dynamically)
+        // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
@@ -267,6 +283,8 @@ const letterF = {
         // Pass translateX & translateY
         gl.uniform1f(this.shader.uniforms.translationX, this.translationX);
         gl.uniform1f(this.shader.uniforms.translationY, this.translationY);
+        // Pass Rotation
+        gl.uniform1f(this.shader.uniforms.rotation, this.rotation);
         // Pass Color
         gl.uniform3fv(this.shader.uniforms.color,this.color);
         // VAO
@@ -479,6 +497,7 @@ const gui = {
         const letterFFolder = gui.addFolder("Translation");
         letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
         letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
+        letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
     }
 };
 
@@ -565,9 +584,10 @@ function render(gl) {
     gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
     // Pass View matrix to shader
     gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
-    // Use default translateX & translateY
+    // Use default translateX/Y & Rotations
     gl.uniform1f(shader.uniforms.translationX, 0);
     gl.uniform1f(shader.uniforms.translationY, 0);
+    gl.uniform1f(shader.uniforms.rotation, 0);
     
     // RENDER MESHES
     //---------------------------------------------------

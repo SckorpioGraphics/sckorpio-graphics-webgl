@@ -1,20 +1,13 @@
 /* #############################################################
-CHAPTER 6d: Dynamic Filled Polygon
+CHAPTER 6d: Rectangle with Two Triangles and Vertex Colors
 
 Topics:
-- Learning Topology TRIANGLE_FAN
-- Making a Polygon to Circle
+- Making a rectangle with 2 different triangles
+- Observe how interpolation works between these triangles
+- Create the gradient effect
 ###############################################################
 */
 
-/* #############################################################
-CHAPTER 6c: Dynamic Polygon Outline
-
-Topics:
-- Learning Topology LINE_LOOP
-- Making a Polygon to Circle
-###############################################################
-*/
 
 // =============================================================
 // SHADER OBJECTS
@@ -23,30 +16,36 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
+    in vec3 a_color;
+
+    out vec4 v_color;
 
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
+        v_color = vec4(a_color, 1.0);
     }
 `,
-
     fragmentShaderSource: `#version 300 es
-    precision mediump float;
-    out vec4 out_Color;
+    precision highp float;
+
+    in vec4 v_color;
+    out vec4 out_color;
 
     void main() {
-        out_Color = vec4(0.39, 0.33, 0.58, 1.0); // Sckorpio Purple
+        out_color = v_color;
     }
-    `,
-
+`,
     program: null,
 
     attributes: {
-        position: null
+        position: null,
+        color: null
     },
 
     uniforms: {},
 
     //FUNCTIONS
+
     init(gl) {
         // Compile shaders
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, shader.vertexShaderSource);
@@ -54,7 +53,8 @@ const shader = {
         // Create shader program
         this.program = createProgram(gl, vertexShader, fragmentShader);
         // Get attribute locations
-        this.attributes.position = gl.getAttribLocation(shader.program,"a_position");
+        this.attributes.position = gl.getAttribLocation(this.program,"a_position");
+        this.attributes.color = gl.getAttribLocation(this.program, "a_color");
         // Get uniform locations
         // Future uniforms will be stored here.
     }
@@ -92,109 +92,96 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 // MESHES
 // =============================================================
-const polygon = {
-    /*
-             v6---v5
-           /   \ /   \
-         v1     v0    v4
-           \         /
-             v2---v3
-    */
+const triangle = {
+    //    v3--------v2 
+    //    |  \      |
+    //    |    \    |
+    //    |      \  |
+    //    v0--------v1
 
     // CPU DATA
-    positions: new Float32Array(),
-    indices: new Float32Array(),
-    // Will be filled dynamically
+    vertexData: new Float32Array(),
 
     //GPU DATA
     shader: null,
     vao: null,
     vbo: null,
-    ibo: null,
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to mesh
+        // Shader
         this.shader = shader;
 
-        // Vertex Buffer
+        // Vertex Buffer (single.. intervleaved pos+colors)
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Index Buffer
-        this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
-        // NOTE: Vertex data will be updated from the UI during rendering.
-
+        // data will be updated from the UI during rendering.
+        
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
+        // Vertex Positions attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
+            2,
+            gl.FLOAT,
+            false,
+            5 * Float32Array.BYTES_PER_ELEMENT, // Stride (x,y + r,g,b = 5)
+            0 * Float32Array.BYTES_PER_ELEMENT  // Offset (pos starts ar 0)
+        );
+
+        // Vertex Colors attrib
+        gl.enableVertexAttribArray(this.shader.attributes.color);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.vertexAttribPointer(
+            this.shader.attributes.color,
+            3,
+            gl.FLOAT,
+            false,
+            5 * Float32Array.BYTES_PER_ELEMENT, // Stride (x,y + r,g,b = 5)
+            2 * Float32Array.BYTES_PER_ELEMENT  // Offset (pos starts ar 2)
         );
 
         // Draw data
-        this.drawMode = gl.TRIANGLE_FAN;
+        this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = 0;
-        this.drawType = gl.UNSIGNED_SHORT;
+        this.drawCount = 6;
     },
 
     updateData(gl) {
-        // Vertex and index data CPU side
-        const positionsData = [];
-        const indicesData = [];
+        gl.bindVertexArray(triangle.vao);
 
-        // Center
-        positionsData.push(gui.state.centerX);
-        positionsData.push(gui.state.centerY);
-        indicesData.push(0);
+        // Interleaved vertex data CPU side
+        // Each vertex = X, Y, R, G, B
+        this.vertexData = new Float32Array([
+            gui.state.aX, gui.state.aY,
+            gui.state.aR, gui.state.aG, gui.state.aB, // Point A
 
-        for(let i = 0; i < gui.state.points; i++) {
-            const angle = (i / gui.state.points) * (2 * Math.PI);
-            const x = gui.state.centerX + Math.sin(angle) * gui.state.radius;
-            const y = gui.state.centerY + Math.cos(angle) * gui.state.radius;
-            positionsData.push(x);
-            positionsData.push(y);
-            indicesData.push(i + 1);
-        }
+            gui.state.bX, gui.state.bY,
+            gui.state.bR, gui.state.bG, gui.state.bB, // Point B
 
-        // First point repeat
-        positionsData.push(positionsData[2]);
-        positionsData.push(positionsData[3]);
-        indicesData.push(indicesData[1]);
+            gui.state.cX, gui.state.cY,
+            gui.state.cR, gui.state.cG, gui.state.cB, // Point C
 
-        // Fill New CPU Data
-        this.positions = new Float32Array(positionsData);
-        this.indices = new Uint16Array(indicesData);
+            gui.state.aX, gui.state.aY,
+            gui.state.aR, gui.state.aG, gui.state.aB, // Point A
 
-        // Update vertex data on the GPU
-        gl.bindBuffer(gl.ARRAY_BUFFER, polygon.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+            gui.state.cX, gui.state.cY,
+            gui.state.cR, gui.state.cG, gui.state.cB, // Point C
 
-        // Update index data on the GPU
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, polygon.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.DYNAMIC_DRAW);
+            gui.state.dX, gui.state.dY,
+            gui.state.dR, gui.state.dG, gui.state.dB  // Point D
+        ]);
 
-        // Update draw data
-        this.drawCount = this.indices.length;
+        // Update interleaved vertex data on the GPU
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
     }
 };
 
@@ -203,25 +190,77 @@ const polygon = {
 // =============================================================
 const gui = {
     state: {
-        centerX: 0.0,
-        centerY: 0.0,
-        radius: 0.5,
-        points: 5
+        // Vertex Positions
+        aX: -0.5, aY: -0.5,
+        bX: 0.5, bY: -0.5,
+        cX: 0.5, cY: 0.5,
+        dX: -0.5, dY: 0.5,
+
+        // Vertex Colors
+        aR: 1.0, aG: 0.0, aB: 0.0,
+        bR: 0.0, bG: 1.0, bB: 0.0,
+        cR: 0.0, cG: 0.0, cB: 1.0,
+        dR: 0.0, dG: 1.0, dB: 1.0
     },
 
     init(render) {
         const gui = new lil.GUI();
-        const polygonFolder = gui.addFolder("Polygon");
 
-        // Center
-        const centerFolder = polygonFolder.addFolder("Center");
-        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(render);
-        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(render);
+        // ---------------------------------------------------------
+        // VERTICES
+        // ---------------------------------------------------------
 
-        // Dimension
-        const dimFolder = polygonFolder.addFolder("Dimensions");
-        dimFolder.add(this.state, "radius", 0, 1).name("radius").onChange(render);
-        dimFolder.add(this.state, "points", 3, 20, 1).name("points").onChange(render);
+        const verticesFolder = gui.addFolder("Vertices");
+
+        // Point A
+        const pointAFolder = verticesFolder.addFolder("Point A");
+        pointAFolder.add(this.state, "aX", -1, 1).name("X").onChange(render);
+        pointAFolder.add(this.state, "aY", -1, 1).name("Y").onChange(render);
+
+        // Point B
+        const pointBFolder = verticesFolder.addFolder("Point B");
+        pointBFolder.add(this.state, "bX", -1, 1).name("X").onChange(render);
+        pointBFolder.add(this.state, "bY", -1, 1).name("Y").onChange(render);
+
+        // Point C
+        const pointCFolder = verticesFolder.addFolder("Point C");
+        pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(render);
+        pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(render);
+
+        // Point D
+        const pointDFolder = verticesFolder.addFolder("Point D");
+        pointDFolder.add(this.state, "dX", -1, 1).name("X").onChange(render);
+        pointDFolder.add(this.state, "dY", -1, 1).name("Y").onChange(render);
+
+        // ---------------------------------------------------------
+        // COLORS
+        // ---------------------------------------------------------
+
+        const colorFolder = gui.addFolder("Color");
+
+        // Point A
+        const pointAColorFolder = colorFolder.addFolder("Point A");
+        pointAColorFolder.add(this.state, "aR", 0, 1).name("R").onChange(render);
+        pointAColorFolder.add(this.state, "aG", 0, 1).name("G").onChange(render);
+        pointAColorFolder.add(this.state, "aB", 0, 1).name("B").onChange(render);
+
+        // Point B
+        const pointBColorFolder = colorFolder.addFolder("Point B");
+        pointBColorFolder.add(this.state, "bR", 0, 1).name("R").onChange(render);
+        pointBColorFolder.add(this.state, "bG", 0, 1).name("G").onChange(render);
+        pointBColorFolder.add(this.state, "bB", 0, 1).name("B").onChange(render);
+
+        // Point C
+        const pointCColorFolder = colorFolder.addFolder("Point C");
+        pointCColorFolder.add(this.state, "cR", 0, 1).name("R").onChange(render);
+        pointCColorFolder.add(this.state, "cG", 0, 1).name("G").onChange(render);
+        pointCColorFolder.add(this.state, "cB", 0, 1).name("B").onChange(render);
+
+        // Point D
+        const pointDColorFolder = colorFolder.addFolder("Point D");
+        pointDColorFolder.add(this.state, "dR", 0, 1).name("R").onChange(render);
+        pointDColorFolder.add(this.state, "dG", 0, 1).name("G").onChange(render);
+        pointDColorFolder.add(this.state, "dB", 0, 1).name("B").onChange(render);
     }
 };
 
@@ -239,19 +278,18 @@ function render(gl) {
 
     // UPDATE THINGS
     //---------------------------------------------------
-    polygon.updateData(gl);
+    triangle.updateData(gl);
 
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-    // Polygon
-    gl.bindVertexArray(polygon.vao);
-    gl.drawElements(
-        polygon.drawMode,
-        polygon.drawCount,
-        polygon.drawType,
-        polygon.drawOffset
+    // Rectangle
+    gl.bindVertexArray(triangle.vao);
+    gl.drawArrays(
+        triangle.drawMode,
+        triangle.drawOffset,
+        triangle.drawCount
     );
 }
 
@@ -274,7 +312,7 @@ function main() {
     shader.init(gl);
 
     //Objects
-    polygon.init(gl, shader);
+    triangle.init(gl, shader);
 
     //Render
     render(gl);

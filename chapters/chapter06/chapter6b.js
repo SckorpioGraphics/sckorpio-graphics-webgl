@@ -1,10 +1,11 @@
 /* #############################################################
-CHAPTER 6b: Dynamic Rectangle
+CHAPTER 6b: Multiple Buffers
 
 Topics:
-- Making a rectangle
+- Using Separate Buffer for Vertex Color
 - Adding a basic UI to manipulate
-- Vertex positions
+- Vertex vertexPositions
+- Vertex color
 ###############################################################
 */
 
@@ -15,25 +16,30 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
+    in vec3 a_color;
+
+    out vec4 v_color;
 
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
+        v_color = vec4(a_color, 1.0);
     }
 `,
-
     fragmentShaderSource: `#version 300 es
-    precision mediump float;
-    out vec4 out_Color;
+    precision highp float;
+
+    in vec4 v_color;
+    out vec4 out_color;
 
     void main() {
-        out_Color = vec4(0.39, 0.33, 0.58, 1.0); // Sckorpio Purple
+        out_color = v_color;
     }
-    `,
-
+`,
     program: null,
 
     attributes: {
-        position: null
+        position: null,
+        color: null
     },
 
     uniforms: {},
@@ -47,7 +53,8 @@ const shader = {
         // Create shader program
         this.program = createProgram(gl, vertexShader, fragmentShader);
         // Get attribute locations
-        this.attributes.position = gl.getAttribLocation(shader.program,"a_position");
+        this.attributes.position = gl.getAttribLocation(this.program,"a_position");
+        this.attributes.color = gl.getAttribLocation(this.program, "a_color");
         // Get uniform locations
         // Future uniforms will be stored here.
     }
@@ -85,50 +92,48 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 // MESHES
 // =============================================================
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
+const triangle = {
+    //         v2
+    //         /\
+    //        /  \
+    //       /    \
+    //      /      \
+    //     /        \
     //    v0--------v1
 
     // CPU DATA
-    positions: new Float32Array([
-        -0.5,  -0.5,   // v0
-        -0.5, 0.5,   // v1
-        0.5,  0.5,   // v2
-        0.5, -0.5   // v3
-    ]),
+    vertexPositions: new Float32Array(),
+    vertexColors: new Float32Array(),
 
     //GPU DATA
     shader: null,
     vao: null,
-    vbo: null,
+    positionVbo: null,
+    colorVbo: null,
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to mesh
+        // Shader
         this.shader = shader;
 
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        // NOTE: Vertex data will be updated from the UI during rendering.
+        // Vertex Buffer(s)
+        this.positionVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionVbo);
+        // Position data will be updated from the UI during rendering.
+        this.colorVbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorVbo);
+        // Color data will be updated from the UI during rendering.
 
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
+        // Vertex vertexPositions attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionVbo);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
             2,                                      // size: 2 components (X, Y)
@@ -136,33 +141,50 @@ const rectangle = {
             false,                                  // normalize
             2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
             0                                       // offset: start of buffer
+        ); 
+
+        // Vertex vertexColors attrib
+        gl.enableVertexAttribArray(this.shader.attributes.color);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorVbo);
+        gl.vertexAttribPointer(
+            this.shader.attributes.color,
+            3,                                      // size: 3 components (R,G,B)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            3 * Float32Array.BYTES_PER_ELEMENT,     // stride: 3
+            0                                       // offset: start of buffer
         );
 
         // Draw data
-        this.drawMode = gl.TRIANGLE_STRIP;
+        this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = 4;
+        this.drawCount = 3;
     },
 
     updateData(gl) {
+        gl.bindVertexArray(triangle.vao);
+
         // Vertex data CPU side
-        this.positions = new Float32Array([
-            gui.state.centerX - gui.state.length / 2.0,
-            gui.state.centerY + gui.state.width / 2.0, // Point 0
-
-            gui.state.centerX + gui.state.length / 2.0,
-            gui.state.centerY + gui.state.width / 2.0, // Point 1
-
-            gui.state.centerX - gui.state.length / 2.0,
-            gui.state.centerY - gui.state.width / 2.0, // Point 2
-
-            gui.state.centerX + gui.state.length / 2.0,
-            gui.state.centerY - gui.state.width / 2.0  // Point 3
+        this.vertexPositions = new Float32Array([
+            gui.state.aX, gui.state.aY, // Point A
+            gui.state.bX, gui.state.bY, // Point B
+            gui.state.cX, gui.state.cY  // Point C
         ]);
 
         // Update vertex data on the GPU
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexPositions, gl.DYNAMIC_DRAW);
+
+        // Color Data CPU Side
+        this.vertexColors = new Float32Array([
+            gui.state.aR, gui.state.aG, gui.state.aB, // Point A
+            gui.state.bR, gui.state.bG, gui.state.bB, // Point B
+            gui.state.cR, gui.state.cG, gui.state.cB  // Point C
+        ]);
+
+        // Update color data on the GPU
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.colorVbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexColors, gl.DYNAMIC_DRAW);
     }
 };
 
@@ -171,25 +193,64 @@ const rectangle = {
 // =============================================================
 const gui = {
     state: {
-        centerX: 0.0,
-        centerY: 0.0,
-        length: 0.5,
-        width: 0.5
+        // Vertex Positions
+        aX: -0.5, aY: 0.0,
+        bX: 0.5, bY: 0.0,
+        cX: 0.0, cY: 0.5,
+
+        // Vertex Colors
+        aR: 1.0, aG: 0.0, aB: 0.0,
+        bR: 0.0, bG: 1.0, bB: 0.0,
+        cR: 0.0, cG: 0.0, cB: 1.0
     },
 
     init(render) {
         const gui = new lil.GUI();
-        const rectangleFolder = gui.addFolder("Rectangle");
 
-        // Center
-        const centerFolder = rectangleFolder.addFolder("Center");
-        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(render);
-        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(render);
+        // ---------------------------------------------------------
+        // VERTICES
+        // ---------------------------------------------------------
 
-        // Dimension
-        const dimFolder = rectangleFolder.addFolder("Dimensions");
-        dimFolder.add(this.state, "length", 0, 2).name("length").onChange(render);
-        dimFolder.add(this.state, "width", 0, 2).name("width").onChange(render);
+        const verticesFolder = gui.addFolder("Vertices");
+
+        // Point A
+        const pointAFolder = verticesFolder.addFolder("Point A");
+        pointAFolder.add(this.state, "aX", -1, 1).name("X").onChange(render);
+        pointAFolder.add(this.state, "aY", -1, 1).name("Y").onChange(render);
+
+        // Point B
+        const pointBFolder = verticesFolder.addFolder("Point B");
+        pointBFolder.add(this.state, "bX", -1, 1).name("X").onChange(render);
+        pointBFolder.add(this.state, "bY", -1, 1).name("Y").onChange(render);
+
+        // Point C
+        const pointCFolder = verticesFolder.addFolder("Point C");
+        pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(render);
+        pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(render);
+
+        // ---------------------------------------------------------
+        // COLORS
+        // ---------------------------------------------------------
+
+        const colorFolder = gui.addFolder("Color");
+
+        // Point A
+        const pointAColorFolder = colorFolder.addFolder("Point A");
+        pointAColorFolder.add(this.state, "aR", 0, 1).name("R").onChange(render);
+        pointAColorFolder.add(this.state, "aG", 0, 1).name("G").onChange(render);
+        pointAColorFolder.add(this.state, "aB", 0, 1).name("B").onChange(render);
+
+        // Point B
+        const pointBColorFolder = colorFolder.addFolder("Point B");
+        pointBColorFolder.add(this.state, "bR", 0, 1).name("R").onChange(render);
+        pointBColorFolder.add(this.state, "bG", 0, 1).name("G").onChange(render);
+        pointBColorFolder.add(this.state, "bB", 0, 1).name("B").onChange(render);
+
+        // Point C
+        const pointCColorFolder = colorFolder.addFolder("Point C");
+        pointCColorFolder.add(this.state, "cR", 0, 1).name("R").onChange(render);
+        pointCColorFolder.add(this.state, "cG", 0, 1).name("G").onChange(render);
+        pointCColorFolder.add(this.state, "cB", 0, 1).name("B").onChange(render);
     }
 };
 
@@ -207,18 +268,18 @@ function render(gl) {
 
     // UPDATE THINGS
     //---------------------------------------------------
-    rectangle.updateData(gl);
+    triangle.updateData(gl);
 
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
     // Rectangle
-    gl.bindVertexArray(rectangle.vao);
+    gl.bindVertexArray(triangle.vao);
     gl.drawArrays(
-        rectangle.drawMode,
-        rectangle.drawOffset,
-        rectangle.drawCount
+        triangle.drawMode,
+        triangle.drawOffset,
+        triangle.drawCount
     );
 }
 
@@ -241,7 +302,7 @@ function main() {
     shader.init(gl);
 
     //Objects
-    rectangle.init(gl, shader);
+    triangle.init(gl, shader);
 
     //Render
     render(gl);

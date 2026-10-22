@@ -33,126 +33,129 @@ CHAPTER 3 — GEOMETRY AND INDEXING
 3c - Reuse rectangle vertices with an index buffer and drawElements().
 3d - Build indexed triangle geometry for a letter F.
 
-CHAPTER 4 — POINTS, LINES, AND OUTLINES
----------------------------------------
+CHAPTER 4 — PRIMITIVE TOPOLOGIES
+--------------------------------
 4a - Draw vertices as points with POINTS.
 4b - Draw separate line segments with LINES.
 4c - Connect vertices with LINE_STRIP.
 4d - Close a connected sequence with LINE_LOOP.
 4e - Draw a hexagon outline with LINE_LOOP.
+4f - Generate and draw a circle outline with LINE_LOOP.
+4g - Draw independent triangles with TRIANGLES.
+4h - Build connected triangles with TRIANGLE_STRIP.
+4i - Fill a hexagon using TRIANGLE_FAN.
+4j - Generate and fill a circle using TRIANGLE_FAN.
 
-CHAPTER 5 — TRIANGLE TOPOLOGIES
--------------------------------
-5a - Draw independent triangles with TRIANGLES.
-5b - Build connected triangles with TRIANGLE_STRIP.
-5c - Fill a polygon using TRIANGLE_FAN.
-
-CHAPTER 6 — DYNAMIC GEOMETRY
+CHAPTER 5 — DYNAMIC GEOMETRY
 ----------------------------
-6a - Update triangle vertex data after creating its buffer.
-6b - Edit rectangle vertices interactively.
-6c - Generate and update a polygon outline.
-6d - Generate and update a filled polygon.
+5a - Update triangle vertex data after creating its buffer.
+5b - Edit rectangle vertices interactively.
+5c - Generate and update a polygon outline.
+5d - Generate and update a filled polygon.
 
-CHAPTER 7 — VERTEX DATA AND COLOR
+CHAPTER 6 — VERTEX DATA AND COLOR
 ---------------------------------
-7a - Use vertex values as color data and observe interpolation.
-7b - Store position and color in separate buffers.
-7c - Interleave position and color in one buffer.
-7d - Observe interpolated colors across a two-triangle rectangle.
-7e - Give the rectangle's triangles different vertex colors.
+6a - Use vertex values as color data and observe interpolation.
+6b - Store position and color in separate buffers.
+6c - Interleave position and color in one buffer.
+6d - Observe interpolated colors across a two-triangle rectangle.
+6e - Give the rectangle's triangles different vertex colors.
 
-CHAPTER 8 — UNIFORMS
+CHAPTER 7 — UNIFORMS
 --------------------
-8a - Pass a float uniform to control brightness.
-8b - Pass color channels as separate float uniforms.
-8c - Pass color as a vector uniform.
-8d - Combine vertex color with a uniform color.
-8e - Demonstrate uniform types and their upload methods.
+7a - Pass a float uniform to control brightness.
+7b - Pass color channels as separate float uniforms.
+7c - Pass color as a vector uniform.
+7d - Combine vertex color with a uniform color.
+7e - Demonstrate uniform types and their upload methods.
 
-CHAPTER 9 — MULTIPLE OBJECTS
+CHAPTER 8 — MULTIPLE OBJECTS
 ----------------------------
-9a - Draw a triangle and rectangle as separate objects with one shader.
-9b - Organize drawing behavior on the objects themselves.
-9c - Draw objects using different primitive topologies.
-9d - Combine different objects, shaders, and color sources.
-9e - Draw a grid and triangle with separate buffers and draw calls.
+8a - Draw a triangle and rectangle as separate objects with one shader.
+8b - Organize drawing behavior on the objects themselves.
+8c - Draw objects using different primitive topologies.
+8d - Combine different objects, shaders, and color sources.
+8e - Draw a grid and triangle with separate buffers and draw calls.
 
 
 PHASE 2 — 2D COORDINATES AND TRANSFORMATIONS
 "From clip space to a camera-based 2D world"
 ============================================
 
-CHAPTER 10 — 2D SPACE AND CAMERA
---------------------------------
-10a - Define geometry in pixel coordinates and map it to clip space.
-10b - Introduce camera bounds and clip-space bounds.
-10c - Invert the Y axis for pixel-space coordinates.
-10d - Adjust camera and clip bounds to control the visible region.
-10e - Map camera bounds to clip space with a camera object.
+CHAPTER 9 — 2D SPACE AND CAMERA
+-------------------------------
+9a - Define geometry in pixel coordinates and map it to clip space.
+9b - Introduce camera bounds and clip-space bounds.
+9c - Invert the Y axis for pixel-space coordinates.
+9d - Adjust camera and clip bounds to control the visible region.
+9e - Map camera bounds to clip space with a camera object.
 
-CHAPTER 11 — PROJECTION MATRIX
+CHAPTER 10 — PROJECTION MATRIX
 ------------------------------
-11a - Build a projection matrix in the shader.
-11b - Build the projection matrix in JavaScript and pass it as a mat3 uniform.
-11c - Render multiple pixel-space rectangles using the projection.
-11d - Build a grid and axes using the projection matrix.
-11e - Combine the grid, axes, and rectangle in the projected 2D world.
+10a - Build a projection matrix in the shader.
+10b - Build the projection matrix in JavaScript and pass it as a mat3 uniform.
+10c - Render multiple pixel-space rectangles using the projection.
+10d - Build a grid and axes using the projection matrix.
+10e - Combine the grid, axes, and rectangle in the projected 2D world.
 
-CHAPTER 12 — VIEW AND CAMERA CONTROL
+CHAPTER 11 — VIEW AND CAMERA CONTROL
 ------------------------------------
-12a - Establish a 2D world with a grid and multiple objects.
-12b - Represent camera state as data.
-12c - Add camera zoom.
-12d - Apply a view matrix for camera movement.
-12e - Control the camera with keyboard input.
-12f - Support continuous movement by tracking held-key state.
+11a - Establish a 2D world with a grid and multiple objects.
+11b - Represent camera state as data.
+11c - Add camera zoom.
+11d - Apply a view matrix for camera movement.
+11e - Control the camera with keyboard input.
+11f - Support continuous movement by tracking held-key state.
 
-CHAPTER 13 — TRANSLATION
+CHAPTER 12 — TRANSLATION
 ------------------------
-13a - Translate an object by updating its geometry.
-13b - Continue object translation with dynamic geometry.
-13c - Pass translation values to the shader as uniforms.
-13d - Represent the translation with a matrix.
+12a - Translate an object by updating its geometry.
+12b - Continue object translation with dynamic geometry.
+12c - Pass translation values to the shader as uniforms.
+12d - Represent the translation with a matrix.
 
-CHAPTER 14 — ROTATION
+CHAPTER 13 — ROTATION
 ---------------------
-14a - Rotate an object with sine and cosine.
-14b - Represent rotation with a matrix.
-14c - Explore transformation order.
-14d - Rotate around a selected pivot.
+13a - Rotate an object with sine and cosine.
+13b - Represent rotation with a matrix.
+13c - Explore transformation order.
+13d - Rotate around a selected pivot.
 
-CHAPTER 15 — SCALE
+CHAPTER 14 — SCALE
 ------------------
-15a - Apply scale directly to an object's geometry.
-15b - Represent uniform and non-uniform scaling with a scale matrix.
+14a - Apply scale directly to an object's geometry.
+14b - Represent uniform and non-uniform scaling with a scale matrix.
 
-CHAPTER 16 — MODEL MATRIX
+CHAPTER 15 — MODEL MATRIX
 -------------------------
-16a - Combine translation, rotation, and scale in a model matrix.
-16b - Pass a model matrix to the shader as a uniform.
-16c - Apply independent model matrices to objects.
-16d - Compose per-object model matrices with view and projection transforms.
+15a - Combine translation, rotation, and scale in a model matrix.
+15b - Pass a model matrix to the shader as a uniform.
+15c - Apply independent model matrices to objects.
+15d - Compose per-object model matrices with view and projection transforms.
 
 
 PHASE 3 — TEXTURES AND ALPHA
 "Give the 2D world image detail and transparency"
 ================================================
 
-CHAPTER 17 — TEXTURES
+CHAPTER 16 — TEXTURES
 ---------------------
-17a - Create and apply a first texture to a square.
-17b - Reuse one texture on multiple objects.
-17c - Assign different textures to different objects.
-17d - Create and use procedural textures.
+16a - Create and apply a first texture to a square.
+16b - Reuse one texture on multiple objects.
+16c - Assign different textures to different objects.
+16d - Create and use procedural textures.
 
-CHAPTER 18 — TEXTURE COORDINATES
---------------------------------
-18a - Introduce UV coordinates and apply a texture to a square.
-18b - Map a texture onto letter-F geometry with custom UVs.
-18c - Use UV coordinates outside 0–1 and explore texture wrapping.
-18d - Apply UV-mapped textures to multiple objects.
-18e - Connect UV and wrapping controls to the GUI.
+CHAPTER 17 — UV MAPPING
+-----------------------
+17a - Introduce UV coordinates and apply a texture to a square.
+17b - Map a texture onto letter-F geometry with custom UVs.
+17c - Map a texture onto a circle.
+
+CHAPTER 18 — TEXTURE WRAPPING AND REPETITION
+--------------------------------------------
+18a - Extend UV coordinates beyond 0–1 and explore wrapping and repetition.
+18b - Apply textures to multiple objects while retaining per-object texture state.
+18c - Connect UV and S/T wrapping controls to the GUI.
 
 CHAPTER 19 — TEXTURE FILTERING AND MIPMAPS
 ------------------------------------------

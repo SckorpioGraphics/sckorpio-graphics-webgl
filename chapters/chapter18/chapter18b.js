@@ -1,9 +1,9 @@
 /* #############################################################
-   CHAPTER 18b: UV coords
+   CHAPTER 18b: Using UVs 
    Topics:
-   - Creating a letter F geometry
-   - Apply texture on the letter F
-   - Using custom UV coords
+   - Creating a square and rectangle
+   - Use different textures
+   - Keep texture in renderable object
    #############################################################
 */
 
@@ -159,14 +159,24 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // TEXTURE RESOURCE
 // =============================================================
 const texture = {
-    imagePath: "chapters/chapter18/assets/letterF_Texture.png",
+    imagePath: "chapters/chapter18/assets/sckorpio_Texture.png",
 
     image: null,
     handle: null,
     loaded: false,
 
+    // Texture wrapping state
+    wrapS: "REPEAT",
+    wrapT: "REPEAT",
+
     init(gl) {
         createTexture(gl, this);
+    },
+
+    setWrapping(gl) {
+        this.bind(gl);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl[this.wrapS]);
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl[this.wrapT]);
     },
 
     bind(gl, textureUnit = 0) {
@@ -193,9 +203,22 @@ function createTexture(gl, texture) {
         new Uint8Array([82, 161, 171, 255])
     );
 
+    // ---------------------------------------------------------
+    // TEXTURE FILTERING
+    // ---------------------------------------------------------
     // No mipmaps yet.
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
 
+    // ---------------------------------------------------------
+    // TEXTURE WRAPPING
+    // ---------------------------------------------------------
+    // Repeat the texture horizontally.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+
+    // ---------------------------------------------------------
+    // LOAD TEXTURE IMAGE
+    // ---------------------------------------------------------
     texture.image = new Image();
 
     texture.image.onload = () => {
@@ -213,6 +236,7 @@ function createTexture(gl, texture) {
         );
 
         texture.loaded = true;
+
         console.log("Texture loaded:", texture.imagePath);
     };
 
@@ -303,13 +327,13 @@ const square = {
     // CPU DATA
     vertexData: new Float32Array([
         // Position     // UV
-        -100, -100,     0, 0,
-        100, -100,      1, 0,
-        -100,  100,     0, 1,
+        -100, -100,     -1, -1,
+        100, -100,      3, -1,
+        -100,  100,     -1, 3,
 
-        -100,  100,     0, 1,
-        100, -100,      1, 0,
-        100,  100,      1, 1
+        -100,  100,     -1, 3,
+        100, -100,      3, -1,
+        100,  100,      3, 3
     ]),
 
     translationX: 100,
@@ -386,182 +410,6 @@ const square = {
         gl.bindVertexArray(this.vao);
         // draw call
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const letterF = {
-    /*
-        v2-------v3--------v4
-        |\       |\         |
-        |\       |   \      |
-        | \      |      \   |
-        |  \     v6________v5
-        |   \    |
-        |    \   v7_____v8
-        |     \  |  \    |
-        |      \ |    \  |
-        |       \v10____v9
-        |        |
-        |        |
-        v0_______v1
-    */
-
-
-    // UVs by Pixel (Image Dim = 1254 * 1254) (top: 0,0 | Bottom: 1254,1254)
-    // v0 = 250 , 1140
-    // v1 = 540 , 1140
-    // v2 = 250 , 110
-    // v3 = 540 , 110
-    // v4 = 1060, 110
-    // v5 = 1060, 350
-    // v6 = 540 , 350
-    // v7 = 540 , 510
-    // v8 = 900 , 510
-    // v9 = 900 , 740
-    //v10 = 540 , 740
-
-    // Interleaved vertex data: x, y, u, v
-    
-    vertexData: new Float32Array([
-        // LEFT COLUMN
-        -100,   -100,   250/1254,   1 - 1140/1254, // v0
-        -60,    -100,   540/1254,   1 - 1140/1254, // v1
-        -100,    100,   250/1254,   1 -  110/1254, // v2
-        -60,     100,   540/1254,   1 -  110/1254, // v3
-
-        // TOP BAR
-        40,     100,    1060/1254,  1 - 110/1254, // v4
-        40,     60,     1060/1254,  1 - 350/1254, // v5
-        -60,   60,     540/1254,   1 - 350/1254, // v6
-
-        // MIDDLE BAR
-        -60,   20,     540/1254,   1 - 510/1254, // v7
-        0,      20,     900/1254,   1 - 510/1254, // v8
-        0,      -20,    900/1254,   1 - 740/1254, // v9
-        -60,  -20,     540/1254,   1 - 740/1254  // v10
-    ]),
-    /*
-
-    // CPU DATA
-    // Interleaved vertex data: x, y, u, v
-    vertexData: new Float32Array([
-        // LEFT COLUMN
-        -100,   -100,       0.19936,    0.09091, // v0
-        -60,    -100,       0.43062,    0.09091, // v1
-        -100,    100,       0.19936,    0.91228, // v2
-        -60,     100,       0.43062,    0.91228, // v3
-
-        // TOP BAR
-        40,     100,        0.84529,    0.91228, // v4
-        40,     60,         0.84529,    0.72089, // v5
-        -100,   60,         0.43062,    0.72089, // v6
-
-        // MIDDLE BAR
-        -100,   20,         0.43062, 0.59330, // v7
-        0,      20,         0.71770, 0.59330, // v8
-        0,     -20,         0.71770, 0.40909, // v9
-        -100,  -20,         0.43062, 0.40909  // v10
-    ]),
-    */
-
-    indices: new Uint16Array([
-        // LEFT COLUMN
-        0, 1, 2,
-        2, 1, 3,
-
-        // TOP BAR
-        3, 6, 5,
-        3, 5, 4,
-
-        // MIDDLE BAR
-        7, 10, 9,
-        7, 9, 8
-    ]),
-
-    translationX: 400,
-    translationY: 100,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-    color: [0.39, 0.33, 0.58], // Sckorpio Purple
-
-    //GPU DATA
-    shader: null,
-    texture: null,
-    vao: null,
-    vbo: null,
-    ibo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader, texture) {
-        // Connect shader to mesh
-        this.shader = shader;
-        this.texture = texture;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Index Buffer
-        this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Position corrds: x, y
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                  // size: 2 components (X, Y)
-            gl.FLOAT,                           // type: 32-bit float
-            false,                              // normalize
-            4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0                                   // offset: start of buffer
-        );
-
-        // Texture coordinates: u, v
-        gl.enableVertexAttribArray(this.shader.attributes.texCoord);
-        gl.vertexAttribPointer(
-            this.shader.attributes.texCoord,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            2 * Float32Array.BYTES_PER_ELEMENT
-        );
-
-        // Bind Index Buffer
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
-        // Draw Data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = this.indices.length;
-        this.drawType = gl.UNSIGNED_SHORT;
-    },
-    draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Modle Matrix
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        // Texture
-        this.texture.bind(gl, 0);
-        gl.uniform1i(this.shader.uniforms.texture, 0);
-        // vao
-        gl.bindVertexArray(this.vao);
-        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
     }
 };
 
@@ -776,17 +624,14 @@ function setupModelMatrix(mesh) {
 // GUI 
 // =============================================================
 const gui = {
+    wrapModes : {
+        "Repeat": "REPEAT",
+        "Clamp To Edge": "CLAMP_TO_EDGE",
+        "Mirrored Repeat": "MIRRORED_REPEAT"
+    },
     init(gl) {
         const gui = new lil.GUI();
         
-        // LetterF
-        const letterFFolder = gui.addFolder("LetterF");
-        letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
-        letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
-        letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
-        letterFFolder.add(letterF, "scaleX", 0.1, 3.0).name("scaleX");
-        letterFFolder.add(letterF, "scaleY", 0.1, 3.0).name("scaleY");
-
         // Square
         const squareFolder = gui.addFolder("Square");
         squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
@@ -794,6 +639,13 @@ const gui = {
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
+
+        // Texture Wrap
+        const wrappingFolder = gui.addFolder("Texture Wrapping");
+        // Horizontal wrapping
+        wrappingFolder.add(texture, "wrapS", this.wrapModes).name("Wrap S (U)").onChange(() => {texture.setWrapping(gl);});
+        // Vertical wrapping
+        wrappingFolder.add(texture, "wrapT", this.wrapModes).name("Wrap T (V)").onChange(() => {texture.setWrapping(gl);});
     }
 };
 
@@ -900,8 +752,6 @@ function render(gl) {
    
     // Square
     square.draw(gl);
-    // Letter-F
-    letterF.draw(gl);
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));
@@ -934,7 +784,6 @@ function main() {
 
     //Objects
     square.init(gl, textureShader, texture);
-    letterF.init(gl, textureShader, texture);
     grid.init(gl, basicShader);
     xAxis.init(gl, basicShader);
     yAxis.init(gl, basicShader);

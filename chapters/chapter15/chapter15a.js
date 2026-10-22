@@ -1,14 +1,13 @@
 /* #############################################################
-   CHAPTER 15a: 2D Transformations — Scale
+   CHAPTER 15a: Model Matrix — Transformation Composition
 
    Topics:
-   - Uniform scaling of a letterF
-   - GUI camera controls
-   - Using scale directly
-   - Object scaling
+   - Building a Model Matrix(within Shader)
+   - Translation, Rotation and Scaling
+   - Passing the Model Matrix as a uniform
+   - Model → View → Projection
    #############################################################
 */
-
 
 // =============================================================
 // SHADER OBJECTS
@@ -23,18 +22,22 @@ const shader = {
     uniform float u_translationX;
     uniform float u_translationY;
     uniform float u_rotation;
-    uniform float u_scale;
+    uniform float u_scaleX;
+    uniform float u_scaleY;
 
     void main() {
-        float scaledX = a_position.x * u_scale;
-        float scaledY = a_position.y * u_scale;
+        vec3 localPosition = vec3(a_position, 1.0);
 
-        vec3 localPosition = vec3(scaledX, scaledY, 1.0);
+        mat3 scaleMatrix = mat3(
+            u_scaleX, 0.0,     0.0,
+            0.0,     u_scaleY, 0.0,
+            0.0,      0.0,     1.0
+        );
 
         mat3 rotationMatrix = mat3(
-            cos(radians(u_rotation)),  sin(radians(u_rotation)),    0.0,
-           -sin(radians(u_rotation)),  cos(radians(u_rotation)),    0.0,
-            0.0,                       0.0,                         1.0
+            cos(radians(u_rotation)),   sin(radians(u_rotation)),    0.0,
+           -sin(radians(u_rotation)),   cos(radians(u_rotation)),    0.0,
+            0.0,                        0.0,                         1.0
         );
 
         mat3 translationMatrix = mat3(
@@ -43,7 +46,8 @@ const shader = {
             u_translationX, u_translationY, 1.0
         );
 
-        vec3 worldPosition = translationMatrix * rotationMatrix * localPosition;
+        mat3 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+        vec3 worldPosition = modelMatrix * localPosition;
         vec3 viewPosition = u_viewMatrix * worldPosition;
         vec3 clipPosition = u_projectionMatrix * viewPosition;
 
@@ -69,6 +73,8 @@ const shader = {
         translationX: null,
         translationY: null,
         rotation: null,
+        scaleX: null,
+        scaleY: null,
         viewMatrix: null,
         projectionMatrix: null,
         color: null
@@ -87,7 +93,8 @@ const shader = {
         this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
         this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
         this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
-        this.uniforms.scale = gl.getUniformLocation(this.program, "u_scale");
+        this.uniforms.scaleX = gl.getUniformLocation(this.program, "u_scaleX");
+        this.uniforms.scaleY = gl.getUniformLocation(this.program, "u_scaleY");
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
@@ -241,7 +248,8 @@ const letterF = {
     translationX: 200,
     translationY: 100,
     rotation: 0,
-    scale: 1.0,
+    scaleX: 1.0,
+    scaleY: 1.0,
     color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
@@ -286,13 +294,14 @@ const letterF = {
     draw(gl) {
         // Shader
         gl.useProgram(this.shader.program);
-        // Pass translateX & translateY
+        // Pass translation
         gl.uniform1f(this.shader.uniforms.translationX, this.translationX);
         gl.uniform1f(this.shader.uniforms.translationY, this.translationY);
         // Pass Rotation
         gl.uniform1f(this.shader.uniforms.rotation, this.rotation);
         // Pass Scale
-        gl.uniform1f(this.shader.uniforms.scale, this.scale);
+        gl.uniform1f(this.shader.uniforms.scaleX, this.scaleX);
+        gl.uniform1f(this.shader.uniforms.scaleY, this.scaleY);
         // Pass Color
         gl.uniform3fv(this.shader.uniforms.color,this.color);
         // VAO
@@ -506,7 +515,8 @@ const gui = {
         letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
         letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
         letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
-        letterFFolder.add(letterF, "scale", 0.1, 3.0).name("scale");
+        letterFFolder.add(letterF, "scaleX", 0.1, 3.0).name("scaleX");
+        letterFFolder.add(letterF, "scaleY", 0.1, 3.0).name("scaleY");
     }
 };
 
@@ -597,7 +607,8 @@ function render(gl) {
     gl.uniform1f(shader.uniforms.translationX, 0);
     gl.uniform1f(shader.uniforms.translationY, 0);
     gl.uniform1f(shader.uniforms.rotation, 0);
-    gl.uniform1f(shader.uniforms.scale, 1.0);
+    gl.uniform1f(shader.uniforms.scaleX, 1.0);
+    gl.uniform1f(shader.uniforms.scaleY, 1.0);
     
     // RENDER MESHES
     //---------------------------------------------------

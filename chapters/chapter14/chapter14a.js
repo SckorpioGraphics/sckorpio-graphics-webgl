@@ -1,11 +1,11 @@
 /* #############################################################
-   CHAPTER 14a: 2D Transformations — Rotation with Sine and Cosine
+   CHAPTER 14a: 2D Transformations — Scale
 
    Topics:
-   - Rotating a letterF around the origin
+   - Uniform scaling of a letterF
    - GUI camera controls
-   - Using Rotation with sin() and cos()
-   - Object rotation
+   - Using scale directly
+   - Object scaling
    #############################################################
 */
 
@@ -23,15 +23,19 @@ const shader = {
     uniform float u_translationX;
     uniform float u_translationY;
     uniform float u_rotation;
+    uniform float u_scale;
 
     void main() {
-        vec3 localPosition = vec3(a_position, 1.0);
+        float scaledX = a_position.x * u_scale;
+        float scaledY = a_position.y * u_scale;
 
-        float c = cos(radians(u_rotation));
-        float s = sin(radians(u_rotation));
-        float rotatedX = localPosition.x * c - localPosition.y * s;
-        float rotatedY = localPosition.x * s + localPosition.y * c;
-        vec3 rotatedPosition = vec3(rotatedX, rotatedY, 1.0);
+        vec3 localPosition = vec3(scaledX, scaledY, 1.0);
+
+        mat3 rotationMatrix = mat3(
+            cos(radians(u_rotation)),  sin(radians(u_rotation)),    0.0,
+           -sin(radians(u_rotation)),  cos(radians(u_rotation)),    0.0,
+            0.0,                       0.0,                         1.0
+        );
 
         mat3 translationMatrix = mat3(
             1.0,            0.0,            0.0,
@@ -39,7 +43,7 @@ const shader = {
             u_translationX, u_translationY, 1.0
         );
 
-        vec3 worldPosition = translationMatrix * rotatedPosition;
+        vec3 worldPosition = translationMatrix * rotationMatrix * localPosition;
         vec3 viewPosition = u_viewMatrix * worldPosition;
         vec3 clipPosition = u_projectionMatrix * viewPosition;
 
@@ -83,6 +87,7 @@ const shader = {
         this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
         this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
         this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
+        this.uniforms.scale = gl.getUniformLocation(this.program, "u_scale");
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
@@ -236,6 +241,7 @@ const letterF = {
     translationX: 200,
     translationY: 100,
     rotation: 0,
+    scale: 1.0,
     color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
@@ -251,7 +257,7 @@ const letterF = {
         // Shader
         this.shader = shader;
 
-        // Vertex Buffer (...will be changed dynamically)
+        // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
@@ -285,6 +291,8 @@ const letterF = {
         gl.uniform1f(this.shader.uniforms.translationY, this.translationY);
         // Pass Rotation
         gl.uniform1f(this.shader.uniforms.rotation, this.rotation);
+        // Pass Scale
+        gl.uniform1f(this.shader.uniforms.scale, this.scale);
         // Pass Color
         gl.uniform3fv(this.shader.uniforms.color,this.color);
         // VAO
@@ -498,6 +506,7 @@ const gui = {
         letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
         letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
         letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
+        letterFFolder.add(letterF, "scale", 0.1, 3.0).name("scale");
     }
 };
 
@@ -588,6 +597,7 @@ function render(gl) {
     gl.uniform1f(shader.uniforms.translationX, 0);
     gl.uniform1f(shader.uniforms.translationY, 0);
     gl.uniform1f(shader.uniforms.rotation, 0);
+    gl.uniform1f(shader.uniforms.scale, 1.0);
     
     // RENDER MESHES
     //---------------------------------------------------

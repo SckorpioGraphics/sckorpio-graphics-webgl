@@ -1,9 +1,14 @@
 /* #############################################################
-CHAPTER 8a: Uniform
+CHAPTER 8a: Multiple Objects
 
 Topics:
-- Adding a basic UI to manipulate
-- Brightness of the triangle (as a single float)
+- Rendering multiple objects
+- A Traingle and a Rectangle
+- Separate VAO/VBO for each object
+- Different shapes
+- Different colors
+- Multiple draw calls
+- Using the same shader for multiple objects
 ###############################################################
 */
 
@@ -23,12 +28,12 @@ const shader = {
     fragmentShaderSource: `#version 300 es
     precision mediump float;
 
-    uniform float u_intensity;
+    uniform vec3 u_color;
 
     out vec4 out_color;
 
     void main() {
-        out_color = vec4(0.39, 0.33, 0.58, 1.0) * u_intensity;
+        out_color = vec4(u_color, 1.0);
     }
 `,
     program: null,
@@ -36,7 +41,7 @@ const shader = {
         position: null
     },
     uniforms: {
-        intensity: null
+        color: null
     },
 
     //FUNCTIONS
@@ -50,7 +55,7 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(shader.program, "a_position");
         // uniforms
-        this.uniforms.intensity = gl.getUniformLocation(shader.program, "u_intensity");
+        this.uniforms.color = gl.getUniformLocation(shader.program, "u_color");
     }
 };
 
@@ -97,9 +102,9 @@ const triangle = {
 
     // CPU DATA
     vertexData: new Float32Array([
-        -0.5,  0.0,  // v0
-        0.5, 0.0,    // v1
-        0.0,  0.5,   // v2
+        -0.5, 0.0,
+        -0.3, 0.4,
+        -0.1, 0.0
     ]),
 
     //GPU DATA
@@ -147,20 +152,66 @@ const triangle = {
     }
 };
 
-// =============================================================
-// GUI Setup Functions
-// =============================================================
-const gui = {
-    state: {
-        intensity: 1.0
-    },
+const rectangle = {
+    //    v1--------v2
+    //    | \        |
+    //    |    \     |
+    //    |       \  |
+    //    v0--------v1
 
-    init(render) {
-        const gui = new lil.GUI();
+    // CPU DATA
+    vertexData: new Float32Array([
+        0.2, -0.2,
+        0.2, 0.2,
+        0.6, -0.2,
 
-        const uniformFolder = gui.addFolder("Uniforms");
-        const intensityFolder = uniformFolder.addFolder("Intensity");
-        intensityFolder.add(this.state, "intensity", 0, 1).name("Intensity").onChange(render);
+        0.6, -0.2,
+        0.6, 0.2,
+        0.2, 0.2
+    ]),
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        // Connect shader to mesh
+        this.shader = shader;
+
+        // Vertex Buffer
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+
+        // Vertex Array
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        // Enable position attribute
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+
+        // Bind Vertex Buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+        // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        // Draw data
+        this.drawMode = gl.TRIANGLES;
+        this.drawOffset = 0;
+        this.drawCount = 6;
     }
 };
 
@@ -179,17 +230,24 @@ function render(gl) {
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
-    gl.useProgram(triangle.shader.program);
-
-    // Set uniform value from UI
-    gl.uniform1f(triangle.shader.uniforms.intensity,gui.state.intensity);
+    gl.useProgram(shader.program);
 
     // Triangle
+    gl.uniform3fv(triangle.shader.uniforms.color,[1.0,0.0,0.0]);
     gl.bindVertexArray(triangle.vao);
     gl.drawArrays(
         triangle.drawMode,
         triangle.drawOffset,
         triangle.drawCount
+    );
+
+    // Rectangle
+    gl.uniform3fv(rectangle.shader.uniforms.color,[0.0,1.0,0.0]);
+    gl.bindVertexArray(rectangle.vao);
+    gl.drawArrays(
+        rectangle.drawMode,
+        rectangle.drawOffset,
+        rectangle.drawCount
     );
 }
 
@@ -205,14 +263,12 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
-    //GUI
-    gui.init(() => render(gl));
-
     //Shaders
     shader.init(gl);
 
     //Objects
     triangle.init(gl, shader);
+    rectangle.init(gl, shader);
 
     //Render
     render(gl);

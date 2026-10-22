@@ -1,14 +1,18 @@
 /* #############################################################
-CHAPTER 10d: 2D Camera
+CHAPTER 10d: 2D World with Grid
 
 Topics:
-- Introducing a 2D camera object
-- Manipulating clip Bounds from [-1,1] to anything else
-- Defining camera bounds
-- Defining clip-space bounds
-- Passing camera values to the shader
+- Creating a grid in pixel space
+- Also creating X-Axis and Y-Axis
+- Creating a rectangle in pixel space
+- Vertex data in pixel space
+- projectionMatrix as a uniform mat3
+- Pixel space -> clip space
+- Inverted Y
+- Multiple objects in pixel space
 ###############################################################
 */
+
 
 // =============================================================
 // SHADER OBJECTS
@@ -18,41 +22,24 @@ const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
 
-    uniform vec4 u_cameraBounds;
-    uniform vec4 u_clipBounds;
+    uniform mat3 u_projectionMatrix;
 
     void main() {
+        // Apply pixel space -> clip space matrix
+        vec3 clipPostion = u_projectionMatrix * vec3(a_position, 1.0);
 
-        vec2 pixelSize = vec2(
-            u_cameraBounds.y - u_cameraBounds.x,
-            u_cameraBounds.w - u_cameraBounds.z
-        );
-
-        vec2 zeroToOne = vec2(
-            (a_position.x - u_cameraBounds.x) / pixelSize.x,
-            (a_position.y - u_cameraBounds.z) / pixelSize.y
-        );
-
-        vec2 clipSize = vec2(
-            u_clipBounds.y - u_clipBounds.x,
-            u_clipBounds.w - u_clipBounds.z
-        );
-
-        vec2 clipPosition = vec2(
-            u_clipBounds.x + zeroToOne.x * clipSize.x,
-            u_clipBounds.z + zeroToOne.y * clipSize.y
-        );
-
-        gl_Position = vec4(clipPosition, 0.0, 1.0);
+        // Convert to clip-space position
+        gl_Position = vec4(clipPostion.xy, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
     precision mediump float;
 
-    out vec4 out_color;
+    uniform vec3 u_color;
+    out vec4 out_Color;
 
     void main() {
-        out_color = vec4(0.39, 0.33, 0.58, 1.0); // Sckorpio Purple
+        out_Color = vec4(u_color, 1.0);
     }
 `,
     program: null,
@@ -60,8 +47,8 @@ const shader = {
         position: null
     },
     uniforms: {
-        cameraBounds: null,
-        clipBounds: null
+        projectionMatrix: null,
+        color: null
     },
 
     //FUNCTIONS
@@ -75,8 +62,8 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.cameraBounds = gl.getUniformLocation(this.program, "u_cameraBounds");
-        this.uniforms.clipBounds = gl.getUniformLocation(this.program, "u_clipBounds");
+        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
+        this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
     }
 };
 
@@ -113,23 +100,31 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // CAMERA
 // =============================================================
 const camera = {
-    //pixel bounds
-    left: 0,
-    right: 800,
-    bottom: 0,
-    top: 600,
-
-    //clip bounds
-    clipLeft: -0.5,
-    clipRight: 0.5,
-    clipBottom: -0.5,
-    clipTop: 0.5,
+    // Camera bounds
+    width: 0,
+    height: 0,
+    
+    // Projection matrix
+    projectionMatrix: mat3.create(),
 
     // FUNCTIONs
     update(gl) {
         // Match the camera's viewing region
-        this.right = gl.canvas.width;
-        this.top = gl.canvas.height;
+        this.width = gl.canvas.width;
+        this.height = gl.canvas.height;
+    },
+
+    updateProjectionMatrix(gl) {
+        // Camera bounds
+        this.width = gl.canvas.width;
+        this.height = gl.canvas.height;
+
+        // Create projection matrix
+        this.projectionMatrix = mat3.fromValues(
+            2 / this.width,  0,                  0,
+            0,               2 / this.height,    0,
+            -1,              -1,                 1,
+        );
     }
 };
 
@@ -145,14 +140,15 @@ const rectangle = {
 
     // CPU DATA (In Pixel Space)
     vertexData: new Float32Array([
-        20, 20,       // Left Bottom
-        200, 20,      // Right Bottom
-        20, 100,      // Left Top
+        100, 100,      // Left Bottom
+        300, 100,      // Right Bottom
+        100, 200,      // Left Top
 
-        20, 100,      // Left Top
-        200, 20,      // Right Bottom
-        200, 100      // Right Top
+        100, 200,      // Left Top
+        300, 100,      // Right Bottom
+        300, 200       // Right Top
     ]),
+    color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
     shader: null,
@@ -198,11 +194,88 @@ const rectangle = {
         this.drawCount = 6;
     },
     draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // vao
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
         gl.bindVertexArray(this.vao);
-        // draw calls
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
+const grid = {
+    //    v1------------v2
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    v0------------v1
+
+    // CPU DATA (In Pixel Space)
+    vertexData: new Float32Array(),
+    spacing: 100,
+    range: 10000,
+    color: [0.39, 0.33, 0.58], // Sckorpio Purple
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        this.shader = shader;
+
+        const positions = [];
+    
+        // Vertical lines
+        for(let x = -this.range; x <= this.range; x += this.spacing) {
+            positions.push(
+                x, -this.range,
+                x, this.range
+            );
+        }
+
+        // Horizontal lines
+        for(let y = -this.range; y <= this.range; y += this.spacing) {
+            positions.push(
+                -this.range, y,
+                this.range, y
+            );
+        }
+
+        this.vertexData = new Float32Array(positions);
+        // Vertex Buffer
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+
+        // Vertex Array
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        // Attrib
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+       // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        //Draw Data
+        this.drawMode = gl.LINES;
+        this.drawOffset = 0;
+        this.drawCount = positions.length / 2;
+    },
+    draw(gl) {
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
@@ -220,20 +293,19 @@ function render(gl) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Camera 
-    camera.update(gl);
+    camera.updateProjectionMatrix(gl);
 
     // COMMON UNIFORMS
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-    // Pass camera bounds to shader
-    gl.uniform4f(shader.uniforms.cameraBounds,camera.left,camera.right,camera.bottom,camera.top);
-    // Pass clip-space bounds to shader
-    gl.uniform4f(shader.uniforms.clipBounds,camera.clipLeft,camera.clipRight,camera.clipBottom,camera.clipTop);
-    
+    // Pass projection matrix to shader
+    gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
     
     // RENDER MESHES
     //---------------------------------------------------
+    // Grid
+    grid.draw(gl);
     // Rectangle
     rectangle.draw(gl);
 }
@@ -255,6 +327,7 @@ function main() {
 
     //Objects
     rectangle.init(gl, shader);
+    grid.init(gl, shader);
 
     //Render
     render(gl);

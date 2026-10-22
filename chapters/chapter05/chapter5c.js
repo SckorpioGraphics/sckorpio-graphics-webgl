@@ -1,11 +1,11 @@
 /* #############################################################
-CHAPTER 5c: Learning Topology — TRIANGLE_FAN
+CHAPTER 5c: Dynamic Polygon Outline
 
 Topics:
-- Making a Filled Polygon — Hexagon
+- Learning Topology LINE_LOOP
+- Making a Polygon to Circle
 ###############################################################
 */
-
 
 // =============================================================
 // SHADER OBJECTS
@@ -17,7 +17,6 @@ const shader = {
 
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
-        gl_PointSize = 5.0;
     }
 `,
 
@@ -39,7 +38,6 @@ const shader = {
     uniforms: {},
 
     //FUNCTIONS
-
     init(gl) {
         // Compile shaders
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, shader.vertexShaderSource);
@@ -85,29 +83,19 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 // MESHES
 // =============================================================
-const hexagon = {
+const polygon = {
     /*
-             v6---v5
-           /   \ /   \
-         v1     v0    v4
+             #5---#4
+           /         \
+         #0           #3
            \         /
-             v2---v3
+             #1---#2
     */
 
     // CPU DATA
-    positions: new Float32Array([
-         0.0,  0.0,   // v0 - Center
-        -0.6,  0.0,   // v1
-        -0.3, -0.6,   // v2
-         0.3, -0.6,   // v3
-         0.6,  0.0,   // v4
-         0.3,  0.6,   // v5
-        -0.3,  0.6    // v6
-    ]),
-
-    indices: new Uint16Array([
-        0, 1, 2, 3, 4, 5, 6, 1
-    ]),
+    positions: new Float32Array(),
+    indices: new Float32Array(),
+    // Will be filled dynamically
 
     //GPU DATA
     shader: null,
@@ -126,12 +114,12 @@ const hexagon = {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.positions,gl.STATIC_DRAW);
 
-        //Index Buffer
+        // Index Buffer
         this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, hexagon.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,this.indices,gl.STATIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+
+        // NOTE: Vertex data will be updated from the UI during rendering.
 
         // Vertex Array
         this.vao = gl.createVertexArray();
@@ -153,14 +141,67 @@ const hexagon = {
             0                                       // offset: start of buffer
         );
 
-        // Index buffer — IMPORTANT
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
         // Draw data
-        this.drawMode = gl.TRIANGLE_FAN;
+        this.drawMode = gl.LINE_LOOP;
         this.drawOffset = 0;
-        this.drawCount = this.indices.length;
+        this.drawCount = 0;
         this.drawType = gl.UNSIGNED_SHORT;
+    },
+
+    updateData(gl) {
+        // Vertex and index data CPU side
+        const positionsData = [];
+        const indicesData = [];
+
+        for(let i = 0; i < gui.state.points; i++) {
+            const angle = (i / gui.state.points) * (2 * Math.PI);
+            const x = gui.state.centerX + Math.sin(angle) * gui.state.radius;
+            const y = gui.state.centerY + Math.cos(angle) * gui.state.radius;
+            positionsData.push(x);
+            positionsData.push(y);
+            indicesData.push(i);
+        }
+
+        this.positions = new Float32Array(positionsData);
+        this.indices = new Uint16Array(indicesData);
+
+        // Update vertex data on the GPU
+        gl.bindBuffer(gl.ARRAY_BUFFER, polygon.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+
+        // Update index data on the GPU
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, polygon.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.DYNAMIC_DRAW);
+
+        // Update draw data
+        this.drawCount = this.indices.length;
+    }
+};
+
+// =============================================================
+// GUI Setup Functions
+// =============================================================
+const gui = {
+    state: {
+        centerX: 0.0,
+        centerY: 0.0,
+        radius: 0.5,
+        points: 5
+    },
+
+    init(render) {
+        const gui = new lil.GUI();
+        const polygonFolder = gui.addFolder("Polygon");
+
+        // Center
+        const centerFolder = polygonFolder.addFolder("Center");
+        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(render);
+        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(render);
+
+        // Dimension
+        const dimFolder = polygonFolder.addFolder("Dimensions");
+        dimFolder.add(this.state, "radius", 0, 1).name("radius").onChange(render);
+        dimFolder.add(this.state, "points", 3, 20, 1).name("points").onChange(render);
     }
 };
 
@@ -176,18 +217,21 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // UPDATE THINGS
+    //---------------------------------------------------
+    polygon.updateData(gl);
+
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-
-    // Rectangle
-    gl.bindVertexArray(hexagon.vao);
+    // Polygon
+    gl.bindVertexArray(polygon.vao);
     gl.drawElements(
-        hexagon.drawMode,
-        hexagon.drawCount,
-        hexagon.drawType,
-        hexagon.drawOffset
+        polygon.drawMode,
+        polygon.drawCount,
+        polygon.drawType,
+        polygon.drawOffset
     );
 }
 
@@ -203,11 +247,14 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
+    //GUI
+    gui.init(() => render(gl));
+
     //Shaders
     shader.init(gl);
 
     //Objects
-    hexagon.init(gl, shader);
+    polygon.init(gl, shader);
 
     //Render
     render(gl);

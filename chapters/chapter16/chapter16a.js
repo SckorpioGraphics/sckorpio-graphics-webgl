@@ -1,56 +1,27 @@
 /* #############################################################
-   CHAPTER 16a: Model Matrix — Transformation Composition
-
+   CHAPTER 16: First Texture
    Topics:
-   - Building a Model Matrix(within Shader)
-   - Translation, Rotation and Scaling
-   - Passing the Model Matrix as a uniform
-   - Model → View → Projection
+   - Creating first texture
+   - Aplying on a square
    #############################################################
 */
+
 
 // =============================================================
 // SHADER OBJECTS
 // =============================================================
 //Shader Object1
-const shader = {
+const basicShader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
 
+    uniform mat3 u_modelMatrix;
     uniform mat3 u_viewMatrix;
     uniform mat3 u_projectionMatrix;
-    uniform float u_translationX;
-    uniform float u_translationY;
-    uniform float u_rotation;
-    uniform float u_scaleX;
-    uniform float u_scaleY;
 
     void main() {
         vec3 localPosition = vec3(a_position, 1.0);
-
-        mat3 scaleMatrix = mat3(
-            u_scaleX, 0.0,     0.0,
-            0.0,     u_scaleY, 0.0,
-            0.0,      0.0,     1.0
-        );
-
-        mat3 rotationMatrix = mat3(
-            cos(radians(u_rotation)),   sin(radians(u_rotation)),    0.0,
-           -sin(radians(u_rotation)),   cos(radians(u_rotation)),    0.0,
-            0.0,                        0.0,                         1.0
-        );
-
-        mat3 translationMatrix = mat3(
-            1.0,            0.0,            0.0,
-            0.0,            1.0,            0.0,
-            u_translationX, u_translationY, 1.0
-        );
-
-        mat3 modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
-        vec3 worldPosition = modelMatrix * localPosition;
-        vec3 viewPosition = u_viewMatrix * worldPosition;
-        vec3 clipPosition = u_projectionMatrix * viewPosition;
-
+        vec3 clipPosition = u_projectionMatrix * u_viewMatrix * u_modelMatrix * localPosition;
         gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
     }
 `,
@@ -70,11 +41,7 @@ const shader = {
         position: null
     },
     uniforms: {
-        translationX: null,
-        translationY: null,
-        rotation: null,
-        scaleX: null,
-        scaleY: null,
+        modelMatrix: null,
         viewMatrix: null,
         projectionMatrix: null,
         color: null
@@ -90,14 +57,71 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
-        this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
-        this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
-        this.uniforms.scaleX = gl.getUniformLocation(this.program, "u_scaleX");
-        this.uniforms.scaleY = gl.getUniformLocation(this.program, "u_scaleY");
+        this.uniforms.modelMatrix = gl.getUniformLocation(this.program, "u_modelMatrix");
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
+    }
+};
+
+const textureShader = {
+    vertexShaderSource: `#version 300 es
+        in vec2 a_position;
+        in vec2 a_texCoord;
+
+        uniform mat3 u_modelMatrix;
+        uniform mat3 u_viewMatrix;
+        uniform mat3 u_projectionMatrix;
+
+        out vec2 v_texCoord;
+
+        void main() {
+            vec3 localPosition = vec3(a_position, 1.0);
+            vec3 clipPosition = u_projectionMatrix * u_viewMatrix * u_modelMatrix * localPosition;
+            gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+            v_texCoord = a_texCoord;
+        }
+    `,
+
+    fragmentShaderSource: `#version 300 es
+        precision mediump float;
+
+        uniform sampler2D u_texture;
+        in vec2 v_texCoord;
+        out vec4 out_color;
+
+        void main() {
+            out_color = texture(u_texture, v_texCoord);
+        }
+    `,
+
+    program: null,
+
+    attributes: {
+        position: null,
+        texCoord: null
+    },
+
+    uniforms: {
+        modelMatrix: null,
+        viewMatrix: null,
+        projectionMatrix: null,
+        texture: null
+    },
+
+    init(gl) {
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        // program
+        this.program = createProgram(gl, vertexShader, fragmentShader);
+        // attribute
+        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
+        this.attributes.texCoord = gl.getAttribLocation(this.program, "a_texCoord");
+        // uniform
+        this.uniforms.modelMatrix = gl.getUniformLocation(this.program, "u_modelMatrix");
+        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
+        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
+        this.uniforms.texture = gl.getUniformLocation(this.program, "u_texture");
     }
 };
 
@@ -128,6 +152,77 @@ function createProgram(gl, vertexShader, fragmentShader) {
 
     console.error("Program Linking Error:", gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
+}
+
+// =============================================================
+// TEXTURE RESOURCE
+// =============================================================
+const texture = {
+    imagePath: "chapters/chapter16/assets/letterF_Texture.png",
+
+    image: null,
+    handle: null,
+    loaded: false,
+
+    init(gl) {
+        createTexture(gl, this);
+    },
+
+    bind(gl, textureUnit = 0) {
+        gl.activeTexture(gl.TEXTURE0 + textureUnit);
+        gl.bindTexture(gl.TEXTURE_2D, this.handle);
+    }
+};
+
+function createTexture(gl, texture) {
+    texture.handle = gl.createTexture();
+
+    gl.bindTexture(gl.TEXTURE_2D, texture.handle);
+
+    // Temporary cyan pixel while the image loads.
+    gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.RGBA,
+        1,
+        1,
+        0,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        new Uint8Array([82, 161, 171, 255])
+    );
+
+    // No mipmaps yet.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+
+    texture.image = new Image();
+
+    texture.image.onload = () => {
+        gl.bindTexture(gl.TEXTURE_2D, texture.handle);
+
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.RGBA,
+            gl.RGBA,
+            gl.UNSIGNED_BYTE,
+            texture.image
+        );
+
+        texture.loaded = true;
+        console.log("Texture loaded:", texture.imagePath);
+    };
+
+    texture.image.onerror = () => {
+        console.error(
+            "Could not load texture image:",
+            texture.imagePath
+        );
+    };
+
+    texture.image.src = texture.imagePath;
 }
 
 // =============================================================
@@ -197,60 +292,31 @@ const camera = {
 // =============================================================
 // MESHES
 // =============================================================
-const letterF = {
-    /*
-        v2-------v3--------v4
-        |\       |\         |
-        |\       |   \      |
-        | \      |      \   |
-        |  \     v6________v5
-        |   \    |
-        |    \   v7_____v8
-        |     \  |  \    |
-        |      \ |    \  |
-        |       \v10____v9
-        |        |
-        |        |
-        v0_______v1
-    */
+const square = {
+    //    v1--------v2
+    //    | \        |
+    //    |    \     |
+    //    |       \  |
+    //    v0--------v1
 
     // CPU DATA
     vertexData: new Float32Array([
-        -100, -100,
-        -60 , -100,
-        -100,  100,
-        -60 ,  100,
+        // Position     // UV
+        -100, -100,     0, 0,
+        100, -100,      1, 0,
+        -100,  100,     0, 1,
 
-        // Top bar
-        40  ,  100,
-        40  ,   60,
-        -60,   60,
-
-        // Middle bar
-        -60,  20,
-        0   ,  20,
-        0   , -20,
-        -60, -20
+        -100,  100,     0, 1,
+        100, -100,      1, 0,
+        100,  100,      1, 1
     ]),
-    indices: new Uint16Array([
-        // LEFT COLUMN
-        0, 1, 2,
-        2, 1, 3,
 
-        // TOP BAR
-        3, 6, 5,
-        3, 5, 4,
-
-        // MIDDLE BAR
-        7, 10, 9,
-        7, 9, 8
-    ]),
-    translationX: 200,
+    translationX: 100,
     translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
-    color: [0.39, 0.33, 0.58], // Sckorpio Purple
+    modelMatrix: mat3.create(),
 
     //GPU DATA
     shader: null,
@@ -262,7 +328,7 @@ const letterF = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Shader
+        // Connect shader to mesh
         this.shader = shader;
 
         // Vertex Buffer
@@ -270,44 +336,55 @@ const letterF = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
 
-        // Index Buffer
-        this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
-
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Attrib
+        // Enable position attribute
         gl.enableVertexAttribArray(this.shader.attributes.position);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.vertexAttribPointer(this.shader.attributes.position, 2, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
 
-        // Draw Data
+        // Bind Vertex Buffer
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+        // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,          // size: 2 components (X, Y)
+            gl.FLOAT,   // type: 32-bit float
+            false,      // normalize
+            4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
+            0           // offset: start of buffer
+        );
+
+        // Texture coordinates: u, v
+        gl.enableVertexAttribArray(this.shader.attributes.texCoord);
+        gl.vertexAttribPointer(
+            this.shader.attributes.texCoord,
+            2,
+            gl.FLOAT,
+            false,
+            4 * Float32Array.BYTES_PER_ELEMENT,
+            2 * Float32Array.BYTES_PER_ELEMENT
+        );
+
+        // Draw data
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = this.indices.length;
-        this.drawType = gl.UNSIGNED_SHORT;
+        this.drawCount = 6;
     },
     draw(gl) {
         // Shader
         gl.useProgram(this.shader.program);
-        // Pass translation
-        gl.uniform1f(this.shader.uniforms.translationX, this.translationX);
-        gl.uniform1f(this.shader.uniforms.translationY, this.translationY);
-        // Pass Rotation
-        gl.uniform1f(this.shader.uniforms.rotation, this.rotation);
-        // Pass Scale
-        gl.uniform1f(this.shader.uniforms.scaleX, this.scaleX);
-        gl.uniform1f(this.shader.uniforms.scaleY, this.scaleY);
-        // Pass Color
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        // VAO
+        // Modle Matrix
+        setupModelMatrix(this);
+        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
+        // Texture
+        texture.bind(gl, 0);
+        gl.uniform1i(this.shader.uniforms.texture, 0);
+        // vao
         gl.bindVertexArray(this.vao);
         // draw call
-        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
 
@@ -385,6 +462,7 @@ const grid = {
         this.drawCount = positions.length / 2;
     },
     draw(gl) {
+        gl.useProgram(this.shader.program);
         gl.uniform3fv(this.shader.uniforms.color,this.color);   
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
@@ -393,6 +471,7 @@ const grid = {
 
 const xAxis = {
     //    -x------0------+x
+
     // CPU DATA
     vertexData: new Float32Array([
         -grid.range, 0,
@@ -438,6 +517,7 @@ const xAxis = {
         this.drawCount = 2;
     },
     draw(gl) {
+        gl.useProgram(this.shader.program);
         gl.uniform3fv(this.shader.uniforms.color,this.color);   
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
@@ -498,11 +578,22 @@ const yAxis = {
         this.drawCount = 2;
     },
     draw(gl) {
+        gl.useProgram(this.shader.program);
         gl.uniform3fv(this.shader.uniforms.color,this.color);   
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
+
+function setupModelMatrix(mesh) {
+    const matrix = mat3.create();
+
+    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
+    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
+    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
+
+    mesh.modelMatrix = matrix;
+}
 
 // =============================================================
 // GUI 
@@ -511,12 +602,13 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
         
-        const letterFFolder = gui.addFolder("Translation");
-        letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
-        letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
-        letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
-        letterFFolder.add(letterF, "scaleX", 0.1, 3.0).name("scaleX");
-        letterFFolder.add(letterF, "scaleY", 0.1, 3.0).name("scaleY");
+        // Rectangle
+        const squareFolder = gui.addFolder("Square");
+        squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
+        squareFolder.add(square, "translationY", -1000, 1000).name("translationY");
+        squareFolder.add(square, "rotation", 0, 360).name("rotation");
+        squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
+        squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
     }
 };
 
@@ -597,18 +689,20 @@ function render(gl) {
 
     // COMMON UNIFORMS
     //---------------------------------------------------
-    // Shader
-    gl.useProgram(shader.program);
-    // Pass projection matrix to shader
-    gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-    // Pass View matrix to shader
-    gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
-    // Use default translateX/Y & Rotations
-    gl.uniform1f(shader.uniforms.translationX, 0);
-    gl.uniform1f(shader.uniforms.translationY, 0);
-    gl.uniform1f(shader.uniforms.rotation, 0);
-    gl.uniform1f(shader.uniforms.scaleX, 1.0);
-    gl.uniform1f(shader.uniforms.scaleY, 1.0);
+    // Shader 1
+    gl.useProgram(basicShader.program);
+    // Pass MVP Matrices
+    gl.uniformMatrix3fv(basicShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+    gl.uniformMatrix3fv(basicShader.uniforms.viewMatrix,false,camera.viewMatrix);
+    gl.uniformMatrix3fv(basicShader.uniforms.modelMatrix,false,mat3.create());
+
+    // Shader 2
+    gl.useProgram(textureShader.program);
+    // Pass MVP Matrices
+    gl.uniformMatrix3fv(textureShader.uniforms.viewMatrix,false,camera.viewMatrix);
+    gl.uniformMatrix3fv(textureShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+    gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
+        
     
     // RENDER MESHES
     //---------------------------------------------------
@@ -618,9 +712,8 @@ function render(gl) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Letter-F
-    letterF.draw(gl);
-
+    // Square
+    square.draw(gl);
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));
@@ -645,13 +738,17 @@ function main() {
     keyEvent.init(() => render(gl));
 
     //Shaders
-    shader.init(gl);
+    basicShader.init(gl);
+    textureShader.init(gl);
+
+    //Textures
+    texture.init(gl);
 
     //Objects
-    letterF.init(gl, shader);
-    grid.init(gl, shader);
-    xAxis.init(gl, shader);
-    yAxis.init(gl, shader);
+    square.init(gl, textureShader);
+    grid.init(gl, basicShader);
+    xAxis.init(gl, basicShader);
+    yAxis.init(gl, basicShader);
 
     //Render
     render(gl);

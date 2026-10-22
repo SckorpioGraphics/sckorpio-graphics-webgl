@@ -1,8 +1,9 @@
 /* #############################################################
-CHAPTER 5a: Learning Topology — TRIANGLES
+CHAPTER 5a: Dynamic Triangle
 
 Topics:
-- Making Multiple Triangles
+- Adding a basic UI to manipulate
+- Vertex positions
 ###############################################################
 */
 
@@ -83,35 +84,26 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 // MESHES
 // =============================================================
-const triangles = {
-    /*
-        v0 ---- v2         v4
-          \    /          / \
-           \  /          /   \
-            v1         v3-----v5
-    */
+const triangle = {
+    //         v2
+    //         /\
+    //        /  \
+    //       /    \
+    //      /      \
+    //     /        \
+    //    v0--------v1
 
     // CPU DATA
     positions: new Float32Array([
-        -0.6,  0.2,   // v0
-        -0.4, -0.2,   // v1
-        -0.2,  0.2,   // v2
-
-         0.0, -0.2,   // v3
-         0.2,  0.2,   // v4
-         0.4, -0.2    // v5
-    ]),
-
-    indices: new Uint16Array([
-        0, 1, 2,
-        3, 4, 5
+        -0.5,  0.0,   // v0
+        0.5, 0.0,   // v1
+        0.0,  0.5,   // v2
     ]),
 
     //GPU DATA
     shader: null,
     vao: null,
     vbo: null,
-    ibo: null,
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
@@ -124,12 +116,7 @@ const triangles = {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.positions,gl.STATIC_DRAW);
-
-        //Index Buffer
-        this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangles.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,this.indices,gl.STATIC_DRAW);
+        // NOTE: Vertex data will be updated from the UI during rendering.
 
         // Vertex Array
         this.vao = gl.createVertexArray();
@@ -151,14 +138,56 @@ const triangles = {
             0                                       // offset: start of buffer
         );
 
-        // Index buffer — IMPORTANT
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
         // Draw data
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = this.indices.length;
-        this.drawType = gl.UNSIGNED_SHORT;
+        this.drawCount = 3;
+    },
+
+    updateData(gl) {
+        gl.bindVertexArray(triangle.vao);
+
+        // Vertex data CPU side
+        this.positions = new Float32Array([
+            gui.state.aX, gui.state.aY, // Point A
+            gui.state.bX, gui.state.bY, // Point B
+            gui.state.cX, gui.state.cY  // Point C
+        ]);
+
+        // Update vertex data on the GPU
+        gl.bindBuffer(gl.ARRAY_BUFFER, triangle.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+    }
+};
+
+// =============================================================
+// GUI Setup Functions
+// =============================================================
+const gui = {
+    state: {
+        aX: -0.5, aY: 0.0,
+        bX: 0.5, bY: 0.0,
+        cX: 0.0, cY: 0.5
+    },
+
+    init(render) {
+        const gui = new lil.GUI();
+        const vertexFolder = gui.addFolder("Vertex Positions");
+
+        // Point A
+        const pointAFolder = vertexFolder.addFolder("Point A");
+        pointAFolder.add(this.state, "aX", -1, 1).name("X").onChange(render);
+        pointAFolder.add(this.state, "aY", -1, 1).name("Y").onChange(render);
+
+        // Point B
+        const pointBFolder = vertexFolder.addFolder("Point B");
+        pointBFolder.add(this.state, "bX", -1, 1).name("X").onChange(render);
+        pointBFolder.add(this.state, "bY", -1, 1).name("Y").onChange(render);
+
+        // Point C
+        const pointCFolder = vertexFolder.addFolder("Point C");
+        pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(render);
+        pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(render);
     }
 };
 
@@ -174,18 +203,20 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // UPDATE THINGS
+    //---------------------------------------------------
+    triangle.updateData(gl);
+
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-
     // Rectangle
-    gl.bindVertexArray(triangles.vao);
-    gl.drawElements(
-        triangles.drawMode,
-        triangles.drawCount,
-        triangles.drawType,
-        triangles.drawOffset
+    gl.bindVertexArray(triangle.vao);
+    gl.drawArrays(
+        triangle.drawMode,
+        triangle.drawOffset,
+        triangle.drawCount
     );
 }
 
@@ -201,11 +232,14 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
+    //GUI
+    gui.init(() => render(gl));
+
     //Shaders
     shader.init(gl);
 
     //Objects
-    triangles.init(gl, shader);
+    triangle.init(gl, shader);
 
     //Render
     render(gl);

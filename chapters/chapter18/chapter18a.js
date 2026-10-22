@@ -1,9 +1,10 @@
 /* #############################################################
-   CHAPTER 18a: UV coords
+   CHAPTER 18a: Using UVs beyond 0-1
    Topics:
-   - Creating texture
-   - Aplying on a square
-   - Trying different than 0-1
+   - Creating a square
+   - Use F textures
+   - Wrapping and Repeat
+   - Keep texture in renderable object
    #############################################################
 */
 
@@ -164,6 +165,7 @@ const texture = {
     image: null,
     handle: null,
     loaded: false,
+    
 
     init(gl) {
         createTexture(gl, this);
@@ -193,9 +195,23 @@ function createTexture(gl, texture) {
         new Uint8Array([82, 161, 171, 255])
     );
 
+    // ---------------------------------------------------------
+    // TEXTURE FILTERING
+    // ---------------------------------------------------------
     // No mipmaps yet.
     gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
 
+    // ---------------------------------------------------------
+    // TEXTURE WRAPPING
+    // ---------------------------------------------------------
+    // Repeat the texture horizontally.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
+    // Repeat the texture vertically.
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+
+    // ---------------------------------------------------------
+    // LOAD TEXTURE IMAGE
+    // ---------------------------------------------------------
     texture.image = new Image();
 
     texture.image.onload = () => {
@@ -213,6 +229,7 @@ function createTexture(gl, texture) {
         );
 
         texture.loaded = true;
+
         console.log("Texture loaded:", texture.imagePath);
     };
 
@@ -303,13 +320,13 @@ const square = {
     // CPU DATA
     vertexData: new Float32Array([
         // Position     // UV
-        -100, -100,     0, 0,
-        100, -100,      1, 0,
-        -100,  100,     0, 1,
+        -100, -100,     -2, -2,
+        100, -100,      3, -2,
+        -100,  100,     -2, 3,
 
-        -100,  100,     0, 1,
-        100, -100,      1, 0,
-        100,  100,      1, 1
+        -100,  100,     -2, 3,
+        100, -100,      3, -2,
+        100,  100,      3, 3
     ]),
 
     translationX: 100,
@@ -321,6 +338,7 @@ const square = {
 
     //GPU DATA
     shader: null,
+    texture: null,
     vao: null,
     vbo: null,
     drawMode: null,
@@ -328,9 +346,10 @@ const square = {
     drawCount: 0,
 
     //FUNCTIONS
-    init(gl, shader) {
+    init(gl, shader, texture) {
         // Connect shader to mesh
         this.shader = shader;
+        this.texture = texture;
 
         // Vertex Buffer
         this.vbo = gl.createBuffer();
@@ -341,20 +360,18 @@ const square = {
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
         // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
-        // Vertex data format
+        // Position corrds: x, y
+        gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
+            2,                                  // size: 2 components (X, Y)
+            gl.FLOAT,                           // type: 32-bit float
+            false,                              // normalize
             4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
+            0                                   // offset: start of buffer
         );
 
         // Texture coordinates: u, v
@@ -380,103 +397,7 @@ const square = {
         setupModelMatrix(this);
         gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
         // Texture
-        texture.bind(gl, 0);
-        gl.uniform1i(this.shader.uniforms.texture, 0);
-        // vao
-        gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const square2 = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        // Position     // UV
-        -100, -100,     0.25, 0.25,
-        100, -100,      0.75, 0.25,
-        -100,  100,     0.25, 0.75,
-
-        -100,  100,     0.25, 0.75,
-        100, -100,      0.75, 0.25,
-        100,  100,      0.75, 0.75
-    ]),
-
-    translationX: 400,
-    translationY: 100,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        // Connect shader to mesh
-        this.shader = shader;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Texture coordinates: u, v
-        gl.enableVertexAttribArray(this.shader.attributes.texCoord);
-        gl.vertexAttribPointer(
-            this.shader.attributes.texCoord,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            2 * Float32Array.BYTES_PER_ELEMENT
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 6;
-    },
-    draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Modle Matrix
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        // Texture
-        texture.bind(gl, 0);
+        this.texture.bind(gl, 0);
         gl.uniform1i(this.shader.uniforms.texture, 0);
         // vao
         gl.bindVertexArray(this.vao);
@@ -700,20 +621,12 @@ const gui = {
         const gui = new lil.GUI();
         
         // Square
-        const squareFolder = gui.addFolder("Square1");
+        const squareFolder = gui.addFolder("Square");
         squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
         squareFolder.add(square, "translationY", -1000, 1000).name("translationY");
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-
-        // Square
-        const squareFolder2 = gui.addFolder("Square2");
-        squareFolder2.add(square2, "translationX", -1000, 1000).name("translationX");
-        squareFolder2.add(square2, "translationY", -1000, 1000).name("translationY");
-        squareFolder2.add(square2, "rotation", 0, 360).name("rotation");
-        squareFolder2.add(square2, "scaleX", 0.1, 3.0).name("scaleX");
-        squareFolder2.add(square2, "scaleY", 0.1, 3.0).name("scaleY");
     }
 };
 
@@ -820,9 +733,6 @@ function render(gl) {
    
     // Square
     square.draw(gl);
-    // Square2
-    square2.draw(gl);
-    
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));
@@ -854,8 +764,7 @@ function main() {
     texture.init(gl);
 
     //Objects
-    square.init(gl, textureShader);
-    square2.init(gl,textureShader);
+    square.init(gl, textureShader, texture);
     grid.init(gl, basicShader);
     xAxis.init(gl, basicShader);
     yAxis.init(gl, basicShader);

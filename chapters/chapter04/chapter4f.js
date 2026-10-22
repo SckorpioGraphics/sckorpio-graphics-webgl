@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4e: Circle
+CHAPTER 4f: Circle Outline — LINE_LOOP
 
 Topics:
 - Making a Circle

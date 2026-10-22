@@ -1,11 +1,20 @@
 /* #############################################################
-CHAPTER 5c: Learning Topology — TRIANGLE_FAN
+CHAPTER 5d: Dynamic Filled Polygon
 
 Topics:
-- Making a Filled Polygon — Hexagon
+- Learning Topology TRIANGLE_FAN
+- Making a Polygon to Circle
 ###############################################################
 */
 
+/* #############################################################
+CHAPTER 5c: Dynamic Polygon Outline
+
+Topics:
+- Learning Topology LINE_LOOP
+- Making a Polygon to Circle
+###############################################################
+*/
 
 // =============================================================
 // SHADER OBJECTS
@@ -38,7 +47,6 @@ const shader = {
     uniforms: {},
 
     //FUNCTIONS
-
     init(gl) {
         // Compile shaders
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, shader.vertexShaderSource);
@@ -84,7 +92,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 // MESHES
 // =============================================================
-const circle = {
+const polygon = {
     /*
              v6---v5
            /   \ /   \
@@ -93,12 +101,12 @@ const circle = {
              v2---v3
     */
 
-    points: 100,
-    radius: 0.5,
-    positions: null,
-    indices: null,
+    // CPU DATA
+    positions: new Float32Array(),
+    indices: new Float32Array(),
+    // Will be filled dynamically
 
-    // GPU DATA
+    //GPU DATA
     shader: null,
     vao: null,
     vbo: null,
@@ -106,49 +114,21 @@ const circle = {
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
-    drawType: null,
 
-    // FUNCTIONS
+    //FUNCTIONS
     init(gl, shader) {
         // Connect shader to mesh
         this.shader = shader;
 
-        // Allocate CPU vertex data
-        // 1 center + points perimeter vertices
-        this.positions = new Float32Array((this.points + 1) * 2);
-        this.indices = new Uint16Array(this.points + 2);
-
-        // Center vertex
-        this.positions[0] = 0.0;
-        this.positions[1] = 0.0;
-        this.indices[0] = 0;
-
-        // Perimeter vertices
-        for (let i = 0; i < this.points; i++) {
-            const angle = (i / this.points) * (2 * Math.PI);
-
-            const pX = this.radius * Math.cos(angle);
-            const pY = this.radius * Math.sin(angle);
-
-            const vertex = i + 1;
-
-            this.positions[vertex * 2] = pX;
-            this.positions[vertex * 2 + 1] = pY;
-            this.indices[vertex] = vertex;
-        }
-
-        // Repeat First one again
-        this.indices[this.points + 1] = 1;
-
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
 
         // Index Buffer
         this.ibo = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
+        // NOTE: Vertex data will be updated from the UI during rendering.
 
         // Vertex Array
         this.vao = gl.createVertexArray();
@@ -170,20 +150,80 @@ const circle = {
             0                                       // offset: start of buffer
         );
 
-        // Index buffer
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
         // Draw data
         this.drawMode = gl.TRIANGLE_FAN;
         this.drawOffset = 0;
-        this.drawCount = this.indices.length;
+        this.drawCount = 0;
         this.drawType = gl.UNSIGNED_SHORT;
+    },
 
-        // Unbind VAO
-        gl.bindVertexArray(null);
+    updateData(gl) {
+        // Vertex and index data CPU side
+        const positionsData = [];
+        const indicesData = [];
+
+        // Center
+        positionsData.push(gui.state.centerX);
+        positionsData.push(gui.state.centerY);
+        indicesData.push(0);
+
+        for(let i = 0; i < gui.state.points; i++) {
+            const angle = (i / gui.state.points) * (2 * Math.PI);
+            const x = gui.state.centerX + Math.sin(angle) * gui.state.radius;
+            const y = gui.state.centerY + Math.cos(angle) * gui.state.radius;
+            positionsData.push(x);
+            positionsData.push(y);
+            indicesData.push(i + 1);
+        }
+
+        // First point repeat
+        positionsData.push(positionsData[2]);
+        positionsData.push(positionsData[3]);
+        indicesData.push(indicesData[1]);
+
+        // Fill New CPU Data
+        this.positions = new Float32Array(positionsData);
+        this.indices = new Uint16Array(indicesData);
+
+        // Update vertex data on the GPU
+        gl.bindBuffer(gl.ARRAY_BUFFER, polygon.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+
+        // Update index data on the GPU
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, polygon.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.DYNAMIC_DRAW);
+
+        // Update draw data
+        this.drawCount = this.indices.length;
     }
 };
 
+// =============================================================
+// GUI Setup Functions
+// =============================================================
+const gui = {
+    state: {
+        centerX: 0.0,
+        centerY: 0.0,
+        radius: 0.5,
+        points: 5
+    },
+
+    init(render) {
+        const gui = new lil.GUI();
+        const polygonFolder = gui.addFolder("Polygon");
+
+        // Center
+        const centerFolder = polygonFolder.addFolder("Center");
+        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(render);
+        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(render);
+
+        // Dimension
+        const dimFolder = polygonFolder.addFolder("Dimensions");
+        dimFolder.add(this.state, "radius", 0, 1).name("radius").onChange(render);
+        dimFolder.add(this.state, "points", 3, 20, 1).name("points").onChange(render);
+    }
+};
 
 // =============================================================
 // RENDER
@@ -197,18 +237,21 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // UPDATE THINGS
+    //---------------------------------------------------
+    polygon.updateData(gl);
+
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-
-    // Rectangle
-    gl.bindVertexArray(circle.vao);
+    // Polygon
+    gl.bindVertexArray(polygon.vao);
     gl.drawElements(
-        circle.drawMode,
-        circle.drawCount,
-        circle.drawType,
-        circle.drawOffset
+        polygon.drawMode,
+        polygon.drawCount,
+        polygon.drawType,
+        polygon.drawOffset
     );
 }
 
@@ -224,11 +267,14 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
+    //GUI
+    gui.init(() => render(gl));
+
     //Shaders
     shader.init(gl);
 
     //Objects
-    circle.init(gl, shader);
+    polygon.init(gl, shader);
 
     //Render
     render(gl);

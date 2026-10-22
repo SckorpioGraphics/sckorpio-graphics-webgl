@@ -1,10 +1,14 @@
 /* #############################################################
-CHAPTER 7d: Rectangle with Two Triangles and Vertex Colors
+CHAPTER 7d: Varying and Uniform Together
 
 Topics:
-- Making a rectangle with 2 different triangles
-- Observe how interpolation works between these triangles
-- Create the gradient effect
+- Using Combined Buffer for Vertex Color
+- Also use uniform color
+- Final color as mixed colors
+- Adding a basic UI to manipulate
+- Vertex positions
+- Vertex color
+- Uniform color
 ###############################################################
 */
 
@@ -31,8 +35,10 @@ const shader = {
     in vec4 v_color;
     out vec4 out_color;
 
+    uniform vec4 u_color;
+
     void main() {
-        out_color = v_color;
+        out_color = mix(v_color, u_color, 0.5);
     }
 `,
     program: null,
@@ -56,7 +62,7 @@ const shader = {
         this.attributes.position = gl.getAttribLocation(this.program,"a_position");
         this.attributes.color = gl.getAttribLocation(this.program, "a_color");
         // Get uniform locations
-        // Future uniforms will be stored here.
+        this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
     }
 };
 
@@ -93,10 +99,12 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // MESHES
 // =============================================================
 const triangle = {
-    //    v3--------v2 
-    //    |  \      |
-    //    |    \    |
-    //    |      \  |
+    //         v2
+    //         /\
+    //        /  \
+    //       /    \
+    //      /      \
+    //     /        \
     //    v0--------v1
 
     // CPU DATA
@@ -151,7 +159,7 @@ const triangle = {
         // Draw data
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = 6;
+        this.drawCount = 3;
     },
 
     updateData(gl) {
@@ -167,16 +175,7 @@ const triangle = {
             gui.state.bR, gui.state.bG, gui.state.bB, // Point B
 
             gui.state.cX, gui.state.cY,
-            gui.state.cR, gui.state.cG, gui.state.cB, // Point C
-
-            gui.state.aX, gui.state.aY,
-            gui.state.aR, gui.state.aG, gui.state.aB, // Point A
-
-            gui.state.cX, gui.state.cY,
-            gui.state.cR, gui.state.cG, gui.state.cB, // Point C
-
-            gui.state.dX, gui.state.dY,
-            gui.state.dR, gui.state.dG, gui.state.dB  // Point D
+            gui.state.cR, gui.state.cG, gui.state.cB  // Point C
         ]);
 
         // Update interleaved vertex data on the GPU
@@ -191,16 +190,17 @@ const triangle = {
 const gui = {
     state: {
         // Vertex Positions
-        aX: -0.5, aY: -0.5,
-        bX: 0.5, bY: -0.5,
-        cX: 0.5, cY: 0.5,
-        dX: -0.5, dY: 0.5,
+        aX: -0.5, aY: 0.0,
+        bX: 0.5, bY: 0.0,
+        cX: 0.0, cY: 0.5,
 
         // Vertex Colors
         aR: 1.0, aG: 0.0, aB: 0.0,
         bR: 0.0, bG: 1.0, bB: 0.0,
         cR: 0.0, cG: 0.0, cB: 1.0,
-        dR: 0.0, dG: 1.0, dB: 1.0
+
+        // Uniform Color
+        r: 0.0, g: 0.0, b: 0.0
     },
 
     init(render) {
@@ -227,13 +227,8 @@ const gui = {
         pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(render);
         pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(render);
 
-        // Point D
-        const pointDFolder = verticesFolder.addFolder("Point D");
-        pointDFolder.add(this.state, "dX", -1, 1).name("X").onChange(render);
-        pointDFolder.add(this.state, "dY", -1, 1).name("Y").onChange(render);
-
         // ---------------------------------------------------------
-        // COLORS
+        // VERTEX COLORS
         // ---------------------------------------------------------
 
         const colorFolder = gui.addFolder("Color");
@@ -256,11 +251,13 @@ const gui = {
         pointCColorFolder.add(this.state, "cG", 0, 1).name("G").onChange(render);
         pointCColorFolder.add(this.state, "cB", 0, 1).name("B").onChange(render);
 
-        // Point D
-        const pointDColorFolder = colorFolder.addFolder("Point D");
-        pointDColorFolder.add(this.state, "dR", 0, 1).name("R").onChange(render);
-        pointDColorFolder.add(this.state, "dG", 0, 1).name("G").onChange(render);
-        pointDColorFolder.add(this.state, "dB", 0, 1).name("B").onChange(render);
+        // ---------------------------------------------------------
+        // UNIFORM COLOR
+        // ---------------------------------------------------------
+        const uniformColorFolder = gui.addFolder("Uniform Color");
+        uniformColorFolder.add(this.state, "r", 0, 1).name("R").onChange(render);
+        uniformColorFolder.add(this.state, "g", 0, 1).name("G").onChange(render);
+        uniformColorFolder.add(this.state, "b", 0, 1).name("B").onChange(render);
     }
 };
 
@@ -283,7 +280,8 @@ function render(gl) {
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
-    gl.useProgram(shader.program);
+    gl.useProgram(triangle.shader.program);
+    gl.uniform4fv(triangle.shader.uniforms.color,[gui.state.r, gui.state.g, gui.state.b, 1.0]);
     // Rectangle
     gl.bindVertexArray(triangle.vao);
     gl.drawArrays(

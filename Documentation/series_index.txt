@@ -2,7 +2,8 @@ SCKORPIO GRAPHICS — WEBGL FUNDAMENTALS
 ======================================
 
 This repository contains the introduction and foundation curriculum through
-Chapter 20.
+Chapter 20, including unified primitive topologies and separate lessons for UV
+mapping and texture wrapping.
 
 The optional `chapterExtra` folder contains supplemental pixel-space and
 render-loop experiments.
@@ -11,16 +12,16 @@ CHAPTER 0 — SERIES INTRODUCTION
 -------------------------------
 
 PHASE 1 — WEBGL FOUNDATIONS
-Chapters 1–9: First draw, lesson structure, geometry and indexing, primitive
+Chapters 1–8: First draw, lesson structure, geometry and indexing, primitive
 topologies, dynamic geometry, vertex color, uniforms, and multiple objects.
 
 PHASE 2 — 2D COORDINATES AND TRANSFORMATIONS
-Chapters 10–16: Pixel and world coordinates, projection and view matrices,
+Chapters 9–15: Pixel and world coordinates, projection and view matrices,
 camera controls, translation, rotation, scale, and model-matrix composition.
 
 PHASE 3 — TEXTURES AND ALPHA
-Chapters 17–20: Texture creation and reuse, UV mapping and wrapping, filtering
-and mipmaps, alpha, blending, and transparent textures.
+Chapters 16–20: Texture creation and reuse, UV mapping, texture wrapping and
+repetition, filtering and mipmaps, alpha, blending, and transparent textures.
 
 Chapters 21 and later, covering animation, movement, physics, and collision
 detection, are in the Sckorpio Real-Time WebGL repository:
@@ -30,7 +31,7 @@ LESSON CODE ORGANIZATION
 ------------------------
 The early lessons introduce WebGL operations directly, then progressively
 organize related state and behavior into objects. The core principle is
-OBJECT = STATE + BEHAVIOR. Chapter 10's lesson-template notes explain the
+OBJECT = STATE + BEHAVIOR. Chapter 9's lesson-template notes explain the
 convention and its purpose.
 
 RUNNING A LESSON

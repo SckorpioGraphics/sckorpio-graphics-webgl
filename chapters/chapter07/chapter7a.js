@@ -1,12 +1,12 @@
 /* #############################################################
-CHAPTER 7a: Varying Vertex Color
+CHAPTER 7a: Uniform
 
 Topics:
-- Using Vertex data itself for Vertex Color
 - Adding a basic UI to manipulate
-- Vertex vertexData
+- Brightness of the triangle (as a single float)
 ###############################################################
 */
+
 
 // =============================================================
 // SHADER OBJECTS
@@ -15,31 +15,29 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
-    out vec4 v_color;
 
     void main() {
         gl_Position = vec4(a_position, 0.0, 1.0);
-        v_color = gl_Position * 0.5 + 0.5;
     }
 `,
-
     fragmentShaderSource: `#version 300 es
-    precision highp float;
-    in vec4 v_color;
+    precision mediump float;
+
+    uniform float u_intensity;
+
     out vec4 out_color;
 
     void main() {
-        out_color = v_color;
+        out_color = vec4(0.39, 0.33, 0.58, 1.0) * u_intensity;
     }
-    `,
-
+`,
     program: null,
-
     attributes: {
         position: null
     },
-
-    uniforms: {},
+    uniforms: {
+        intensity: null
+    },
 
     //FUNCTIONS
 
@@ -49,10 +47,10 @@ const shader = {
         const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, shader.fragmentShaderSource);
         // Create shader program
         this.program = createProgram(gl, vertexShader, fragmentShader);
-        // Get attribute locations
-        this.attributes.position = gl.getAttribLocation(shader.program,"a_position");
-        // Get uniform locations
-        // Future uniforms will be stored here.
+        // Attributes
+        this.attributes.position = gl.getAttribLocation(shader.program, "a_position");
+        // uniforms
+        this.uniforms.intensity = gl.getUniformLocation(shader.program, "u_intensity");
     }
 };
 
@@ -120,7 +118,7 @@ const triangle = {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        // NOTE: Vertex data will be updated from the UI during rendering.
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
@@ -146,21 +144,6 @@ const triangle = {
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
         this.drawCount = 3;
-    },
-
-    updateData(gl) {
-        gl.bindVertexArray(triangle.vao);
-
-        // Vertex data CPU side
-        this.vertexData = new Float32Array([
-            gui.state.aX, gui.state.aY, // Point A
-            gui.state.bX, gui.state.bY, // Point B
-            gui.state.cX, gui.state.cY  // Point C
-        ]);
-
-        // Update vertex data on the GPU
-        gl.bindBuffer(gl.ARRAY_BUFFER, triangle.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
     }
 };
 
@@ -169,29 +152,15 @@ const triangle = {
 // =============================================================
 const gui = {
     state: {
-        aX: -0.5, aY: 0.0,
-        bX: 0.5, bY: 0.0,
-        cX: 0.0, cY: 0.5
+        intensity: 1.0
     },
 
     init(render) {
         const gui = new lil.GUI();
-        const vertexFolder = gui.addFolder("Vertex Positions");
 
-        // Point A
-        const pointAFolder = vertexFolder.addFolder("Point A");
-        pointAFolder.add(this.state, "aX", -1, 1).name("X").onChange(render);
-        pointAFolder.add(this.state, "aY", -1, 1).name("Y").onChange(render);
-
-        // Point B
-        const pointBFolder = vertexFolder.addFolder("Point B");
-        pointBFolder.add(this.state, "bX", -1, 1).name("X").onChange(render);
-        pointBFolder.add(this.state, "bY", -1, 1).name("Y").onChange(render);
-
-        // Point C
-        const pointCFolder = vertexFolder.addFolder("Point C");
-        pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(render);
-        pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(render);
+        const uniformFolder = gui.addFolder("Uniforms");
+        const intensityFolder = uniformFolder.addFolder("Intensity");
+        intensityFolder.add(this.state, "intensity", 0, 1).name("Intensity").onChange(render);
     }
 };
 
@@ -207,15 +176,15 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    // UPDATE THINGS
-    //---------------------------------------------------
-    triangle.updateData(gl);
-
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
-    gl.useProgram(shader.program);
-    // Rectangle
+    gl.useProgram(triangle.shader.program);
+
+    // Set uniform value from UI
+    gl.uniform1f(triangle.shader.uniforms.intensity,gui.state.intensity);
+
+    // Triangle
     gl.bindVertexArray(triangle.vao);
     gl.drawArrays(
         triangle.drawMode,

@@ -1,15 +1,11 @@
 /* #############################################################
-CHAPTER 9b: Multiple Objects
+CHAPTER 9b: 2D Camera
 
 Topics:
-- But now using draw() in each object
-- Rendering multiple objects
-- A Traingle and a Rectangle
-- Separate VAO/VBO for each object
-- Different shapes
-- Different colors
-- Multiple draw calls
-- Using the same shader for multiple objects
+- Introducing a 2D camera object
+- Defining camera bounds
+- Defining clip-space bounds
+- Passing camera values to the shader
 ###############################################################
 */
 
@@ -22,19 +18,41 @@ const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
 
+    uniform vec4 u_cameraBounds;
+    uniform vec4 u_clipBounds;
+
     void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
+
+        vec2 pixelSize = vec2(
+            u_cameraBounds.y - u_cameraBounds.x,
+            u_cameraBounds.w - u_cameraBounds.z
+        );
+
+        vec2 zeroToOne = vec2(
+            (a_position.x - u_cameraBounds.x) / pixelSize.x,
+            (a_position.y - u_cameraBounds.z) / pixelSize.y
+        );
+
+        vec2 clipSize = vec2(
+            u_clipBounds.y - u_clipBounds.x,
+            u_clipBounds.w - u_clipBounds.z
+        );
+
+        vec2 clipPosition = vec2(
+            u_clipBounds.x + zeroToOne.x * clipSize.x,
+            u_clipBounds.z + zeroToOne.y * clipSize.y
+        );
+
+        gl_Position = vec4(clipPosition, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
     precision mediump float;
 
-    uniform vec3 u_color;
-
     out vec4 out_color;
 
     void main() {
-        out_color = vec4(u_color, 1.0);
+        out_color = vec4(0.39, 0.33, 0.58, 1.0); // Sckorpio Purple
     }
 `,
     program: null,
@@ -42,21 +60,23 @@ const shader = {
         position: null
     },
     uniforms: {
-        color: null
+        cameraBounds: null,
+        clipBounds: null
     },
 
     //FUNCTIONS
 
     init(gl) {
         // Compile shaders
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, shader.vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, shader.fragmentShaderSource);
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
         // Create shader program
         this.program = createProgram(gl, vertexShader, fragmentShader);
         // Attributes
-        this.attributes.position = gl.getAttribLocation(shader.program, "a_position");
+        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.color = gl.getUniformLocation(shader.program, "u_color");
+        this.uniforms.cameraBounds = gl.getUniformLocation(this.program, "u_cameraBounds");
+        this.uniforms.clipBounds = gl.getUniformLocation(this.program, "u_clipBounds");
     }
 };
 
@@ -90,80 +110,32 @@ function createProgram(gl, vertexShader, fragmentShader) {
 }
 
 // =============================================================
-// MESHES
+// CAMERA
 // =============================================================
-const triangle = {
-    //         v2
-    //         /\
-    //        /  \
-    //       /    \
-    //      /      \
-    //     /        \
-    //    v0--------v1
+const camera = {
+    //camera pixel bounds
+    left: 0,
+    right: 800,
+    bottom: 0,
+    top: 600,
 
-    // CPU DATA
-    vertexData: new Float32Array([
-        -0.5, 0.0,
-        -0.3, 0.4,
-        -0.1, 0.0
-    ]),
-    color: [1.0,0.0,0.0],
+    //clip bounds
+    clipLeft: -1,
+    clipRight: 1,
+    clipBottom: -1,
+    clipTop: 1,
 
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        // Connect shader to mesh
-        this.shader = shader;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 3;
-    },
-    draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Uniform
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        // Bind VAO
-        gl.bindVertexArray(this.vao);
-        // Draw Call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    // FUNCTIONs
+    update(gl) {
+        // Match the camera's viewing region
+        this.right = gl.canvas.width;
+        this.top = gl.canvas.height;
     }
 };
 
+// =============================================================
+// MESHES
+// =============================================================
 const rectangle = {
     //    v1--------v2
     //    | \        |
@@ -171,17 +143,16 @@ const rectangle = {
     //    |       \  |
     //    v0--------v1
 
-    // CPU DATA
+    // CPU DATA (In Pixel Space)
     vertexData: new Float32Array([
-        0.2, -0.2,
-        0.2, 0.2,
-        0.6, -0.2,
+        20, 20,       // Left Bottom
+        200, 20,      // Right Bottom
+        20, 100,      // Left Top
 
-        0.6, -0.2,
-        0.6, 0.2,
-        0.2, 0.2
+        20, 100,      // Left Top
+        200, 20,      // Right Bottom
+        200, 100      // Right Top
     ]),
-    color: [0.0,1.0,0.0],
 
     //GPU DATA
     shader: null,
@@ -229,11 +200,9 @@ const rectangle = {
     draw(gl) {
         // Shader
         gl.useProgram(this.shader.program);
-        // Uniform
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        // Bind VAO
+        // VAO
         gl.bindVertexArray(this.vao);
-        // Draw Call
+        // draw call
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
@@ -250,10 +219,21 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // Camera 
+    camera.update(gl);
+
+    // COMMON UNIFORMS
+    //---------------------------------------------------
+    // Shader
+    gl.useProgram(shader.program);
+    // Pass camera bounds to shader
+    gl.uniform4f(shader.uniforms.cameraBounds,camera.left,camera.right,camera.bottom,camera.top);
+    // Pass clip-space bounds to shader
+    gl.uniform4f(shader.uniforms.clipBounds,camera.clipLeft,camera.clipRight,camera.clipBottom,camera.clipTop);
+    
+
     // RENDER MESHES
     //---------------------------------------------------
-    // Triangle
-    triangle.draw(gl);
     // Rectangle
     rectangle.draw(gl);
 }
@@ -274,7 +254,6 @@ function main() {
     shader.init(gl);
 
     //Objects
-    triangle.init(gl, shader);
     rectangle.init(gl, shader);
 
     //Render

@@ -1,11 +1,16 @@
 /* #############################################################
-CHAPTER 11a: 2D Projection Matrix
+CHAPTER 11a: 2D World
 
 Topics:
-- Creating a projection matrix in GLSL Shader itself
-- Camera space -> clip space
-###############################################################
-*/
+- Creating a grid in pixel space
+- Also adding X-Axis and Y-Axis
+- Creating a rectangle in pixel space
+- Vertex data in pixel space
+- projectionMatrix as a uniform mat3
+- Pixel space -> clip space
+- Multiple objects in pixel space
+###############################################################*/
+
 
 // =============================================================
 // SHADER OBJECTS
@@ -14,38 +19,30 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
-    uniform vec2 u_cameraBounds;
+
+    uniform mat3 u_projectionMatrix;
 
     void main() {
+        // WORLD -> CAMERA
+        vec2 cameraPosition = vec2(-300.0, -200.0); // Hardcoded camera position.
+        vec2 viewPosition = a_position - cameraPosition;
+        
+        // CAMERA -> CLIP
+        // Apply pixel space -> clip space matrix
+        vec3 clipPostion = u_projectionMatrix * vec3(viewPosition, 1.0);
 
-        float width  = u_cameraBounds.x;
-        float height = u_cameraBounds.y;
-
-        // ---------------------------------------------------------
-        // Projection Matrix
-        // ---------------------------------------------------------
-
-        mat3 projectionMatrix = mat3(
-            2.0 / width,  0.0,          0.0,
-            0.0,          2.0 / height, 0.0,
-           -1.0,         -1.0,          1.0
-        );
-
-        // ---------------------------------------------------------
-        // Camera Space -> Clip Space
-        // ---------------------------------------------------------
-
-        vec3 clipPosition = projectionMatrix * vec3(a_position, 1.0);
-        gl_Position = vec4(clipPosition.xy,0.0,1.0);
+        // Convert to clip-space position
+        gl_Position = vec4(clipPostion.xy, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
     precision mediump float;
 
-    out vec4 out_color;
+    uniform vec3 u_color;
+    out vec4 out_Color;
 
     void main() {
-        out_color = vec4(0.39, 0.33, 0.58, 1.0); // Sckorpio Purple
+        out_Color = vec4(u_color, 1.0);
     }
 `,
     program: null,
@@ -53,7 +50,8 @@ const shader = {
         position: null
     },
     uniforms: {
-        cameraBounds: null
+        projectionMatrix: null,
+        color: null
     },
 
     //FUNCTIONS
@@ -67,7 +65,8 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.cameraBounds = gl.getUniformLocation(this.program, "u_cameraBounds");
+        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
+        this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
     }
 };
 
@@ -104,17 +103,31 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // CAMERA
 // =============================================================
 const camera = {
+    // Camera bounds
     width: 0,
     height: 0,
-    // Camera bounds
-    // [left = 0, right = width, bottom = 0, top = height]
-    // Clip space is fixed to [-1,1]
+    
+    // Projection matrix
+    projectionMatrix: mat3.create(),
 
     // FUNCTIONs
     update(gl) {
         // Match the camera's viewing region
         this.width = gl.canvas.width;
         this.height = gl.canvas.height;
+    },
+
+    updateProjectionMatrix(gl) {
+        // Camera bounds
+        this.width = gl.canvas.width;
+        this.height = gl.canvas.height;
+
+        // Create projection matrix
+        this.projectionMatrix = mat3.fromValues(
+            2 / this.width,  0,                  0,
+            0,               2 / this.height,    0,
+            -1,              -1,                 1,
+        );
     }
 };
 
@@ -138,6 +151,7 @@ const rectangle = {
         300, 100,      // Right Bottom
         300, 200       // Right Top
     ]),
+    color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
     shader: null,
@@ -183,11 +197,202 @@ const rectangle = {
         this.drawCount = 6;
     },
     draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Vao
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
         gl.bindVertexArray(this.vao);
-        // draw calls
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
+const grid = {
+    //    v1------------v2
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    |--|--|--|--|--|
+    //    v0------------v1
+
+    // CPU DATA (In Pixel Space)
+    vertexData: new Float32Array(),
+    spacing: 100,
+    range: 10000,
+    color: [0.39, 0.33, 0.58], // Sckorpio Purple
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        this.shader = shader;
+
+        const positions = [];
+    
+        // Vertical lines
+        for(let x = -this.range; x <= this.range; x += this.spacing) {
+            positions.push(
+                x, -this.range,
+                x, this.range
+            );
+        }
+
+        // Horizontal lines
+        for(let y = -this.range; y <= this.range; y += this.spacing) {
+            positions.push(
+                -this.range, y,
+                this.range, y
+            );
+        }
+
+        this.vertexData = new Float32Array(positions);
+        // Vertex Buffer
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+
+        // Vertex Array
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        // Attrib
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+       // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        //Draw Data
+        this.drawMode = gl.LINES;
+        this.drawOffset = 0;
+        this.drawCount = positions.length / 2;
+    },
+    draw(gl) {
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
+const xAxis = {
+    //    -x------0------+x
+
+    // CPU DATA (In Pixel Space)
+    vertexData: new Float32Array([
+        -grid.range, 0,
+        grid.range, 0
+    ]),
+    color: [1.0, 0.0, 0.0], // Red
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        this.shader = shader;
+
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+       // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        this.drawMode = gl.LINES;
+        this.drawOffset = 0;
+        this.drawCount = 2;
+    },
+    draw(gl) {
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
+const yAxis = {
+    //      +y
+    //      |
+    //      |
+    //      0
+    //      |
+    //      |
+    //      -y
+
+    // CPU DATA (In Pixel Space)
+    vertexData: new Float32Array([
+        0, -grid.range,
+        0, grid.range
+    ]),
+    color: [0.0, 1.0, 0.0], // Green
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        this.shader = shader;
+
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+       // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        this.drawMode = gl.LINES;
+        this.drawOffset = 0;
+        this.drawCount = 2;
+    },
+    draw(gl) {
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
 };
@@ -205,17 +410,23 @@ function render(gl) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Camera 
-    camera.update(gl);
+    camera.updateProjectionMatrix(gl);
 
     // COMMON UNIFORMS
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-    // Uniform: Pass camera bounds(w/h)
-    gl.uniform2f(shader.uniforms.cameraBounds,camera.width,camera.height);
-
+    // Pass projection matrix to shader
+    gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+    
     // RENDER MESHES
     //---------------------------------------------------
+    // Grid
+    grid.draw(gl);
+    // X-Axis
+    xAxis.draw(gl);
+    // Y-Axis
+    yAxis.draw(gl);
     // Rectangle
     rectangle.draw(gl);
 }
@@ -237,6 +448,9 @@ function main() {
 
     //Objects
     rectangle.init(gl, shader);
+    grid.init(gl, shader);
+    xAxis.init(gl, shader);
+    yAxis.init(gl, shader);
 
     //Render
     render(gl);

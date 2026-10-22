@@ -1,11 +1,12 @@
 /* #############################################################
-CHAPTER 10b: 2D Camera
+CHAPTER 10b: 2D Projection Matrix
 
 Topics:
-- Introducing a 2D camera object
-- Defining camera bounds
-- Defining clip-space bounds
-- Passing camera values to the shader
+- Creating a projection matrix in JavaScript
+- Storing the projection matrix in the camera
+- Matrix as a uniform
+- mat3
+- Camera space -> clip space
 ###############################################################
 */
 
@@ -18,32 +19,14 @@ const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
 
-    uniform vec4 u_cameraBounds;
-    uniform vec4 u_clipBounds;
+    uniform mat3 u_projectionMatrix;
 
     void main() {
+        // Apply pixel space -> clip space matrix
+        vec3 clipPostion = u_projectionMatrix * vec3(a_position, 1.0);
 
-        vec2 pixelSize = vec2(
-            u_cameraBounds.y - u_cameraBounds.x,
-            u_cameraBounds.w - u_cameraBounds.z
-        );
-
-        vec2 zeroToOne = vec2(
-            (a_position.x - u_cameraBounds.x) / pixelSize.x,
-            (a_position.y - u_cameraBounds.z) / pixelSize.y
-        );
-
-        vec2 clipSize = vec2(
-            u_clipBounds.y - u_clipBounds.x,
-            u_clipBounds.w - u_clipBounds.z
-        );
-
-        vec2 clipPosition = vec2(
-            u_clipBounds.x + zeroToOne.x * clipSize.x,
-            u_clipBounds.z + zeroToOne.y * clipSize.y
-        );
-
-        gl_Position = vec4(clipPosition, 0.0, 1.0);
+        // Convert to clip-space position
+        gl_Position = vec4(clipPostion.xy, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
@@ -60,8 +43,7 @@ const shader = {
         position: null
     },
     uniforms: {
-        cameraBounds: null,
-        clipBounds: null
+        projectionMatrix: null
     },
 
     //FUNCTIONS
@@ -75,8 +57,7 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.cameraBounds = gl.getUniformLocation(this.program, "u_cameraBounds");
-        this.uniforms.clipBounds = gl.getUniformLocation(this.program, "u_clipBounds");
+        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
     }
 };
 
@@ -113,23 +94,31 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // CAMERA
 // =============================================================
 const camera = {
-    //camera pixel bounds
-    left: 0,
-    right: 800,
-    bottom: 0,
-    top: 600,
-
-    //clip bounds
-    clipLeft: -1,
-    clipRight: 1,
-    clipBottom: -1,
-    clipTop: 1,
+    // Camera bounds
+    width: 0,
+    height: 0,
+    
+    // Projection matrix
+    projectionMatrix: mat3.create(),
 
     // FUNCTIONs
     update(gl) {
         // Match the camera's viewing region
-        this.right = gl.canvas.width;
-        this.top = gl.canvas.height;
+        this.width = gl.canvas.width;
+        this.height = gl.canvas.height;
+    },
+
+    updateProjectionMatrix(gl) {
+        // Camera bounds
+        this.width = gl.canvas.width;
+        this.height = gl.canvas.height;
+
+        // Create projection matrix
+        this.projectionMatrix = mat3.fromValues(
+            2 / this.width,  0,                  0,
+            0,               2 / this.height,    0,
+            -1,              -1,                 1,
+        );
     }
 };
 
@@ -145,13 +134,13 @@ const rectangle = {
 
     // CPU DATA (In Pixel Space)
     vertexData: new Float32Array([
-        20, 20,       // Left Bottom
-        200, 20,      // Right Bottom
-        20, 100,      // Left Top
+        100, 100,      // Left Bottom
+        300, 100,      // Right Bottom
+        100, 200,      // Left Top
 
-        20, 100,      // Left Top
-        200, 20,      // Right Bottom
-        200, 100      // Right Top
+        100, 200,      // Left Top
+        300, 100,      // Right Bottom
+        300, 200       // Right Top
     ]),
 
     //GPU DATA
@@ -200,7 +189,7 @@ const rectangle = {
     draw(gl) {
         // Shader
         gl.useProgram(this.shader.program);
-        // VAO
+        // Vao
         gl.bindVertexArray(this.vao);
         // draw call
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
@@ -220,18 +209,15 @@ function render(gl) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Camera 
-    camera.update(gl);
+    camera.updateProjectionMatrix(gl);
 
     // COMMON UNIFORMS
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-    // Pass camera bounds to shader
-    gl.uniform4f(shader.uniforms.cameraBounds,camera.left,camera.right,camera.bottom,camera.top);
-    // Pass clip-space bounds to shader
-    gl.uniform4f(shader.uniforms.clipBounds,camera.clipLeft,camera.clipRight,camera.clipBottom,camera.clipTop);
+    // Pass projection matrix to shader
+    gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
     
-
     // RENDER MESHES
     //---------------------------------------------------
     // Rectangle

@@ -1,8 +1,9 @@
 # Sckorpio Graphics: WebGL Fundamentals
 
 This repository contains the WebGL 2 foundation curriculum, from the series
-introduction through Chapter 20: geometry, cameras and transformations,
-textures, and alpha blending.
+introduction through Chapter 20: geometry and primitive topologies, cameras
+and transformations, UV mapping, texture wrapping and filtering, and alpha
+blending.
 
 The optional `chapterExtra` folder contains supplemental pixel-space and
 render-loop experiments.

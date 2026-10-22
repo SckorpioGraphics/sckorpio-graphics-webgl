@@ -1,11 +1,12 @@
 /* #############################################################
-CHAPTER 5b: Learning Topology — TRIANGLE_STRIP
+CHAPTER 5b: Dynamic Rectangle
 
 Topics:
-- Making Strip of Triangles
+- Making a rectangle
+- Adding a basic UI to manipulate
+- Vertex positions
 ###############################################################
 */
-
 
 // =============================================================
 // SHADER OBJECTS
@@ -84,34 +85,25 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 // MESHES
 // =============================================================
-const triangleStrip = {
-    /*
-        v0 ---- v2 ------v4
-          \     /  \     / \
-           \   /    \   /   \
-            v1 ------v3------v5
-    */
+const rectangle = {
+    //    v1--------v2
+    //    | \        |
+    //    |    \     |
+    //    |       \  |
+    //    v0--------v1
 
     // CPU DATA
     positions: new Float32Array([
-        -0.6,  0.2,   // v0
-        -0.4, -0.2,   // v1
-        -0.2,  0.2,   // v2
-
-         0.0, -0.2,   // v3
-         0.2,  0.2,   // v4
-         0.4, -0.2    // v5
-    ]),
-
-    indices: new Uint16Array([
-        0, 1, 2, 3, 4, 5
+        -0.5,  -0.5,   // v0
+        -0.5, 0.5,   // v1
+        0.5,  0.5,   // v2
+        0.5, -0.5   // v3
     ]),
 
     //GPU DATA
     shader: null,
     vao: null,
     vbo: null,
-    ibo: null,
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
@@ -124,12 +116,7 @@ const triangleStrip = {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.positions,gl.STATIC_DRAW);
-
-        //Index Buffer
-        this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleStrip.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,this.indices,gl.STATIC_DRAW);
+        // NOTE: Vertex data will be updated from the UI during rendering.
 
         // Vertex Array
         this.vao = gl.createVertexArray();
@@ -151,14 +138,58 @@ const triangleStrip = {
             0                                       // offset: start of buffer
         );
 
-        // Index buffer — IMPORTANT
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-
         // Draw data
         this.drawMode = gl.TRIANGLE_STRIP;
         this.drawOffset = 0;
-        this.drawCount = this.indices.length;
-        this.drawType = gl.UNSIGNED_SHORT;
+        this.drawCount = 4;
+    },
+
+    updateData(gl) {
+        // Vertex data CPU side
+        this.positions = new Float32Array([
+            gui.state.centerX - gui.state.length / 2.0,
+            gui.state.centerY + gui.state.width / 2.0, // Point 0
+
+            gui.state.centerX + gui.state.length / 2.0,
+            gui.state.centerY + gui.state.width / 2.0, // Point 1
+
+            gui.state.centerX - gui.state.length / 2.0,
+            gui.state.centerY - gui.state.width / 2.0, // Point 2
+
+            gui.state.centerX + gui.state.length / 2.0,
+            gui.state.centerY - gui.state.width / 2.0  // Point 3
+        ]);
+
+        // Update vertex data on the GPU
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+    }
+};
+
+// =============================================================
+// GUI Setup Functions
+// =============================================================
+const gui = {
+    state: {
+        centerX: 0.0,
+        centerY: 0.0,
+        length: 0.5,
+        width: 0.5
+    },
+
+    init(render) {
+        const gui = new lil.GUI();
+        const rectangleFolder = gui.addFolder("Rectangle");
+
+        // Center
+        const centerFolder = rectangleFolder.addFolder("Center");
+        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(render);
+        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(render);
+
+        // Dimension
+        const dimFolder = rectangleFolder.addFolder("Dimensions");
+        dimFolder.add(this.state, "length", 0, 2).name("length").onChange(render);
+        dimFolder.add(this.state, "width", 0, 2).name("width").onChange(render);
     }
 };
 
@@ -174,18 +205,20 @@ function render(gl) {
     gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
     gl.clear(gl.COLOR_BUFFER_BIT);
 
+    // UPDATE THINGS
+    //---------------------------------------------------
+    rectangle.updateData(gl);
+
     // RENDER MESHES
     //---------------------------------------------------
     // Shader
     gl.useProgram(shader.program);
-
     // Rectangle
-    gl.bindVertexArray(triangleStrip.vao);
-    gl.drawElements(
-        triangleStrip.drawMode,
-        triangleStrip.drawCount,
-        triangleStrip.drawType,
-        triangleStrip.drawOffset
+    gl.bindVertexArray(rectangle.vao);
+    gl.drawArrays(
+        rectangle.drawMode,
+        rectangle.drawOffset,
+        rectangle.drawCount
     );
 }
 
@@ -201,11 +234,14 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
+    //GUI
+    gui.init(() => render(gl));
+
     //Shaders
     shader.init(gl);
 
     //Objects
-    triangleStrip.init(gl, shader);
+    rectangle.init(gl, shader);
 
     //Render
     render(gl);

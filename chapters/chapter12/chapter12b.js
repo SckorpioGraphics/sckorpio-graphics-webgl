@@ -1,16 +1,11 @@
 /* #############################################################
-   CHAPTER 12b: 2D Camera — Camera as Data
+   CHAPTER 12b: 2D Transformations
 
    Topics:
-   - Camera position
-   - Camera as data
-   - Uniform vec2
-   - Passing camera position from JavaScript
+   - Translating a letterF
    - GUI camera controls
-
-   No keyboard yet.
-   No zoom yet.
-   No view matrix yet.
+   - Using Dynamic Buffer geometry
+   - Object translation
    #############################################################
 */
 
@@ -21,29 +16,18 @@
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
-
-    uniform vec2 u_cameraPosition;
+    uniform mat3 u_viewMatrix;
     uniform mat3 u_projectionMatrix;
 
     void main() {
-        // ---------------------------------------------------------
-        // WORLD -> VIEW
-        // ---------------------------------------------------------
-        vec2 viewPosition = a_position - u_cameraPosition;
-
-        // ---------------------------------------------------------
-        // VIEW -> CLIP
-        // ---------------------------------------------------------
-        vec3 clipPosition = u_projectionMatrix * vec3(viewPosition, 1.0);
-
+        vec3 viewPosition = u_viewMatrix * vec3(a_position, 1.0);
+        vec3 clipPosition = u_projectionMatrix * viewPosition;
         gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
     precision mediump float;
-
     uniform vec3 u_color;
-
     out vec4 out_color;
 
     void main() {
@@ -55,13 +39,12 @@ const shader = {
         position: null
     },
     uniforms: {
-        cameraPosition: null,
+        viewMatrix: null,
         projectionMatrix: null,
         color: null
     },
 
     //FUNCTIONS
-
     init(gl) {
         // Compile shaders
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
@@ -71,7 +54,7 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
-        this.uniforms.cameraPosition = gl.getUniformLocation(shader.program, "u_cameraPosition");
+        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
     }
@@ -110,15 +93,27 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // CAMERA
 // =============================================================
 const camera = {
-    // Camera bounds
+    // Camera Data
     width: 0,
     height: 0,
-
-    // Camera Position
     positionX: -300,
     positionY: -200,
-    panSpeed: 50,
-    
+    zoom: 1.0,
+    panSpeed: 20,
+    zoomSpeed: 0.1,
+
+    // Control state
+    state: {
+        panUp: false,
+        panDown: false,
+        panLeft: false,
+        panRight: false,
+        zoomIn: false,
+        zoomOut: false
+    },
+
+    // View Matrix
+    viewMatrix: mat3.create(),
     // Projection matrix
     projectionMatrix: mat3.create(),
 
@@ -127,8 +122,23 @@ const camera = {
         // Match the camera's viewing region
         this.width = gl.canvas.width;
         this.height = gl.canvas.height;
+        // Update the pos and zooms
+        if(this.state.panUp) this.positionY += this.panSpeed;
+        if(this.state.panDown) this.positionY -= this.panSpeed;
+        if(this.state.panLeft) this.positionX -= this.panSpeed;
+        if(this.state.panRight) this.positionX += this.panSpeed;
+        if(this.state.zoomIn) this.zoom += this.zoomSpeed;
+        if(this.state.zoomOut) this.zoom = Math.max(0.1, this.zoom - this.zoomSpeed);
     },
-
+    updateViewMatrix(gl) {
+        // Update Camera values first
+        this.update(gl);
+        // Create View matrix
+        const matrix = mat3.create();
+        mat3.fromTranslation(matrix, [-camera.positionX, -camera.positionY]);
+        mat3.scale(matrix, matrix, [camera.zoom, camera.zoom]);
+        camera.viewMatrix = matrix;
+    },
     updateProjectionMatrix(gl) {
         // Camera bounds
         this.width = gl.canvas.width;
@@ -146,23 +156,56 @@ const camera = {
 // =============================================================
 // MESHES
 // =============================================================
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
+const letterF = {
+    /*
+        v2-------v3--------v4
+        |\       |\         |
+        |\       |   \      |
+        | \      |      \   |
+        |  \     v6________v5
+        |   \    |
+        |    \   v7_____v8
+        |     \  |  \    |
+        |      \ |    \  |
+        |       \v10____v9
+        |        |
+        |        |
+        v0_______v1
+    */
 
-    // CPU DATA (In Pixel Space)
+    // CPU DATA
     vertexData: new Float32Array([
-        100, 100,      // Left Bottom
-        300, 100,      // Right Bottom
-        100, 200,      // Left Top
+        -100, -100,
+        -60 , -100,
+        -100,  100,
+        -60 ,  100,
 
-        100, 200,      // Left Top
-        300, 100,      // Right Bottom
-        300, 200       // Right Top
+        // Top bar
+        40  ,  100,
+        40  ,   60,
+        -60,   60,
+
+        // Middle bar
+        -60,  20,
+        0   ,  20,
+        0   , -20,
+        -60, -20
     ]),
+    indices: new Uint16Array([
+        // LEFT COLUMN
+        0, 1, 2,
+        2, 1, 3,
+
+        // TOP BAR
+        3, 6, 5,
+        3, 5, 4,
+
+        // MIDDLE BAR
+        7, 10, 9,
+        7, 9, 8
+    ]),
+    translationX: 200,
+    translationY: 100,
     color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
@@ -175,43 +218,69 @@ const rectangle = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to mesh
+        // Shader
         this.shader = shader;
 
-        // Vertex Buffer
+        // Vertex Buffer (...will be changed dynamically)
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+
+        // Index Buffer
+        this.ibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
+        // Attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.vertexAttribPointer(this.shader.attributes.position, 2, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
 
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        // Draw data
+        // Draw Data
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = 6;
+        this.drawCount = this.indices.length;
+        this.drawType = gl.UNSIGNED_SHORT;
+
+        // update once start
+        this.update(gl);
+    },
+    update(gl){
+        const x = letterF.translationX;
+        const y = letterF.translationY;
+
+        this.vertexData = new Float32Array([
+            // Left column
+            -100 + x, -100 + y,
+            -60 + x, -100 + y,
+            -100 + x,  100 + y,
+            -60 + x,  100 + y,
+
+            // Top bar
+            40 + x,  100 + y,
+            40 + x,   60 + y,
+            -100+ x,   60 + y,
+
+            // Middle bar
+            -100 + x,  20 + y,
+            0 + x,  20 + y,
+            0 + x, -20 + y,
+            -100 + x, -20 + y
+        ]);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, letterF.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
     },
     draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.useProgram(this.shader.program);
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
     }
 };
 
@@ -224,7 +293,7 @@ const grid = {
     //    |--|--|--|--|--|
     //    v0------------v1
 
-    // CPU DATA (In Pixel Space)
+    // CPU DATA
     vertexData: new Float32Array(),
     spacing: 100,
     range: 10000,
@@ -297,7 +366,6 @@ const grid = {
 
 const xAxis = {
     //    -x------0------+x
-
     // CPU DATA
     vertexData: new Float32Array([
         -grid.range, 0,
@@ -413,33 +481,72 @@ const yAxis = {
 // GUI 
 // =============================================================
 const gui = {
-    init(render) {
+    init(gl) {
         const gui = new lil.GUI();
-        const cameraFolder = gui.addFolder("Camera");
+        
+        const letterFFolder = gui.addFolder("Rectangle");
+        letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX").onChange(() => letterF.update(gl));
+        letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY").onChange(() => letterF.update(gl));
 
-        const cameraControls = {
-            up: () => {
-                camera.positionY += camera.panSpeed;
-                render();
-            },
-            left: () => {
-                camera.positionX -= camera.panSpeed;
-                render();
-            },
-            down: () => {
-                camera.positionY -= camera.panSpeed;
-                render();
-            },
-            right: () => {
-                camera.positionX += camera.panSpeed;
-                render();
+    }
+};
+
+// =============================================================
+// KEY EVENTS 
+// =============================================================
+const keyEvent = {
+    init(render) {
+        window.addEventListener("keydown", event => {
+            switch(event.key) {
+                case "ArrowUp":
+                    camera.state.panUp = true;
+                    break;
+                case "ArrowLeft":
+                    camera.state.panLeft = true;
+                    break;
+                case "ArrowDown":
+                    camera.state.panDown = true;
+                    break;
+                case "ArrowRight":
+                    camera.state.panRight = true;
+                    break;
+                case "+":
+                case "=":
+                    camera.state.zoomIn = true;
+                    break;
+                case "-":
+                case "_":
+                    camera.state.zoomOut = true;
+                    break;
+                default:
             }
-        };
+        });
 
-        cameraFolder.add(cameraControls, "up").name("↑ Up");
-        cameraFolder.add(cameraControls, "left").name("← Left");
-        cameraFolder.add(cameraControls, "down").name("↓ Down");
-        cameraFolder.add(cameraControls, "right").name("→ Right");
+        window.addEventListener("keyup", event => {
+            switch(event.key) {
+                case "ArrowUp":
+                    camera.state.panUp = false;
+                    break;
+                case "ArrowLeft":
+                    camera.state.panLeft = false;
+                    break;
+                case "ArrowDown":
+                    camera.state.panDown = false;
+                    break;
+                case "ArrowRight":
+                    camera.state.panRight = false;
+                    break;
+                case "+":
+                case "=":
+                    camera.state.zoomIn = false;
+                    break;
+                case "-":
+                case "_":
+                    camera.state.zoomOut = false;
+                    break;
+                default:
+            }
+        });
     }
 };
 
@@ -457,6 +564,7 @@ function render(gl) {
 
     // Camera 
     camera.updateProjectionMatrix(gl);
+    camera.updateViewMatrix(gl);
 
     // COMMON UNIFORMS
     //---------------------------------------------------
@@ -464,8 +572,8 @@ function render(gl) {
     gl.useProgram(shader.program);
     // Pass projection matrix to shader
     gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-    // Pass camera vec2
-    gl.uniform2f(shader.uniforms.cameraPosition,camera.positionX,camera.positionY);
+    // Pass View matrix to shader
+    gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
     
     // RENDER MESHES
     //---------------------------------------------------
@@ -475,8 +583,12 @@ function render(gl) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+    // Letter-F
+    letterF.draw(gl);
+
+    //---------------------------------------------------
+    // LOOP
+    requestAnimationFrame(() => render(gl));
 }
 
 // =============================================================
@@ -492,13 +604,16 @@ function main() {
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
     //GUI
-    gui.init(() => render(gl));
+    gui.init(gl);
+
+    //KeyEvents
+    keyEvent.init(() => render(gl));
 
     //Shaders
     shader.init(gl);
 
     //Objects
-    rectangle.init(gl, shader);
+    letterF.init(gl, shader);
     grid.init(gl, shader);
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);

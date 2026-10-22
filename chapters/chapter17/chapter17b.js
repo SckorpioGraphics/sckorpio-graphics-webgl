@@ -1,12 +1,12 @@
 /* #############################################################
-   CHAPTER 17b: Multiple objects using same Texture
+   CHAPTER 17b: UV coords
    Topics:
-   - Creating a square and rectangle
-   - Keep using same texture texture
-   - Keep texture in renderable object
-   - Aplying on a square
+   - Creating a letter F geometry
+   - Apply texture on the letter F
+   - Using custom UV coords
    #############################################################
 */
+
 
 // =============================================================
 // SHADER OBJECTS
@@ -321,6 +321,7 @@ const square = {
 
     //GPU DATA
     shader: null,
+    texture: null,
     vao: null,
     vbo: null,
     drawMode: null,
@@ -328,9 +329,10 @@ const square = {
     drawCount: 0,
 
     //FUNCTIONS
-    init(gl, shader) {
+    init(gl, shader, texture) {
         // Connect shader to mesh
         this.shader = shader;
+        this.texture = texture;
 
         // Vertex Buffer
         this.vbo = gl.createBuffer();
@@ -341,20 +343,18 @@ const square = {
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
         // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
-        // Vertex data format
+        // Position corrds: x, y
+        gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
+            2,                                  // size: 2 components (X, Y)
+            gl.FLOAT,                           // type: 32-bit float
+            false,                              // normalize
             4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
+            0                                   // offset: start of buffer
         );
 
         // Texture coordinates: u, v
@@ -380,7 +380,7 @@ const square = {
         setupModelMatrix(this);
         gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
         // Texture
-        texture.bind(gl, 0);
+        this.texture.bind(gl, 0);
         gl.uniform1i(this.shader.uniforms.texture, 0);
         // vao
         gl.bindVertexArray(this.vao);
@@ -389,68 +389,145 @@ const square = {
     }
 };
 
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
+const letterF = {
+    /*
+        v2-------v3--------v4
+        |\       |\         |
+        |\       |   \      |
+        | \      |      \   |
+        |  \     v6________v5
+        |   \    |
+        |    \   v7_____v8
+        |     \  |  \    |
+        |      \ |    \  |
+        |       \v10____v9
+        |        |
+        |        |
+        v0_______v1
+    */
+
+
+    // UVs by Pixel (Image Dim = 1254 * 1254) (top: 0,0 | Bottom: 1254,1254)
+    // v0 = 250 , 1140
+    // v1 = 540 , 1140
+    // v2 = 250 , 110
+    // v3 = 540 , 110
+    // v4 = 1060, 110
+    // v5 = 1060, 350
+    // v6 = 540 , 350
+    // v7 = 540 , 510
+    // v8 = 900 , 510
+    // v9 = 900 , 740
+    //v10 = 540 , 740
+
+    // Interleaved vertex data: x, y, u, v
+    
+    vertexData: new Float32Array([
+        // LEFT COLUMN
+        -100,   -100,   250/1254,   1 - 1140/1254, // v0
+        -60,    -100,   540/1254,   1 - 1140/1254, // v1
+        -100,    100,   250/1254,   1 -  110/1254, // v2
+        -60,     100,   540/1254,   1 -  110/1254, // v3
+
+        // TOP BAR
+        40,     100,    1060/1254,  1 - 110/1254, // v4
+        40,     60,     1060/1254,  1 - 350/1254, // v5
+        -60,   60,     540/1254,   1 - 350/1254, // v6
+
+        // MIDDLE BAR
+        -60,   20,     540/1254,   1 - 510/1254, // v7
+        0,      20,     900/1254,   1 - 510/1254, // v8
+        0,      -20,    900/1254,   1 - 740/1254, // v9
+        -60,  -20,     540/1254,   1 - 740/1254  // v10
+    ]),
+    /*
 
     // CPU DATA
+    // Interleaved vertex data: x, y, u, v
     vertexData: new Float32Array([
-        // Position     // UV
-        -300, -100,     0, 0,
-        300, -100,      1, 0,
-        -300,  100,     0, 1,
+        // LEFT COLUMN
+        -100,   -100,       0.19936,    0.09091, // v0
+        -60,    -100,       0.43062,    0.09091, // v1
+        -100,    100,       0.19936,    0.91228, // v2
+        -60,     100,       0.43062,    0.91228, // v3
 
-        -300,  100,     0, 1,
-        300, -100,      1, 0,
-        300,  100,      1, 1
+        // TOP BAR
+        40,     100,        0.84529,    0.91228, // v4
+        40,     60,         0.84529,    0.72089, // v5
+        -100,   60,         0.43062,    0.72089, // v6
+
+        // MIDDLE BAR
+        -100,   20,         0.43062, 0.59330, // v7
+        0,      20,         0.71770, 0.59330, // v8
+        0,     -20,         0.71770, 0.40909, // v9
+        -100,  -20,         0.43062, 0.40909  // v10
+    ]),
+    */
+
+    indices: new Uint16Array([
+        // LEFT COLUMN
+        0, 1, 2,
+        2, 1, 3,
+
+        // TOP BAR
+        3, 6, 5,
+        3, 5, 4,
+
+        // MIDDLE BAR
+        7, 10, 9,
+        7, 9, 8
     ]),
 
-    translationX: 600,
+    translationX: 400,
     translationY: 100,
     rotation: 0,
     scaleX: 1.0,
     scaleY: 1.0,
     modelMatrix: mat3.create(),
+    color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
     shader: null,
+    texture: null,
     vao: null,
     vbo: null,
+    ibo: null,
     drawMode: null,
     drawOffset: 0,
     drawCount: 0,
 
     //FUNCTIONS
-    init(gl, shader) {
+    init(gl, shader, texture) {
         // Connect shader to mesh
         this.shader = shader;
+        this.texture = texture;
 
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
 
+        // Index Buffer
+        this.ibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
         // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
-        // Vertex data format
+        // Position corrds: x, y
+        gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
+            2,                                  // size: 2 components (X, Y)
+            gl.FLOAT,                           // type: 32-bit float
+            false,                              // normalize
             4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
+            0                                   // offset: start of buffer
         );
 
         // Texture coordinates: u, v
@@ -464,10 +541,14 @@ const rectangle = {
             2 * Float32Array.BYTES_PER_ELEMENT
         );
 
-        // Draw data
+        // Bind Index Buffer
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+
+        // Draw Data
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = 6;
+        this.drawCount = this.indices.length;
+        this.drawType = gl.UNSIGNED_SHORT;
     },
     draw(gl) {
         // Shader
@@ -476,12 +557,11 @@ const rectangle = {
         setupModelMatrix(this);
         gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
         // Texture
-        texture.bind(gl, 0);
+        this.texture.bind(gl, 0);
         gl.uniform1i(this.shader.uniforms.texture, 0);
         // vao
         gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
     }
 };
 
@@ -699,6 +779,14 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
         
+        // LetterF
+        const letterFFolder = gui.addFolder("LetterF");
+        letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
+        letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
+        letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
+        letterFFolder.add(letterF, "scaleX", 0.1, 3.0).name("scaleX");
+        letterFFolder.add(letterF, "scaleY", 0.1, 3.0).name("scaleY");
+
         // Square
         const squareFolder = gui.addFolder("Square");
         squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
@@ -706,14 +794,6 @@ const gui = {
         squareFolder.add(square, "rotation", 0, 360).name("rotation");
         squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
         squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-
-        // Rectangle
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "translationX", -1000, 1000).name("translationX");
-        rectangleFolder.add(rectangle, "translationY", -1000, 1000).name("translationY");
-        rectangleFolder.add(rectangle, "rotation", 0, 360).name("rotation");
-        rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
-        rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
     }
 };
 
@@ -817,10 +897,11 @@ function render(gl) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
+   
     // Square
     square.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+    // Letter-F
+    letterF.draw(gl);
     //---------------------------------------------------
     // LOOP
     requestAnimationFrame(() => render(gl));
@@ -850,10 +931,10 @@ function main() {
 
     //Textures
     texture.init(gl);
-    
+
     //Objects
-    square.init(gl, textureShader);
-    rectangle.init(gl, textureShader);
+    square.init(gl, textureShader, texture);
+    letterF.init(gl, textureShader, texture);
     grid.init(gl, basicShader);
     xAxis.init(gl, basicShader);
     yAxis.init(gl, basicShader);

@@ -1,16 +1,15 @@
 /* #############################################################
-CHAPTER 11d: 2D World with Grid
+   CHAPTER 11d: 2D Camera — View Matrix
 
-Topics:
-- Creating a grid in pixel space
-- Also creating X-Axis and Y-Axis
-- Creating a rectangle in pixel space
-- Vertex data in pixel space
-- projectionMatrix as a uniform mat3
-- Pixel space -> clip space
-- Inverted Y
-- Multiple objects in pixel space
-###############################################################
+   Topics:
+   - Camera position
+   - Camera zoom
+   - View matrix
+   - Uniform mat3
+   - Camera transformation
+   - World space -> camera space
+   - Matrix abstraction
+   #############################################################
 */
 
 
@@ -21,25 +20,22 @@ Topics:
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
-
+    uniform mat3 u_viewMatrix;
     uniform mat3 u_projectionMatrix;
 
     void main() {
-        // Apply pixel space -> clip space matrix
-        vec3 clipPostion = u_projectionMatrix * vec3(a_position, 1.0);
-
-        // Convert to clip-space position
-        gl_Position = vec4(clipPostion.xy, 0.0, 1.0);
+        vec3 viewPosition = u_viewMatrix * vec3(a_position, 1.0);
+        vec3 clipPosition = u_projectionMatrix * viewPosition;
+        gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
     precision mediump float;
-
     uniform vec3 u_color;
-    out vec4 out_Color;
+    out vec4 out_color;
 
     void main() {
-        out_Color = vec4(u_color, 1.0);
+        out_color = vec4(u_color,1.0);
     }
 `,
     program: null,
@@ -47,6 +43,7 @@ const shader = {
         position: null
     },
     uniforms: {
+        viewMatrix: null,
         projectionMatrix: null,
         color: null
     },
@@ -62,6 +59,7 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
+        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
     }
@@ -103,9 +101,21 @@ const camera = {
     // Camera bounds
     width: 0,
     height: 0,
+
+    // Camera Position
+    positionX: -300,
+    positionY: -200,
+    // Camera Zoom
+    zoom: 1.0,
+    // Speed
+    panSpeed: 50,
+    zoomSpeed: 0.1,
     
+    // View Matrix
+    viewMatrix: mat3.create(),
     // Projection matrix
     projectionMatrix: mat3.create(),
+
 
     // FUNCTIONs
     update(gl) {
@@ -113,7 +123,13 @@ const camera = {
         this.width = gl.canvas.width;
         this.height = gl.canvas.height;
     },
-
+    updateViewMatrix(gl) {
+        // create View matrix
+        const matrix = mat3.create();
+        mat3.fromTranslation(matrix, [-camera.positionX, -camera.positionY]);
+        mat3.scale(matrix, matrix, [camera.zoom, camera.zoom]);
+        camera.viewMatrix = matrix;
+    },
     updateProjectionMatrix(gl) {
         // Camera bounds
         this.width = gl.canvas.width;
@@ -280,6 +296,164 @@ const grid = {
     }
 };
 
+const xAxis = {
+    //    -x------0------+x
+
+    // CPU DATA
+    vertexData: new Float32Array([
+        -grid.range, 0,
+        grid.range, 0
+    ]),
+    color: [1.0, 0.0, 0.0], // Red
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        this.shader = shader;
+
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+       // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        this.drawMode = gl.LINES;
+        this.drawOffset = 0;
+        this.drawCount = 2;
+    },
+    draw(gl) {
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
+const yAxis = {
+    //      +y
+    //      |
+    //      |
+    //      0
+    //      |
+    //      |
+    //      -y
+
+    // CPU DATA
+    vertexData: new Float32Array([
+        0, -grid.range,
+        0, grid.range
+    ]),
+    color: [0.0, 1.0, 0.0], // Green
+
+    //GPU DATA
+    shader: null,
+    vao: null,
+    vbo: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 0,
+
+    //FUNCTIONS
+    init(gl, shader) {
+        this.shader = shader;
+
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        gl.enableVertexAttribArray(this.shader.attributes.position);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+
+       // Vertex data format
+        gl.vertexAttribPointer(
+            this.shader.attributes.position,
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        );
+
+        this.drawMode = gl.LINES;
+        this.drawOffset = 0;
+        this.drawCount = 2;
+    },
+    draw(gl) {
+        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+    }
+};
+
+// =============================================================
+// GUI 
+// =============================================================
+const gui = {
+    init(render) {
+        const gui = new lil.GUI();
+        const cameraFolder = gui.addFolder("Camera");
+
+        const cameraControls = {
+            up: () => {
+                camera.positionY += camera.panSpeed;
+                render();
+            },
+            left: () => {
+                camera.positionX -= camera.panSpeed;
+                render();
+            },
+            down: () => {
+                camera.positionY -= camera.panSpeed;
+                render();
+            },
+            right: () => {
+                camera.positionX += camera.panSpeed;
+                render();
+            },
+            zoomIn: () => {
+                camera.zoom += camera.zoomSpeed;
+                render();
+            },
+            zoomOut: () => {
+                camera.zoom = Math.max(0.1, camera.zoom - camera.zoomSpeed);
+                render();
+            }
+        };
+
+        cameraFolder.add(cameraControls, "up").name("↑ Up");
+        cameraFolder.add(cameraControls, "left").name("← Left");
+        cameraFolder.add(cameraControls, "down").name("↓ Down");
+        cameraFolder.add(cameraControls, "right").name("→ Right");
+        cameraFolder.add(cameraControls, "zoomIn").name("Zoom In");
+        cameraFolder.add(cameraControls, "zoomOut").name("Zoom Out");
+    }
+};
+
 // =============================================================
 // RENDER
 // =============================================================
@@ -294,6 +468,7 @@ function render(gl) {
 
     // Camera 
     camera.updateProjectionMatrix(gl);
+    camera.updateViewMatrix(gl);
 
     // COMMON UNIFORMS
     //---------------------------------------------------
@@ -301,11 +476,17 @@ function render(gl) {
     gl.useProgram(shader.program);
     // Pass projection matrix to shader
     gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+    // Pass View matrix to shader
+    gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
     
     // RENDER MESHES
     //---------------------------------------------------
     // Grid
     grid.draw(gl);
+    // X-Axis
+    xAxis.draw(gl);
+    // Y-Axis
+    yAxis.draw(gl);
     // Rectangle
     rectangle.draw(gl);
 }
@@ -322,12 +503,17 @@ function main() {
     const gl = canvas.getContext("webgl2");
     if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
 
+    //GUI
+    gui.init(() => render(gl));
+
     //Shaders
     shader.init(gl);
 
     //Objects
     rectangle.init(gl, shader);
     grid.init(gl, shader);
+    xAxis.init(gl, shader);
+    yAxis.init(gl, shader);
 
     //Render
     render(gl);

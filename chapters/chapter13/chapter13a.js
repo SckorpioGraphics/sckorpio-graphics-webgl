@@ -1,11 +1,11 @@
 /* #############################################################
-   CHAPTER 13a: 2D Transformations — Translation
+   CHAPTER 13a: 2D Transformations — Rotation with Sine and Cosine
 
    Topics:
-   - Translating a rectangle
+   - Rotating a letterF around the origin
    - GUI camera controls
-   - Using Dynamic Buffer geometry
-   - Object translation
+   - Using Rotation with sin() and cos()
+   - Object rotation
    #############################################################
 */
 
@@ -17,22 +17,44 @@
 const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
+
     uniform mat3 u_viewMatrix;
     uniform mat3 u_projectionMatrix;
+    uniform float u_translationX;
+    uniform float u_translationY;
+    uniform float u_rotation;
 
     void main() {
-        vec3 viewPosition = u_viewMatrix * vec3(a_position, 1.0);
+        vec3 localPosition = vec3(a_position, 1.0);
+
+        float c = cos(radians(u_rotation));
+        float s = sin(radians(u_rotation));
+        float rotatedX = localPosition.x * c - localPosition.y * s;
+        float rotatedY = localPosition.x * s + localPosition.y * c;
+        vec3 rotatedPosition = vec3(rotatedX, rotatedY, 1.0);
+
+        mat3 translationMatrix = mat3(
+            1.0,            0.0,            0.0,
+            0.0,            1.0,            0.0,
+            u_translationX, u_translationY, 1.0
+        );
+
+        vec3 worldPosition = translationMatrix * rotatedPosition;
+        vec3 viewPosition = u_viewMatrix * worldPosition;
         vec3 clipPosition = u_projectionMatrix * viewPosition;
+
         gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
     }
 `,
     fragmentShaderSource: `#version 300 es
     precision mediump float;
+
     uniform vec3 u_color;
+
     out vec4 out_color;
 
     void main() {
-        out_color = vec4(u_color,1.0);
+        out_color = vec4(u_color, 1.0);
     }
 `,
     program: null,
@@ -40,6 +62,9 @@ const shader = {
         position: null
     },
     uniforms: {
+        translationX: null,
+        translationY: null,
+        rotation: null,
         viewMatrix: null,
         projectionMatrix: null,
         color: null
@@ -55,6 +80,9 @@ const shader = {
         // Attributes
         this.attributes.position = gl.getAttribLocation(this.program, "a_position");
         // uniforms
+        this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
+        this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
+        this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
         this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
         this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
         this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
@@ -157,19 +185,57 @@ const camera = {
 // =============================================================
 // MESHES
 // =============================================================
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
+const letterF = {
+    /*
+        v2-------v3--------v4
+        |\       |\         |
+        |\       |   \      |
+        | \      |      \   |
+        |  \     v6________v5
+        |   \    |
+        |    \   v7_____v8
+        |     \  |  \    |
+        |      \ |    \  |
+        |       \v10____v9
+        |        |
+        |        |
+        v0_______v1
+    */
 
     // CPU DATA
-    vertexData: new Float32Array(),
-    width: 200,
-    height: 100,
+    vertexData: new Float32Array([
+        -100, -100,
+        -60 , -100,
+        -100,  100,
+        -60 ,  100,
+
+        // Top bar
+        40  ,  100,
+        40  ,   60,
+        -60,   60,
+
+        // Middle bar
+        -60,  20,
+        0   ,  20,
+        0   , -20,
+        -60, -20
+    ]),
+    indices: new Uint16Array([
+        // LEFT COLUMN
+        0, 1, 2,
+        2, 1, 3,
+
+        // TOP BAR
+        3, 6, 5,
+        3, 5, 4,
+
+        // MIDDLE BAR
+        7, 10, 9,
+        7, 9, 8
+    ]),
     translationX: 200,
-    translationY: 150,
+    translationY: 100,
+    rotation: 0,
     color: [0.39, 0.33, 0.58], // Sckorpio Purple
 
     //GPU DATA
@@ -182,65 +248,49 @@ const rectangle = {
 
     //FUNCTIONS
     init(gl, shader) {
-        // Connect shader to mesh
+        // Shader
         this.shader = shader;
 
-        // Vertex Buffer
+        // Vertex Buffer (...will be changed dynamically)
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+
+        // Index Buffer
+        this.ibo = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
+        // Attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.vertexAttribPointer(this.shader.attributes.position, 2, gl.FLOAT, false, 0, 0);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
 
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        // Draw data
+        // Draw Data
         this.drawMode = gl.TRIANGLES;
         this.drawOffset = 0;
-        this.drawCount = 6;
-
-        // Call once
-        this.update(gl);
-    },
-    update(gl){
-        const halfWidth = this.width / 2;
-        const halfHeight = this.height / 2;
-
-        const x = this.translationX;
-        const y = this.translationY;
-
-        this.vertexData = new Float32Array([
-            x - halfWidth, y - halfHeight,
-            x + halfWidth, y - halfHeight,
-            x - halfWidth, y + halfHeight,
-            x - halfWidth, y + halfHeight,
-            x + halfWidth, y - halfHeight,
-            x + halfWidth, y + halfHeight
-        ]);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+        this.drawCount = this.indices.length;
+        this.drawType = gl.UNSIGNED_SHORT;
     },
     draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        // Shader
+        gl.useProgram(this.shader.program);
+        // Pass translateX & translateY
+        gl.uniform1f(this.shader.uniforms.translationX, this.translationX);
+        gl.uniform1f(this.shader.uniforms.translationY, this.translationY);
+        // Pass Rotation
+        gl.uniform1f(this.shader.uniforms.rotation, this.rotation);
+        // Pass Color
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
+        // VAO
         gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        // draw call
+        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
     }
 };
 
@@ -253,7 +303,7 @@ const grid = {
     //    |--|--|--|--|--|
     //    v0------------v1
 
-    // CPU DATA (In Pixel Space)
+    // CPU DATA
     vertexData: new Float32Array(),
     spacing: 100,
     range: 10000,
@@ -326,7 +376,6 @@ const grid = {
 
 const xAxis = {
     //    -x------0------+x
-
     // CPU DATA
     vertexData: new Float32Array([
         -grid.range, 0,
@@ -445,10 +494,10 @@ const gui = {
     init(gl) {
         const gui = new lil.GUI();
         
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "translationX", -1000, 1000).name("translationX").onChange(() => rectangle.update(gl));
-        rectangleFolder.add(rectangle, "translationY", -1000, 1000).name("translationY").onChange(() => rectangle.update(gl));
-
+        const letterFFolder = gui.addFolder("Translation");
+        letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
+        letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
+        letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
     }
 };
 
@@ -535,6 +584,10 @@ function render(gl) {
     gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
     // Pass View matrix to shader
     gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
+    // Use default translateX/Y & Rotations
+    gl.uniform1f(shader.uniforms.translationX, 0);
+    gl.uniform1f(shader.uniforms.translationY, 0);
+    gl.uniform1f(shader.uniforms.rotation, 0);
     
     // RENDER MESHES
     //---------------------------------------------------
@@ -544,11 +597,11 @@ function render(gl) {
     xAxis.draw(gl);
     // Y-Axis
     yAxis.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
+    // Letter-F
+    letterF.draw(gl);
 
-    // LOOP
     //---------------------------------------------------
+    // LOOP
     requestAnimationFrame(() => render(gl));
 }
 
@@ -574,7 +627,7 @@ function main() {
     shader.init(gl);
 
     //Objects
-    rectangle.init(gl, shader);
+    letterF.init(gl, shader);
     grid.init(gl, shader);
     xAxis.init(gl, shader);
     yAxis.init(gl, shader);
