@@ -21,9 +21,17 @@ PHASE 4 — ANIMATION AND SPRITE SHEETS
 Chapters 21–25: The render loop, delta time, clock objects, transform animation,
 animated color and alpha, texture scrolling, and sprite-sheet frame playback.
 
-Chapter 0 is the introduction; Chapters 1–25 are the completed instructional
-chapters. See series_episodes.txt for the lesson-by-lesson guide and the
-separately labeled roadmap beyond Chapter 25.
+PHASE 5 — MOVEMENT AND BASIC PHYSICS
+Chapter 26: Two-dimensional velocity, acceleration, gravity, projectile
+motion, and a bow-and-arrow simulation.
+
+PHASE 6 — COLLISION DETECTION AND RESPONSE
+Chapter 27: Object bounds, AABB collision detection, and basic collision
+responses including stopping and exchanging velocities.
+
+Chapter 0 is the introduction; Chapters 1–27 are currently implemented. See
+series_episodes.txt for the lesson-by-lesson guide and the roadmap beyond
+Chapter 27.
 
 
 LESSON CODE ORGANIZATION
