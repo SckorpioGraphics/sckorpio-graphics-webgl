@@ -2,9 +2,9 @@ WEBGL FUNDAMENTALS — EPISODE GUIDE
 ==================================
 
 This guide describes the lessons currently implemented in
-../chapters/chapter00 through ../chapters/chapter25. Chapter 0 is the series
-introduction; Chapters 1–25 are the twenty-five instructional chapters in the
-completed foundation.
+../chapters/chapter00 through ../chapters/chapter27. Chapter 0 is the series
+introduction; Chapters 1–27 are the instructional chapters currently
+implemented.
 
 
 PHASE 1 — WEBGL FOUNDATIONS
@@ -227,28 +227,47 @@ CHAPTER 25 — SPRITE SHEET ANIMATION
 25g - Create a running sckoprio mascot sprit sheet animation , Transparent
 
 
-BEYOND THE COMPLETED FOUNDATION — ROADMAP
+PHASE 5 — MOVEMENT AND BASIC PHYSICS
+"Give objects velocity, gravity, and projectile motion"
+=======================================================
+
+CHAPTER 26 — MOVEMENT AND BASIC PHYSICS
+---------------------------------------
+26a - Animate an object's translation.
+26b - Organize motion state in a PhysicsInfo object.
+26c - Apply X and Y velocity to move in two dimensions.
+26d - Add acceleration along the X axis.
+26e - Add gravity as vertical acceleration.
+26f - Simulate projectile motion.
+26g - Represent launch direction with a unit vector and speed, and apply
+      gravity to the motion.
+26h - Build a basic bow-and-arrow projectile simulation.
+26i - Apply the bow-and-arrow simulation to the textured Sckorpio mascot.
+
+PHASE 6 — COLLISION DETECTION AND RESPONSE
+"Detect when moving objects meet and respond"
+=============================================
+
+CHAPTER 27 — COLLISION DETECTION AND RESPONSE
+---------------------------------------------
+27a - Observe moving objects that do not collide.
+27b - Introduce object bounding boxes.
+27c - Calculate an object's bounding box from its geometry.
+27d - Find the bounding box of complex geometry such as a letter F.
+27e - Calculate an axis-aligned bounding box using the model matrix.
+27f - Calculate bounds for multiple objects.
+27g - Detect collisions using axis-aligned bounding boxes.
+27h - Stop objects when a collision is detected.
+27i - Exchange object velocities after a collision and observe sticking.
+27j - Use a single collision check while exchanging velocities between moving
+      objects.
+
+
+BEYOND THE IMPLEMENTED CHAPTERS — ROADMAP
 =========================================
 
-Chapter 26 — Movement & Basic Physics
-How objects move
-- 26a: Constant-velocity linear motion
-- 26b: Acceleration and changing velocity
-- 26c: Gravity and free fall
-- 26d: Projectile motion
-- 26e: Applying physics with delta time and a shared physics configuration
-Outcome: objects move naturally through the world.
-
-Chapter 27 — Collision Detection
-When objects meet
-- 27a: Collision concepts and collision shapes
-- 27b: Object bounds and AABBs
-- 27c: Rectangle–rectangle collision
-- 27d: Circle–circle collision
-- 27e: Object versus world boundaries
-- 27f: Detecting collisions between multiple objects
-- 27g: Visualizing collision shapes with debug rendering
-Outcome: the engine knows which objects are overlapping.
+The following chapters are planned and are not part of the currently
+implemented 0–27 lessons.
 
 Chapter 28 — Object Interactions
 What happens when they meet
@@ -258,7 +277,8 @@ What happens when they meet
 - 28d: Collision events — enter, stay, and exit
 - 28e: Trigger zones versus solid collisions
 - 28f: Object-specific interaction behavior and callbacks
-Outcome: collisions can trigger meaningful changes without putting all the logic inside the collision detector.
+Outcome: collisions can trigger meaningful changes without putting all the
+logic inside the collision detector.
 
 Chapter 29 — Gameplay Mechanics
 How a world becomes playable
@@ -269,7 +289,8 @@ How a world becomes playable
 - 29e: Collectibles and interactive objects
 - 29f: Basic enemy behavior and state transitions
 - 29g: Coordinating gameplay state with sprite animations
-Outcome: individual mechanics work together to create simple gameplay systems.
+Outcome: individual mechanics work together to create simple gameplay
+systems.
 
 Chapter 30 — Building a Complete 2D World
 Bring everything together
@@ -279,19 +300,6 @@ Bring everything together
 - 30d: Add interactive objects and basic enemies
 - 30e: Connect animation, interactions, and gameplay mechanics
 - 30f: Assemble the complete scene and test the world end to end
-
-The following outline is a direction for future chapters, not part of the
-completed 0–25 episode set. Update it as those lessons are developed.
-
-CHAPTERS 26–29 — INTERACTION AND PHYSICS
-----------------------------------------
-Keyboard and pointer input; movement, velocity, and gravity; collision tests;
-and basic collision response.
-
-CHAPTER 30 — BUILDING THE 2D WORLD
-----------------------------------
-Combine scene organization, camera and transforms, textures, blending, render
-order, animation, input, physics, and collision in a complete interactive scene.
 
 SPECIAL PROJECT — BUILD SCKORPIO
 --------------------------------
