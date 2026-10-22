@@ -136,23 +136,23 @@ const triangle = {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.positionVbo);
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,                      // Stride : 0
-            0                       // Offset : 0 (Both 0, as dedicated buffer for this)
-        );  
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
+        ); 
 
         // Vertex vertexColors attrib
         gl.enableVertexAttribArray(this.shader.attributes.color);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorVbo);
         gl.vertexAttribPointer(
             this.shader.attributes.color,
-            3,
-            gl.FLOAT,
-            false,
-            0,                      // Stride : 0
-            0                       // Offset : 0 (Both 0, as dedicated buffer for this)
+            3,                                      // size: 3 components (R,G,B)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            3 * Float32Array.BYTES_PER_ELEMENT,     // stride: 3
+            0                                       // offset: start of buffer
         );
 
         // Draw data

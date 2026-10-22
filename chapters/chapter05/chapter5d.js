@@ -163,11 +163,11 @@ const circle = {
         // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         // Index buffer

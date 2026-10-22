@@ -220,11 +220,11 @@ const square = {
         // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            0,          // stride: 0(tightly packed)
-            0           // offset: start of buffer
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         // Draw data
@@ -299,13 +299,14 @@ const grid = {
         // Attrib
         gl.enableVertexAttribArray(this.shader.attributes.position);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+       // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         //Draw Data
@@ -354,13 +355,14 @@ const xAxis = {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
+       // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         this.drawMode = gl.LINES;
@@ -414,13 +416,14 @@ const yAxis = {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
 
+       // Vertex data format
         gl.vertexAttribPointer(
             this.shader.attributes.position,
-            2,
-            gl.FLOAT,
-            false,
-            0,
-            0
+            2,                                      // size: 2 components (X, Y)
+            gl.FLOAT,                               // type: 32-bit float
+            false,                                  // normalize
+            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
+            0                                       // offset: start of buffer
         );
 
         this.drawMode = gl.LINES;

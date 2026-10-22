@@ -189,11 +189,11 @@ function main() {
     // bind the buffer
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     // Buffer data format
-    const size = 2;          // 2 components (X, Y) per vertex
-    const type = gl.FLOAT;   // 32-bit float values
-    const normalize = false; // Do not normalize
-    const stride = 0;        // Auto stride
-    const offset = 0;        // Start reading from index 0
+    const size = 2;                                     // 2 components (X, Y) per vertex
+    const type = gl.FLOAT;                              // 32-bit float values
+    const normalize = false;                            // Do not normalize
+    const stride = 2 * Float32Array.BYTES_PER_ELEMENT;  // stride:2 (or if only positions then Auto stride = 0 also)
+    const offset = 0;                                   // Start reading from index 0
     gl.vertexAttribPointer(
         locationAttributePosition,
         size,
