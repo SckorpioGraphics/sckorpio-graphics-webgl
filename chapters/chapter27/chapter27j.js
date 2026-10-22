@@ -986,7 +986,7 @@ function render(gl, timeStamp) {
 
     // ANIMATIONS
     // -------------------------------------
-
+    // No animations
     
     // CANVAS
     // ---------------------------------------
