@@ -13,12 +13,10 @@ Topics:
 */
 
 // =============================================================
-// GLOBAL OBJECTS
+// SHADER OBJECTS
 // =============================================================
-let canvas = null;
-let gl = null;
 
-const shaderInfo = {
+const shader = {
     vertexShaderSource: `#version 300 es
     in vec2 a_position;
     uniform mat3 u_matrix;
@@ -32,7 +30,6 @@ const shaderInfo = {
         );
     }
 `,
-
     fragmentShaderSource: `#version 300 es
     precision mediump float;
 
@@ -44,87 +41,149 @@ const shaderInfo = {
         // Set line color
         out_color = u_color;
     }
-`
+`,
+    program: null,
+    attributes: {
+        position: null
+    },
+    uniforms: {
+        matrix: null,
+        color: null
+    },
+    init(gl) {
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        this.program = createProgram(gl, vertexShader, fragmentShader);
+        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
+        this.uniforms.matrix = gl.getUniformLocation(this.program, "u_matrix");
+        this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
+    }
 };
-
-// =============================================================
-// FUNCTIONS
-// =============================================================
-
-// =============================================================
-// Shader Creating Functions
-// =============================================================
-
-/**
- * Compiles a GLSL shader.
- */
 
 function createShader(gl, type, source) {
     const shader = gl.createShader(type);
-
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
 
-    const success = gl.getShaderParameter(
-        shader,
-        gl.COMPILE_STATUS
-    );
+    const compileStatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+    if (compileStatus) return shader;
 
-    if (success) return shader;
-
-    console.error(
-        "Shader Compilation Error:",
-        gl.getShaderInfoLog(shader)
-    );
-
+    console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
     gl.deleteShader(shader);
 }
 
-/**
- * Links vertex and fragment shaders into a GPU program.
- */
-
 function createProgram(gl, vertexShader, fragmentShader) {
     const program = gl.createProgram();
-
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
-
     gl.linkProgram(program);
 
-    const success = gl.getProgramParameter(
-        program,
-        gl.LINK_STATUS
-    );
+    const linkStatus = gl.getProgramParameter(program, gl.LINK_STATUS);
+    if (linkStatus) return program;
 
-    if (success) return program;
-
-    console.error(
-        "Program Linking Error:",
-        gl.getProgramInfoLog(program)
-    );
-
+    console.error("Program Linking Error:", gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
 }
 
 // =============================================================
-// Helper Functions
+// MESHES
 // =============================================================
 
-/**
- * Uploads two 2D points to the active ARRAY_BUFFER.
- */
+const line = {
+    vertexData: new Float32Array(4),
+    buffer: null,
+    drawMode: null,
+    drawOffset: 0,
+    drawCount: 2,
+    init(gl) {
+        this.buffer = gl.createBuffer();
+        this.drawMode = gl.LINES;
 
-function setLineGeometry(gl, x1, y1, x2, y2) {
-    gl.bufferData(
-        gl.ARRAY_BUFFER,
-        new Float32Array([
-            x1, y1,
-            x2, y2
-        ]),
-        gl.DYNAMIC_DRAW
-    );
-}
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.enableVertexAttribArray(shader.attributes.position);
+        gl.vertexAttribPointer(shader.attributes.position, 2, gl.FLOAT, false, 0, 0);
+    },
+    update(gl, x1, y1, x2, y2) {
+        this.vertexData.set([x1, y1, x2, y2]);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+    },
+    draw(gl) {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+        gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
+    }
+};
+
+// =============================================================
+// RENDER SYSTEM
+// =============================================================
+
+const renderSystem = {
+    canvas: null,
+    gl: null,
+    initWebgl() {
+        this.canvas = document.querySelector("#c");
+
+        if (!this.canvas) {
+            console.error("Canvas element '#c' not found.");
+            return;
+        }
+
+        this.gl = this.canvas.getContext("webgl2");
+
+        if (!this.gl) {
+            console.error("WebGL2 is not supported by this browser.");
+        }
+    },
+    resizeCanvasToDisplaySize() {
+        const width = this.canvas.clientWidth | 0;
+        const height = this.canvas.clientHeight | 0;
+
+        if (this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
+    },
+    init() {
+        shader.init(this.gl);
+        line.init(this.gl);
+    },
+    update(now) {
+        const radius =
+            Math.sqrt(
+                this.canvas.width ** 2 +
+                this.canvas.height ** 2
+            ) * 0.5;
+
+        const angle = now;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const centerX = this.canvas.width * 0.5;
+        const centerY = this.canvas.height * 0.5;
+
+        line.update(
+            this.gl,
+            centerX + x,
+            centerY + y,
+            centerX - x,
+            centerY - y
+        );
+    },
+    render() {
+        const gl = this.gl;
+
+        gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+        gl.clearColor(0.0, 1.0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(shader.program);
+
+        const projectionMatrix = m3Projection(this.canvas.width, this.canvas.height);
+
+        gl.uniformMatrix3fv(shader.uniforms.matrix, false, projectionMatrix);
+        gl.uniform4fv(shader.uniforms.color, [0.39, 0.33, 0.58, 1.0]);
+        line.draw(gl);
+    }
+};
 
 // =============================================================
 // Camera-Related Matrix Functions
@@ -154,294 +213,29 @@ function m3Projection(width, height) {
 // MAIN
 // =============================================================
 
-function main() {
-
-    // -------------------------------------------------------------
-    // 1. WEBGL CANVAS
-    // -------------------------------------------------------------
-
-    canvas = document.querySelector("#c");
-
-    if (!canvas) {
-        console.error("Canvas element '#c' not found.");
-        return;
-    }
-
-    // Get WebGL 2.0 context
-    gl = canvas.getContext("webgl2");
-
-    if (!gl) {
-        console.error(
-            "WebGL2 is not supported by this browser."
-        );
-        return;
-    }
-
-
-    // -------------------------------------------------------------
-    // 2. SHADERS & PROGRAM
-    // -------------------------------------------------------------
-
-    const vertexShader = createShader(
-        gl,
-        gl.VERTEX_SHADER,
-        shaderInfo.vertexShaderSource
-    );
-
-    const fragmentShader = createShader(
-        gl,
-        gl.FRAGMENT_SHADER,
-        shaderInfo.fragmentShaderSource
-    );
-
-    const program = createProgram(
-        gl,
-        vertexShader,
-        fragmentShader
-    );
-
-
-    // -------------------------------------------------------------
-    // 3. ATTRIBUTE & UNIFORM LOCATIONS
-    // -------------------------------------------------------------
-
-    const locationAttributePosition =
-        gl.getAttribLocation(
-            program,
-            "a_position"
-        );
-
-    const matrixLocation =
-        gl.getUniformLocation(
-            program,
-            "u_matrix"
-        );
-
-    const colorLocation =
-        gl.getUniformLocation(
-            program,
-            "u_color"
-        );
-
-
-    // -------------------------------------------------------------
-    // 4. DATA & BUFFERS
-    // -------------------------------------------------------------
-
-    // Create vertex buffer
-    const positionBuffer = gl.createBuffer();
-
-
-    // =============================================================
-    // 5. RENDER LOOP
-    // =============================================================
-
-    function render(now) {
-
-        // requestAnimationFrame gives time in milliseconds.
-        // Convert it to seconds.
-        now *= 0.001;
-
-
-        // ---------------------------------------------------------
-        // CANVAS
-        // ---------------------------------------------------------
-
-        resizeCanvasToDisplaySize(gl.canvas);
-
-        gl.viewport(
-            0,
-            0,
-            gl.canvas.width,
-            gl.canvas.height
-        );
-
-
-        // ---------------------------------------------------------
-        // BACKGROUND
-        // ---------------------------------------------------------
-
-        gl.clearColor(
-            0.0,
-            1.0,
-            1.0,
-            1.0
-        );
-
-        gl.clear(gl.COLOR_BUFFER_BIT);
-
-
-        // ---------------------------------------------------------
-        // SHADER
-        // ---------------------------------------------------------
-
-        gl.useProgram(program);
-
-
-        // ---------------------------------------------------------
-        // BUFFER / ATTRIBUTE
-        // ---------------------------------------------------------
-
-        gl.bindBuffer(
-            gl.ARRAY_BUFFER,
-            positionBuffer
-        );
-
-        gl.enableVertexAttribArray(
-            locationAttributePosition
-        );
-
-        const size = 2;
-        const type = gl.FLOAT;
-        const normalize = false;
-        const stride = 0;
-        const offset = 0;
-
-        gl.vertexAttribPointer(
-            locationAttributePosition,
-            size,
-            type,
-            normalize,
-            stride,
-            offset
-        );
-
-
-        // =========================================================
-        // CREATE DYNAMIC LINE
-        // =========================================================
-
-        // Calculate a radius large enough for the line
-        // to reach beyond the canvas corners.
-        const radius =
-            Math.sqrt(
-                gl.canvas.width ** 2 +
-                gl.canvas.height ** 2
-            ) * 0.5;
-
-
-        // Use time as the rotation angle.
-        const angle = now;
-
-        const x =
-            Math.cos(angle) * radius;
-
-        const y =
-            Math.sin(angle) * radius;
-
-
-        // Canvas center
-        const centerX =
-            gl.canvas.width * 0.5;
-
-        const centerY =
-            gl.canvas.height * 0.5;
-
-
-        // Two endpoints of the rotating line
-        const x1 = centerX + x;
-        const y1 = centerY + y;
-
-        const x2 = centerX - x;
-        const y2 = centerY - y;
-
-
-        // Upload new vertex positions
-        setLineGeometry(
-            gl,
-            x1,
-            y1,
-            x2,
-            y2
-        );
-
-
-        // =========================================================
-        // PROJECTION
-        // =========================================================
-
-        const projectionMatrix =
-            m3Projection(
-                gl.canvas.width,
-                gl.canvas.height
-            );
-
-
-        // Upload projection matrix
-        gl.uniformMatrix3fv(
-            matrixLocation,
-            false,
-            projectionMatrix
-        );
-
-
-        // =========================================================
-        // COLOR
-        // =========================================================
-
-        gl.uniform4fv(
-            colorLocation,
-            [
-                0.39,
-                0.33,
-                0.58,
-                1.0
-            ]
-        );
-
-
-        // =========================================================
-        // DRAW CALL
-        // =========================================================
-
-        const primitiveType = gl.LINES;
-        const drawOffset = 0;
-        const drawCount = 2;
-
-        gl.drawArrays(
-            primitiveType,
-            drawOffset,
-            drawCount
-        );
-
-
-        // =========================================================
-        // NEXT FRAME
-        // =========================================================
-
-        requestAnimationFrame(render);
-    }
-
-
-    // Start render loop
-    requestAnimationFrame(render);
+function appLoop(now = 0) {
+    renderSystem.resizeCanvasToDisplaySize();
+    renderSystem.update(now * 0.001);
+    renderSystem.render();
+    requestAnimationFrame(frameTime => appLoop(frameTime));
 }
 
-/**
- * Resizes the internal drawing buffer to match CSS display pixels.
- */
+function appInit() {
+    // init renderSystem
+    renderSystem.initWebgl();
+    renderSystem.init();
+}
 
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
-
-    if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
+function main() {
+    appInit();
+    appLoop();
 }
 
 // =============================================================
 // STARTUP AND EXPORTS
 // =============================================================
 
-window.addEventListener(
-    "DOMContentLoaded",
-    main
-);
+window.addEventListener("DOMContentLoaded", main);
 
 export {
     main
