@@ -8,7 +8,6 @@
    #############################################################
 */
 
-
 // =============================================================
 // SHADER OBJECTS
 // =============================================================
@@ -462,7 +461,7 @@ const grid = {
         this.shader = shader;
 
         const positions = [];
-    
+
         // Vertical lines
         for(let x = -this.range; x <= this.range; x += this.spacing) {
             positions.push(
@@ -509,7 +508,7 @@ const grid = {
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
@@ -564,7 +563,7 @@ const xAxis = {
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
@@ -625,7 +624,7 @@ const yAxis = {
     },
     draw(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
@@ -642,19 +641,131 @@ function setupModelMatrix(mesh) {
 }
 
 // =============================================================
-// GUI 
+// RENDER SYSTEM
+// =============================================================
+const renderSystem = {
+    canvas: null,
+    gl: null,
+
+    initWebgl() {
+        // Canvas
+        this.canvas = document.querySelector("#c");
+
+        if (!this.canvas) {
+            console.error("Canvas element not found");
+            return;
+        }
+
+        // Context
+        this.gl = this.canvas.getContext("webgl2");
+
+        if (!this.gl) {
+            console.error("WebGL2 is not supported by this browser");
+            return;
+        }
+    },
+    // RESIZE
+    resizeCanvasToDisplaySize(multiplier = 1) {
+        const width = (this.canvas.clientWidth * multiplier) | 0;
+        const height = (this.canvas.clientHeight * multiplier) | 0;
+
+        if(this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+
+        }
+    },
+    // INIT
+    init() {
+        this.initWebgl();
+        const gl = this.gl;
+
+        // Resources Initialise
+
+        //Shaders
+        basicShader.init(gl);
+        textureShader.init(gl);
+
+        //Textures
+        texture.init(gl);
+
+        //Objects
+        squares = [
+            createSquare(64, 0, 0),
+            createSquare(128, 100, 0),
+            createSquare(256, 300, 0),
+            createSquare(512, 700, 0)
+        ];
+        squares.forEach(square => square.init(gl, textureShader));
+
+        grid.init(gl, basicShader);
+        xAxis.init(gl, basicShader);
+        yAxis.init(gl, basicShader);
+
+    },
+    // UPDATE
+    update() {
+        const gl = this.gl;
+
+        camera.updateProjectionMatrix(gl);
+        camera.updateViewMatrix(gl);
+    },
+    // RENDER
+    render() {
+        const gl = this.gl;
+        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+
+        // Background
+        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+        // COMMON UNIFORMS
+        //---------------------------------------------------
+        // Shader 1
+        gl.useProgram(basicShader.program);
+        // Pass MVP Matrices
+        gl.uniformMatrix3fv(basicShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+        gl.uniformMatrix3fv(basicShader.uniforms.viewMatrix,false,camera.viewMatrix);
+        gl.uniformMatrix3fv(basicShader.uniforms.modelMatrix,false,mat3.create());
+
+        // Shader 2
+        gl.useProgram(textureShader.program);
+        // Pass MVP Matrices
+        gl.uniformMatrix3fv(textureShader.uniforms.viewMatrix,false,camera.viewMatrix);
+        gl.uniformMatrix3fv(textureShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+        gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
+
+        // RENDER MESHES
+        //---------------------------------------------------
+        // Grid
+        grid.draw(gl);
+        // X-Axis
+        xAxis.draw(gl);
+        // Y-Axis
+        yAxis.draw(gl);
+
+        // All Squares
+        squares.forEach(square => square.draw(gl));
+
+        
+    },
+};
+
+// =============================================================
+// GUI
 // =============================================================
 const gui = {
-    init(gl) {
+    init() {
         const gui = new lil.GUI();
             }
 };
 
 // =============================================================
-// KEY EVENTS 
+// KEY EVENTS
 // =============================================================
 const keyEvent = {
-    init(render) {
+    init(func) {
         window.addEventListener("keydown", event => {
             switch(event.key) {
                 case "ArrowUp":
@@ -708,117 +819,25 @@ const keyEvent = {
         });
     }
 };
-
-// =============================================================
-// RENDER
-// =============================================================
-function render(gl) {
-    // Canvas
-    resizeCanvasToDisplaySize(gl.canvas);
-    gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
-
-    // Background
-    gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    // Camera 
-    camera.updateProjectionMatrix(gl);
-    camera.updateViewMatrix(gl);
-
-    // COMMON UNIFORMS
-    //---------------------------------------------------
-    // Shader 1
-    gl.useProgram(basicShader.program);
-    // Pass MVP Matrices
-    gl.uniformMatrix3fv(basicShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-    gl.uniformMatrix3fv(basicShader.uniforms.viewMatrix,false,camera.viewMatrix);
-    gl.uniformMatrix3fv(basicShader.uniforms.modelMatrix,false,mat3.create());
-
-    // Shader 2
-    gl.useProgram(textureShader.program);
-    // Pass MVP Matrices
-    gl.uniformMatrix3fv(textureShader.uniforms.viewMatrix,false,camera.viewMatrix);
-    gl.uniformMatrix3fv(textureShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-    gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
-        
-    
-    // RENDER MESHES
-    //---------------------------------------------------
-    // Grid
-    grid.draw(gl);
-    // X-Axis
-    xAxis.draw(gl);
-    // Y-Axis
-    yAxis.draw(gl);
-   
-    // All Squares
-    squares.forEach(square => square.draw(gl));
-    
-    //---------------------------------------------------
-    // LOOP
-    requestAnimationFrame(() => render(gl));
-}
-
 // =============================================================
 // MAIN
 // =============================================================
-function main() {
-    //Canvas
-    const canvas = document.querySelector("#c");
-    if(!canvas) {console.error("Canvas element not found");return;}
-
-    //Context
-    const gl = canvas.getContext("webgl2");
-    if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
-
-    //GUI
-    gui.init(gl);
-
-    //KeyEvents
-    keyEvent.init(() => render(gl));
-
-    //Shaders
-    basicShader.init(gl);
-    textureShader.init(gl);
-
-    //Textures
-    texture.init(gl);
-
-    //Objects
-    squares = [
-        createSquare(64, 0, 0),
-        createSquare(128, 100, 0),
-        createSquare(256, 300, 0),
-        createSquare(512, 700, 0)
-    ];
-    squares.forEach(square => square.init(gl, textureShader));
-
-    grid.init(gl, basicShader);
-    xAxis.init(gl, basicShader);
-    yAxis.init(gl, basicShader);
-
-    //Render
-    render(gl);
-
-    //Resize
-    window.addEventListener("resize", () => render(gl));
+function appLoop() {
+    renderSystem.resizeCanvasToDisplaySize();
+    renderSystem.update();
+    renderSystem.render();
+    requestAnimationFrame(appLoop);
 }
 
-// =============================================================
-// HELPER FUNCS
-// =============================================================
-// Resize Canvas
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
+function appInit() {
+    renderSystem.init();
+    gui.init();
+    keyEvent.init(() => appLoop());
+}
 
-    if(canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
+function main() {
+    appInit();
+    appLoop();
 }
 
 // =============================================================
