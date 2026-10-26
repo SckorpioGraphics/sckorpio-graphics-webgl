@@ -103,7 +103,7 @@ const camera = {
     // Camera bounds
     width: 0,
     height: 0,
-    
+
     // Projection matrix
     projectionMatrix: mat3.create(),
 
@@ -194,9 +194,13 @@ const rectangle = {
         this.drawCount = 6;
     },
     draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        gl.drawArrays(
+            this.drawMode,
+            this.drawOffset,
+            this.drawCount
+        );
     }
 };
 
@@ -228,7 +232,7 @@ const grid = {
         this.shader = shader;
 
         const positions = [];
-    
+
         // Vertical lines
         for(let x = -this.range; x <= this.range; x += this.spacing) {
             positions.push(
@@ -274,83 +278,107 @@ const grid = {
         this.drawCount = positions.length / 2;
     },
     draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);   
+        gl.uniform3fv(this.shader.uniforms.color,this.color);
         gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        gl.drawArrays(
+            this.drawMode,
+            this.drawOffset,
+            this.drawCount
+        );
     }
 };
 
 // =============================================================
-// RENDER
+// RENDER SYSTEM
 // =============================================================
-function render(gl) {
-    // Canvas
-    resizeCanvasToDisplaySize(gl.canvas);
-    gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+const renderSystem = {
+    canvas: null,
+    gl: null,
 
-    // Background
-    gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    initWebgl() {
+        // Canvas
+        this.canvas = document.querySelector("#c");
 
-    // Camera 
-    camera.updateProjectionMatrix(gl);
+        if (!this.canvas) {
+            console.error("Canvas element #c not found.");
+            return false;
+        }
 
-    // COMMON UNIFORMS
-    //---------------------------------------------------
-    // Shader
-    gl.useProgram(shader.program);
-    // Pass projection matrix to shader
-    gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-    
-    // RENDER MESHES
-    //---------------------------------------------------
-    // Grid
-    grid.draw(gl);
-    // Rectangle
-    rectangle.draw(gl);
-}
+        // Context
+        this.gl = this.canvas.getContext("webgl2");
+
+        if (!this.gl) {
+            console.error("WebGL2 is not supported or unavailable.");
+            return false;
+        }
+    },
+    // RESIZE
+    resizeCanvasToDisplaySize(multiplier = 1) {
+        const width = (this.canvas.clientWidth * multiplier) | 0;
+        const height = (this.canvas.clientHeight * multiplier) | 0;
+
+        if (this.canvas.width !== width ||
+            this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
+    },
+    // INIT
+    init() {
+        this.initWebgl();
+        const gl = this.gl;
+
+        // Resources Initialise
+        shader.init(gl);
+        rectangle.init(gl, shader);
+        grid.init(gl, shader);
+    },
+    // UPDATE
+    update() {
+        const gl = this.gl;
+
+        camera.updateProjectionMatrix(gl);
+    },
+    // RENDER
+    render() {
+        const gl = this.gl;
+        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+
+        // Background
+        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+        // COMMON UNIFORMS
+        //---------------------------------------------------
+        gl.useProgram(shader.program);
+        // Pass projection matrix to shader
+        gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
+
+        // RENDER MESHES
+        //---------------------------------------------------
+        grid.draw(gl);
+        rectangle.draw(gl);
+    },
+};
 
 // =============================================================
 // MAIN
 // =============================================================
-function main() {
-    //Canvas
-    const canvas = document.querySelector("#c");
-    if(!canvas) {console.error("Canvas element not found");return;}
-
-    //Context
-    const gl = canvas.getContext("webgl2");
-    if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
-
-    //Shaders
-    shader.init(gl);
-
-    //Objects
-    rectangle.init(gl, shader);
-    grid.init(gl, shader);
-
-    //Render
-    render(gl);
-
-    //Resize
-    window.addEventListener("resize", () => render(gl));
+function app() {
+    renderSystem.resizeCanvasToDisplaySize();
+    renderSystem.update();
+    renderSystem.render();
 }
 
-// =============================================================
-// HELPER FUNCS
-// =============================================================
-// Resize Canvas
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
+function appInit() {
+    renderSystem.init();
+    window.addEventListener("resize", () => app());
+}
 
-    if(canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
+function main() {
+    appInit();
+    app();
 }
 
 // =============================================================
@@ -358,6 +386,4 @@ function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
 // =============================================================
 window.addEventListener("DOMContentLoaded", main);
 
-export {
-    main
-};
+export { main };
