@@ -29,10 +29,15 @@ https://github.com/SckorpioGraphics/sckorpio-real-time-webgl
 
 LESSON CODE ORGANIZATION
 ------------------------
-The early lessons introduce WebGL operations directly, then progressively
-organize related state and behavior into objects. The core principle is
-OBJECT = STATE + BEHAVIOR. Chapter 9's lesson-template notes explain the
-convention and its purpose.
+Lessons remain self-contained JavaScript modules and progressively organize
+related state and behavior into objects. The core principle is to keep state
+and the behavior that manages it together. Shader objects own shader state,
+mesh objects own geometry and GPU resources, and renderSystem owns canvas and
+context setup and rendering. GUI and keyboard setup lives in appInit(); app()
+handles one-shot frames and appLoop() handles lessons that need continuous
+rendering. Each lesson uses only the systems it needs. Chapter 2a documents
+the conventions with code examples:
+chapters/chapter02/chapter2a.js
 
 RUNNING A LESSON
 ----------------

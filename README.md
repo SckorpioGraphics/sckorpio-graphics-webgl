@@ -22,5 +22,18 @@ Open <http://localhost:8000>. The page loads
 `index.html` to select another lesson. Lil GUI and gl-matrix are loaded from
 CDNs in `index.html`.
 
+## Lesson structure
+
+Lessons remain self-contained JavaScript modules. As the series advances, they
+organize shader state and initialization in shader objects, geometry and GPU
+resources in mesh objects, and canvas/context setup and rendering in
+`renderSystem`. GUI and keyboard systems are initialized from `appInit()`.
+Static lessons use a one-shot app function; lessons that animate schedule
+frames from `appLoop()`. Each lesson uses only the systems needed for its
+concepts.
+
+Chapter 2a explains the conventions with annotated examples:
+[lesson template](chapters/chapter02/chapter2a.js).
+
 See the [series overview](Documentation/series_index.txt) and
 [episode guide](Documentation/series_episodes.txt).
