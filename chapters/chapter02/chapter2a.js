@@ -1,429 +1,305 @@
-// =============================================================
-// WEBGL FUNDAMENTALS — CHAPTER LESSON TEMPLATE
-// =============================================================
-//
-// PURPOSE
-// -------------------------------------------------------------
-// This is the common code structure used throughout the
-// WebGL Fundamentals series.
-//
-// The goal is to keep every lesson:
-//   - Easy to read
-//   - Easy to extend
-//   - Consistent across chapters
-//   - Gradually closer to real engine architecture
-//
-// CORE PRINCIPLE
-// -------------------------------------------------------------
-// An object should own both:
-//
-//   1. Its DATA
-//   2. The FUNCTIONS that manage that data
-//
-// In other words:
-//
-//   OBJECT = STATE + BEHAVIOR
-//
-// Example:
-//
-//   camera
-//      ├── width
-//      ├── height
-//      ├── position
-//      ├── viewMatrix
-//      ├── projectionMatrix
-//      │
-//      ├── init()
-//      ├── updateBounds()
-//      ├── updateViewMatrix()
-//      └── updateProjectionMatrix()
-//
-// This keeps related code together and makes the architecture
-// easier to understand as the series becomes more advanced.
-//
-// =============================================================
+/*
+=============================================================
+WEBGL FUNDAMENTALS — LESSON TEMPLATE
+=============================================================
 
+PURPOSE
+-------------------------------------------------------------
+This file describes the code organization used by the lessons.
+Each lesson remains a self-contained JavaScript file and uses
+only the systems needed for its graphics concepts.
 
-// =============================================================
-// GLOBAL OBJECTS
-// =============================================================
-//
-// Keep the main objects of the lesson here.
-//
-// Each object should contain its own:
-//
-//   - Data / State
-//   - GPU resources
-//   - Initialization functions
-//   - Update functions
-//   - Rendering functions, when appropriate
-//
-// Do NOT create a large collection of global functions that
-// manipulate unrelated object data.
-//
-// -------------------------------------------------------------
-//
-// CANVAS / WEBGL
-// -------------------------------------------------------------
-//
-// Keep canvas and WebGL context here when needed.
-//
-// Example:
-//
-//   const canvas = document.querySelector("#c");
-//   const gl = canvas.getContext("webgl2");
-//
-//
-// -------------------------------------------------------------
-//
-// SHADER OBJECTS
-// -------------------------------------------------------------
-//
-// A shader object owns everything specific to that shader:
-//
-//   - Vertex shader source
-//   - Fragment shader source
-//   - Program
-//   - Attribute locations
-//   - Uniform locations
-//   - Shader initialization
-//
-// Example:
-//
-//   const shader = {
-//
-//       vertexShaderSource: `...`,
-//       fragmentShaderSource: `...`,
-//
-//       program: null,
-//
-//       attributes: {
-//           position: null
-//       },
-//
-//       uniforms: {
-//           color: null
-//       },
-//
-//       init(gl) {
-//           // Create shader program
-//           // Find attributes
-//           // Find uniforms
-//       }
-//   };
-//
-// Different shaders may have different attributes and uniforms.
-// Therefore, shader-specific initialization belongs inside the
-// shader object itself.
-//
-//
-// -------------------------------------------------------------
-//
-// CAMERA OBJECTS
-// -------------------------------------------------------------
-//
-// A camera owns camera state and camera-related matrices.
-//
-// Example:
-//
-//   const camera = {
-//
-//       // Camera data
-//       width: 0,
-//       height: 0,
-//       position: [0, 0],
-//
-//       // Camera matrices
-//       viewMatrix: mat3.create(),
-//       projectionMatrix: mat3.create(),
-//
-//       // Camera functions
-//       init() {},
-//       updateBounds() {},
-//       updateViewMatrix() {},
-//       updateProjectionMatrix() {}
-//   };
-//
-// Keep camera-related state and operations together.
-//
-//
-//
-// -------------------------------------------------------------
-//
-// SCENE / DRAWABLE OBJECTS
-// -------------------------------------------------------------
-//
-// Objects such as:
-//
-//   - Rectangle
-//   - Grid
-//   - Triangle
-//   - Mesh
-//   - Axis
-//
-// should own the data and GPU resources required to render them.
-//
-// Example:
-//
-//   const rectangle = {
-//
-//       vao: null,
-//       vbo: null,
-//
-//       drawMode: null,
-//       drawOffset: 0,
-//       drawCount: 0,
-//
-//       init(gl, shader) {
-//           // Create vertex data
-//           // Create VBO
-//           // Create VAO
-//           // Configure attributes
-//       },
-//
-//       draw(gl) {
-//           // Bind VAO
-//           // Draw
-//       }
-//   };
-//
-// The object should know how to initialize and render itself.
-//
-//
-//
-// -------------------------------------------------------------
-//
-// OTHER STATE
-// -------------------------------------------------------------
-//
-// Keep lesson-specific state here only when it does not naturally
-// belong to an existing object.
-//
-// Examples:
-//
-//   - GUI state
-//   - Animation state
-//   - Temporary application state
-//
-// Prefer placing state inside the object that owns it whenever
-// there is a clear ownership relationship.
-//
-// =============================================================
+The architecture should make ownership clear:
 
+  SHADER       owns shader sources and shader locations
+  MESH         owns geometry, GPU resources, and drawing
+  RENDER SYSTEM owns the canvas, WebGL context, and rendering
+  GUI          owns GUI creation and controls
+  KEY EVENTS   owns keyboard event registration
+  APP          initializes systems and coordinates a frame
 
-// =============================================================
-// SHARED / GENERIC FUNCTIONS
-// =============================================================
-//
-// Keep a function outside an object when it is genuinely generic
-// infrastructure and does not belong to one particular object.
-//
-// Examples:
-//
-//   - resizeCanvasToDisplaySize()
-//   - Generic WebGL resource helpers
-//   - Utility functions
-//
-// Avoid creating generic functions simply to keep code outside
-// an object.
-//
-// If a function primarily modifies one object's state,
-// it should usually live inside that object instead.
-//
-//
-// Example:
-//
-//   GOOD:
-//
-//       camera.updateViewMatrix();
-//
-//   Instead of:
-//
-//       updateViewMatrix(camera);
-//
-//
-//
-// -------------------------------------------------------------
-//
-// GENERIC WEBGL HELPERS
-// -------------------------------------------------------------
-//
-// Functions that are reusable infrastructure may live here.
-//
-// Example:
-//
-//   createShader()
-//   createProgram()
-//   resizeCanvasToDisplaySize()
-//
-// These functions do not represent behavior belonging to one
-// specific scene object.
-//
-// =============================================================
+Keep related data and behavior together. Add a new object or
+helper only when the lesson needs it.
 
+=============================================================
+SHADER OBJECTS
+=============================================================
 
-// =============================================================
-// RENDER
-// =============================================================
-//
-// render() should primarily orchestrate the frame.
-//
-// It should NOT contain the implementation details of every
-// object.
-//
-// Think of render() as:
-//
-//   "Tell the systems what to do."
-//
-// rather than:
-//
-//   "Implement everything here."
-//
-// Example:
-//
-//   function render(gl) {
-//
-//       camera.updateBounds(gl);
-//       camera.updateProjectionMatrix();
-//       camera.updateViewMatrix();
-//
-//       rectangle.draw(gl);
-//       grid.draw(gl);
-//   }
-//
-// As the series becomes more advanced, render() should gradually
-// become cleaner because more behavior is encapsulated inside
-// the objects themselves.
-//
-// =============================================================
+A shader object owns shader-specific data and initialization:
 
+  const shader = {
+      vertexShaderSource: `...`,
+      fragmentShaderSource: `...`,
+      program: null,
+      attributes: {
+          position: null
+      },
+      uniforms: {
+          color: null
+      },
+      init(gl) {
+          const vertexShader = createShader(
+              gl,
+              gl.VERTEX_SHADER,
+              this.vertexShaderSource
+          );
+          const fragmentShader = createShader(
+              gl,
+              gl.FRAGMENT_SHADER,
+              this.fragmentShaderSource
+          );
+          this.program = createProgram(gl, vertexShader, fragmentShader);
+          this.attributes.position =
+              gl.getAttribLocation(this.program, "a_position");
+          this.uniforms.color =
+              gl.getUniformLocation(this.program, "u_color");
+      }
+  };
 
-// =============================================================
-// MAIN
-// =============================================================
-//
-// main() is responsible for application initialization.
-//
-// Typical responsibilities:
-//
-//   - Find canvas
-//   - Create WebGL context
-//   - Initialize objects
-//   - Start rendering
-//   - Register events
-//
-// Example:
-//
-//   function main() {
-//
-//       // Canvas / WebGL
-//
-//       // Initialize shader
-//       shader.init(gl);
-//
-//       // Initialize camera
-//       camera.init(gl);
-//
-//       // Initialize scene objects
-//       rectangle.init(gl, shader);
-//       grid.init(gl, shader);
-//
-//       // Start rendering
-//       render(gl);
-//
-//       // Events
-//   }
-//
-// Keep main() readable.
-// It should describe WHAT is being initialized,
-// not contain the implementation of HOW it is initialized.
-//
-// =============================================================
+Different shaders can have different attributes and uniforms.
+Keep their locations and initialization in the shader object.
+Generic functions such as createShader() and createProgram()
+remain outside the object because they are reusable helpers.
 
+=============================================================
+MESHES
+=============================================================
 
-// =============================================================
-// STARTUP AND EXPORTS
-// =============================================================
-//
-// Application startup and module exports.
-//
-// Example:
-//
-//   window.addEventListener("DOMContentLoaded", main);
-//
-//   export {
-//       main
-//   };
-//
-// =============================================================
+Mesh objects own their vertex data, GPU resources,
+initialization, and draw method:
 
+  const triangle = {
+      vertexData: new Float32Array([
+          -0.8, -0.6,
+           0.0,  0.8,
+           0.8, -0.6
+      ]),
+      shader: null,
+      vao: null,
+      vbo: null,
+      drawMode: null,
+      drawOffset: 0,
+      drawCount: 0,
+      init(gl, shader) {
+          this.shader = shader;
+          this.vbo = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+          gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+          this.vao = gl.createVertexArray();
+          gl.bindVertexArray(this.vao);
+          gl.enableVertexAttribArray(this.shader.attributes.position);
+          gl.vertexAttribPointer(
+              this.shader.attributes.position,
+              2,
+              gl.FLOAT,
+              false,
+              2 * Float32Array.BYTES_PER_ELEMENT,
+              0
+          );
+          this.drawMode = gl.TRIANGLES;
+          this.drawOffset = 0;
+          this.drawCount = 3;
+      },
+      draw(gl) {
+          gl.useProgram(this.shader.program);
+          gl.bindVertexArray(this.vao);
+          gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
+          gl.bindVertexArray(null);
+      }
+  };
 
-// =============================================================
-// ARCHITECTURE EVOLUTION
-// =============================================================
-//
-// The architecture should grow naturally with the series.
-//
-// Early chapters:
-//
-//   Object
-//      ├── data
-//      └── init()
-//
-//
-// As concepts are introduced:
-//
-//   Camera
-//      ├── data
-//      ├── init()
-//      ├── updateBounds()
-//      ├── updateProjectionMatrix()
-//      └── updateViewMatrix()
-//
-//
-// Drawable objects:
-//
-//   Rectangle
-//      ├── GPU resources
-//      ├── init()
-//      └── draw()
-//
-//
-// Later, the same structure can naturally evolve toward:
-//
-//   Renderer
-//   Camera
-//   Shader
-//   Mesh
-//   Material
-//   Scene
-//
-// The architecture should NEVER be introduced just for the sake
-// of abstraction.
-//
-// Introduce a new structure when the concept becomes necessary
-// for the lesson.
-//
-// =============================================================
+Use one mesh object per drawable when that matches the lesson.
+Meshes may also own transforms, colors, textures, index buffers,
+or update methods when the lesson needs them. Do not add empty
+or artificial update methods.
 
+=============================================================
+RENDER SYSTEM
+=============================================================
 
-// =============================================================
-// GOLDEN RULE
-// =============================================================
-//
-// Keep related DATA + BEHAVIOR together.
-//
-// If an object owns the data,
-// it should usually own the functions that manage that data.
-//
-// This keeps every chapter:
-//
-//   SIMPLE
-//      ↓
-//   CONSISTENT
-//      ↓
-//   EXTENSIBLE
-//      ↓
-//   ENGINE-LIKE
-//
-// =============================================================
+Place renderSystem immediately after the mesh objects. It owns
+the canvas, WebGL context, resource initialization, resizing,
+scene updates when needed, and drawing.
+
+Keep its methods in this order:
+
+  1. initWebgl()
+  2. resizeCanvasToDisplaySize()
+  3. init()
+  4. update(), only when scene updates are needed
+  5. render()
+
+  const renderSystem = {
+      canvas: null,
+      gl: null,
+      initWebgl() {
+          this.canvas = document.querySelector("#c");
+          if (!this.canvas) {
+              console.error("Canvas element #c not found.");
+              return;
+          }
+          this.gl = this.canvas.getContext("webgl2");
+          if (!this.gl) {
+              console.error("WebGL2 is not supported or unavailable.");
+              return;
+          }
+      },
+      resizeCanvasToDisplaySize(multiplier = 1) {
+          const width = (this.canvas.clientWidth * multiplier) | 0;
+          const height = (this.canvas.clientHeight * multiplier) | 0;
+          if (this.canvas.width !== width ||
+              this.canvas.height !== height) {
+              this.canvas.width = width;
+              this.canvas.height = height;
+          }
+      },
+      init() {
+          this.initWebgl();
+          const gl = this.gl;
+          shader.init(gl);
+          triangle.init(gl, shader);
+      },
+      render() {
+          const gl = this.gl;
+          gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+          gl.clearColor(0.32, 0.63, 0.67, 1.0);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+          triangle.draw(gl);
+      }
+  };
+
+When a lesson has scene state to update, add update() and put
+those operations there. Keep rendering in render(): set the
+viewport, clear the canvas, upload uniforms, and draw meshes.
+Do not duplicate canvas resizing in render().
+
+=============================================================
+GUI
+=============================================================
+
+Create and initialize the GUI from appInit(). Pass a callback
+named func only when a control needs to call it:
+
+  const gui = {
+      init(func) {
+          const controls = new lil.GUI();
+          controls.add(triangle, "size", 0.1, 1.0)
+              .onChange(func);
+      }
+  };
+
+If the GUI does not use a callback or WebGL context, omit that
+parameter. Pass gl only to GUI initialization when its controls
+actually need the WebGL context.
+
+=============================================================
+KEY EVENTS
+=============================================================
+
+Keep keyboard event registration in keyEvent and initialize it
+from appInit(). Use func only when a handler needs to invoke the
+provided callback. Otherwise, omit the parameter:
+
+  const keyEvent = {
+      init(func) {
+          window.addEventListener("keydown", event => {
+              if (event.key === "ArrowRight") {
+                  triangle.translationX += 10;
+                  func();
+              }
+          });
+      }
+  };
+
+Register keyboard and resize listeners once. Do not restart a
+continuous animation loop from an event handler. For lessons with
+a continuous loop, handlers should update state and let that
+existing loop render it.
+
+=============================================================
+MAIN
+=============================================================
+
+appInit() initializes WebGL resources and the lesson's GUI,
+keyboard events, and other systems exactly once.
+
+For a static or user-triggered lesson, app() coordinates a frame:
+
+  1. Resize the canvas
+  2. Update scene state, when needed
+  3. Render the scene
+
+  function app() {
+      renderSystem.resizeCanvasToDisplaySize();
+      // Call renderSystem.update() here only when needed.
+      renderSystem.render();
+  }
+
+  function appInit() {
+      renderSystem.init();
+      gui.init(app);
+      keyEvent.init();
+      window.addEventListener("resize", app);
+  }
+
+  function main() {
+      appInit();
+      app();
+  }
+
+For an animated lesson, appLoop() performs the same frame work and
+schedules the next frame. Start it once from main(). Event handlers
+update state; they do not restart the loop:
+
+  function appLoop() {
+      renderSystem.resizeCanvasToDisplaySize();
+      renderSystem.update();
+      renderSystem.render();
+      requestAnimationFrame(appLoop);
+  }
+
+  function main() {
+      appInit();
+      appLoop();
+  }
+
+Omit update() or callback arguments when the lesson does not need
+them. Do not add return-value plumbing or duplicate initialization.
+Keep renderSystem.update() and renderSystem.render() separate.
+
+=============================================================
+STARTUP AND EXPORTS
+=============================================================
+
+Start the lesson after the document is ready and export main
+when the existing module setup requires it:
+
+  window.addEventListener("DOMContentLoaded", main);
+
+  export {
+      main
+  };
+
+=============================================================
+ARCHITECTURE GUIDELINES
+=============================================================
+
+Keep the lesson's graphics concepts, rendering behavior, and
+educational progression intact. Adapt the template to the actual
+lesson rather than adding systems that it does not use.
+
+Organize related data and behavior together:
+
+  SHADER       shader code and locations
+  MESH         geometry, GPU resources, and drawing
+  RENDER SYSTEM canvas, context, updates, and rendering
+  GUI          controls
+  KEY EVENTS   keyboard listeners
+  APP          initialization and frame orchestration
+
+Use generic helpers only for reusable operations that do not
+belong to one particular object. Keep each lesson independently
+runnable within its existing HTML and library setup.
+
+=============================================================
+*/
