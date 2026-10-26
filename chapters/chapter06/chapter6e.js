@@ -92,7 +92,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // MESHES
 // =============================================================
 const triangle = {
-    //    v3--------v2 
+    //    v3--------v2
     //    |  \      |
     //    |    \    |
     //    |      \  |
@@ -118,7 +118,7 @@ const triangle = {
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         // data will be updated from the UI during rendering.
-        
+
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
@@ -181,7 +181,83 @@ const triangle = {
         // Update interleaved vertex data on the GPU
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.DYNAMIC_DRAW);
+    },
+
+    draw(gl) {
+        gl.useProgram(this.shader.program);
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(
+            this.drawMode,
+            this.drawOffset,
+            this.drawCount
+        );
     }
+};
+
+// =============================================================
+// RENDER SYSTEM
+// =============================================================
+const renderSystem = {
+    canvas: null,
+    gl: null,
+
+    initWebgl() {
+        // Canvas
+        this.canvas = document.querySelector("#c");
+
+        if (!this.canvas) {
+            console.error("Canvas element #c not found.");
+            return false;
+        }
+
+        // Context
+        this.gl = this.canvas.getContext("webgl2");
+
+        if (!this.gl) {
+            console.error("WebGL2 is not supported or unavailable.");
+            return false;
+        }
+    },
+    // RESIZE
+    resizeCanvasToDisplaySize(multiplier = 1) {
+        const width = (this.canvas.clientWidth * multiplier) | 0;
+        const height = (this.canvas.clientHeight * multiplier) | 0;
+
+        if (this.canvas.width !== width ||
+            this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
+    },
+    // INIT
+    init() {
+        this.initWebgl();
+        const gl = this.gl;
+
+        // Resources Initialise
+        shader.init(gl);
+        triangle.init(gl, shader);
+    },
+    // UPDATE
+    update() {
+        const gl = this.gl;
+
+        triangle.updateData(gl);
+    },
+    // RENDER
+    render() {
+        const gl = this.gl;
+        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+
+        // Background
+        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+        // RENDER MESHES
+        //---------------------------------------------------
+        triangle.draw(gl);
+    },
 };
 
 // =============================================================
@@ -202,7 +278,7 @@ const gui = {
         qR: 0.0, qG: 1.0, qB: 0.0
     },
 
-    init(render) {
+    init(func) {
         const gui = new lil.GUI();
 
         // ---------------------------------------------------------
@@ -213,23 +289,23 @@ const gui = {
 
         // Point A
         const pointAFolder = verticesFolder.addFolder("Point A");
-        pointAFolder.add(this.state, "aX", -1, 1).name("X").onChange(render);
-        pointAFolder.add(this.state, "aY", -1, 1).name("Y").onChange(render);
+        pointAFolder.add(this.state, "aX", -1, 1).name("X").onChange(func);
+        pointAFolder.add(this.state, "aY", -1, 1).name("Y").onChange(func);
 
         // Point B
         const pointBFolder = verticesFolder.addFolder("Point B");
-        pointBFolder.add(this.state, "bX", -1, 1).name("X").onChange(render);
-        pointBFolder.add(this.state, "bY", -1, 1).name("Y").onChange(render);
+        pointBFolder.add(this.state, "bX", -1, 1).name("X").onChange(func);
+        pointBFolder.add(this.state, "bY", -1, 1).name("Y").onChange(func);
 
         // Point C
         const pointCFolder = verticesFolder.addFolder("Point C");
-        pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(render);
-        pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(render);
+        pointCFolder.add(this.state, "cX", -1, 1).name("X").onChange(func);
+        pointCFolder.add(this.state, "cY", -1, 1).name("Y").onChange(func);
 
         // Point D
         const pointDFolder = verticesFolder.addFolder("Point D");
-        pointDFolder.add(this.state, "dX", -1, 1).name("X").onChange(render);
-        pointDFolder.add(this.state, "dY", -1, 1).name("Y").onChange(render);
+        pointDFolder.add(this.state, "dX", -1, 1).name("X").onChange(func);
+        pointDFolder.add(this.state, "dY", -1, 1).name("Y").onChange(func);
 
         // ---------------------------------------------------------
         // COLORS
@@ -239,90 +315,35 @@ const gui = {
 
         // Triangle P Color
         const pointAColorFolder = colorFolder.addFolder("Triangle P");
-        pointAColorFolder.add(this.state, "pR", 0, 1).name("R").onChange(render);
-        pointAColorFolder.add(this.state, "pG", 0, 1).name("G").onChange(render);
-        pointAColorFolder.add(this.state, "pB", 0, 1).name("B").onChange(render);
+        pointAColorFolder.add(this.state, "pR", 0, 1).name("R").onChange(func);
+        pointAColorFolder.add(this.state, "pG", 0, 1).name("G").onChange(func);
+        pointAColorFolder.add(this.state, "pB", 0, 1).name("B").onChange(func);
 
         // Triangle Q Color
         const pointBColorFolder = colorFolder.addFolder("Triangle Q");
-        pointBColorFolder.add(this.state, "qR", 0, 1).name("R").onChange(render);
-        pointBColorFolder.add(this.state, "qG", 0, 1).name("G").onChange(render);
-        pointBColorFolder.add(this.state, "qB", 0, 1).name("B").onChange(render);
+        pointBColorFolder.add(this.state, "qR", 0, 1).name("R").onChange(func);
+        pointBColorFolder.add(this.state, "qG", 0, 1).name("G").onChange(func);
+        pointBColorFolder.add(this.state, "qB", 0, 1).name("B").onChange(func);
     }
 };
-
-// =============================================================
-// RENDER
-// =============================================================
-function render(gl) {
-    // Canvas
-    resizeCanvasToDisplaySize(gl.canvas);
-    gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
-
-    // Background
-    gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    // UPDATE THINGS
-    //---------------------------------------------------
-    triangle.updateData(gl);
-
-    // RENDER MESHES
-    //---------------------------------------------------
-    // Shader
-    gl.useProgram(shader.program);
-    // Rectangle
-    gl.bindVertexArray(triangle.vao);
-    gl.drawArrays(
-        triangle.drawMode,
-        triangle.drawOffset,
-        triangle.drawCount
-    );
-}
-
 // =============================================================
 // MAIN
 // =============================================================
-function main() {
-    //Canvas
-    const canvas = document.querySelector("#c");
-    if(!canvas) {console.error("Canvas element not found");return;}
-
-    //Context
-    const gl = canvas.getContext("webgl2");
-    if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
-
-    //GUI
-    gui.init(() => render(gl));
-
-    //Shaders
-    shader.init(gl);
-
-    //Objects
-    triangle.init(gl, shader);
-
-    //Render
-    render(gl);
-
-    //Resize
-    window.addEventListener("resize", () => render(gl));
+function app() {
+    renderSystem.resizeCanvasToDisplaySize();
+    renderSystem.update();
+    renderSystem.render();
 }
 
-// =============================================================
-// HELPER FUNCS
-// =============================================================
-// Resize Canvas
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
+function appInit() {
+    renderSystem.init();
+    gui.init(() => app());
+    window.addEventListener("resize", () => app());
+}
 
-    if(canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
+function main() {
+    appInit();
+    app();
 }
 
 // =============================================================
@@ -330,6 +351,4 @@ function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
 // =============================================================
 window.addEventListener("DOMContentLoaded", main);
 
-export {
-    main
-};
+export { main };
