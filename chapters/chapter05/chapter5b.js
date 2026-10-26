@@ -163,7 +163,83 @@ const rectangle = {
         // Update vertex data on the GPU
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
         gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.DYNAMIC_DRAW);
+    },
+
+    draw(gl) {
+        gl.useProgram(this.shader.program);
+        gl.bindVertexArray(this.vao);
+        gl.drawArrays(
+            this.drawMode,
+            this.drawOffset,
+            this.drawCount
+        );
     }
+};
+
+// =============================================================
+// RENDER SYSTEM
+// =============================================================
+const renderSystem = {
+    canvas: null,
+    gl: null,
+
+    initWebgl() {
+        // Canvas
+        this.canvas = document.querySelector("#c");
+
+        if (!this.canvas) {
+            console.error("Canvas element #c not found.");
+            return false;
+        }
+
+        // Context
+        this.gl = this.canvas.getContext("webgl2");
+
+        if (!this.gl) {
+            console.error("WebGL2 is not supported or unavailable.");
+            return false;
+        }
+    },
+    // RESIZE
+    resizeCanvasToDisplaySize(multiplier = 1) {
+        const width = (this.canvas.clientWidth * multiplier) | 0;
+        const height = (this.canvas.clientHeight * multiplier) | 0;
+
+        if (this.canvas.width !== width ||
+            this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
+    },
+    // INIT
+    init() {
+        this.initWebgl();
+        const gl = this.gl;
+
+        // Resources Initialise
+        shader.init(gl);
+        rectangle.init(gl, shader);
+    },
+    // UPDATE
+    update() {
+        const gl = this.gl;
+
+        rectangle.updateData(gl);
+    },
+    // RENDER
+    render() {
+        const gl = this.gl;
+        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+
+        // Background
+        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+
+        // RENDER MESHES
+        //---------------------------------------------------
+        rectangle.draw(gl);
+    },
 };
 
 // =============================================================
@@ -177,94 +253,39 @@ const gui = {
         width: 0.5
     },
 
-    init(render) {
+    init(func) {
         const gui = new lil.GUI();
         const rectangleFolder = gui.addFolder("Rectangle");
 
         // Center
         const centerFolder = rectangleFolder.addFolder("Center");
-        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(render);
-        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(render);
+        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(func);
+        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(func);
 
         // Dimension
         const dimFolder = rectangleFolder.addFolder("Dimensions");
-        dimFolder.add(this.state, "length", 0, 2).name("length").onChange(render);
-        dimFolder.add(this.state, "width", 0, 2).name("width").onChange(render);
+        dimFolder.add(this.state, "length", 0, 2).name("length").onChange(func);
+        dimFolder.add(this.state, "width", 0, 2).name("width").onChange(func);
     }
 };
-
-// =============================================================
-// RENDER
-// =============================================================
-function render(gl) {
-    // Canvas
-    resizeCanvasToDisplaySize(gl.canvas);
-    gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
-
-    // Background
-    gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    // UPDATE THINGS
-    //---------------------------------------------------
-    rectangle.updateData(gl);
-
-    // RENDER MESHES
-    //---------------------------------------------------
-    // Shader
-    gl.useProgram(shader.program);
-    // Rectangle
-    gl.bindVertexArray(rectangle.vao);
-    gl.drawArrays(
-        rectangle.drawMode,
-        rectangle.drawOffset,
-        rectangle.drawCount
-    );
-}
-
 // =============================================================
 // MAIN
 // =============================================================
-function main() {
-    //Canvas
-    const canvas = document.querySelector("#c");
-    if(!canvas) {console.error("Canvas element not found");return;}
-
-    //Context
-    const gl = canvas.getContext("webgl2");
-    if(!gl) {console.error("WebGL2 is not supported by this browser");return;}
-
-    //GUI
-    gui.init(() => render(gl));
-
-    //Shaders
-    shader.init(gl);
-
-    //Objects
-    rectangle.init(gl, shader);
-
-    //Render
-    render(gl);
-
-    //Resize
-    window.addEventListener("resize", () => render(gl));
+function app() {
+    renderSystem.resizeCanvasToDisplaySize();
+    renderSystem.update();
+    renderSystem.render();
 }
 
-// =============================================================
-// HELPER FUNCS
-// =============================================================
-// Resize Canvas
-function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
-    const width = (canvas.clientWidth * multiplier) | 0;
-    const height = (canvas.clientHeight * multiplier) | 0;
+function appInit() {
+    renderSystem.init();
+    gui.init(() => app());
+    window.addEventListener("resize", () => app());
+}
 
-    if(canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        return true;
-    }
-
-    return false;
+function main() {
+    appInit();
+    app();
 }
 
 // =============================================================
@@ -272,6 +293,4 @@ function resizeCanvasToDisplaySize(canvas, multiplier = 1) {
 // =============================================================
 window.addEventListener("DOMContentLoaded", main);
 
-export {
-    main
-};
+export { main };
