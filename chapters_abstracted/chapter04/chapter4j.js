@@ -362,7 +362,7 @@ class App {
     }
 
     init() {
-        if(!this.renderSystem.init()) return false;
+        this.renderSystem.init();
         return true;
     }
     
@@ -377,7 +377,7 @@ class App {
 // =============================================================
 function main() {
     const app = new App();
-    if(app.renderSystem.gl) app.play();
+    app.play();
 }
 
 window.addEventListener("DOMContentLoaded", main);
