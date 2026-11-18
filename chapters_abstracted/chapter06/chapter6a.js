@@ -315,7 +315,9 @@ class App {
                     out_Color = v_color;
                 }
             `,
-            attributes: { position: "a_position" }
+            attributes: { 
+                position: "a_position" 
+            }
         });
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);

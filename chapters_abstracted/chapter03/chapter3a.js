@@ -235,7 +235,9 @@ class App {
                     out_Color = vec4(0.39, 0.33, 0.58, 1.0);
                 }
             `,
-            attributes: { position: "a_position" }
+            attributes: { 
+                position: "a_position" 
+            }
         });
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);
