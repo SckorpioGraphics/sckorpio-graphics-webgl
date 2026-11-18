@@ -17,11 +17,8 @@ class Shader {
         this.vertexShaderSource = options.vertexShaderSource;
         this.fragmentShaderSource = options.fragmentShaderSource;
 
-        this.attributeNames = options.attributes || {};
-        this.uniformNames = options.uniforms || {};
-
         this.program = null;
-        this.attributes = {};
+        this.attributes = options.attributes || {};
     }
 
     createShader(gl, type, source) {
@@ -66,8 +63,9 @@ class Shader {
         gl.deleteShader(fragmentShader);
         if(!this.program) return;
 
-        for(const [key, name] of Object.entries(this.attributeNames))
-            this.attributes[key] = gl.getAttribLocation(this.program, name);
+        for (const attribute of Object.values(this.attributes)) {
+            attribute.location = gl.getAttribLocation(this.program, attribute.variable);
+        }
 
     }
 }
@@ -108,7 +106,8 @@ class Mesh {
 
         // Vertex Buffer Layout
         for(const layout of this.vertexBufferLayout) {
-            const location = this.shader.attributes[layout.attribute];
+            const attribute = this.shader.attributes[layout.attribute];
+            const location = attribute.location;
             gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
             gl.enableVertexAttribArray(location);
             gl.vertexAttribPointer(location, layout.size, gl[layout.type], layout.normalized, layout.stride, layout.offset);
@@ -342,8 +341,16 @@ class App {
                 }
             `,
             attributes: { 
-                position: "a_position", 
-                color: "a_color" 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                },
+                color: {
+                    variable: "a_color",
+                    type: "vec3",
+                    location: null
+                }
             }
         });
         // Add to RenderSystem

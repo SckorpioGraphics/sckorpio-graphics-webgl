@@ -11,12 +11,8 @@ class Shader {
     constructor(options = {}) {
         this.vertexShaderSource = options.vertexShaderSource;
         this.fragmentShaderSource = options.fragmentShaderSource;
-
-        this.attributeNames = options.attributes || {};
-        this.uniformNames = options.uniforms || {};
-
         this.program = null;
-        this.attributes = {};
+        this.attributes = options.attributes || {};
     }
 
     createShader(gl, type, source) {
@@ -45,25 +41,29 @@ class Shader {
     }
 
     init(gl) {
+        // vertex shader
         const vertexShader = this.createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
         if(!vertexShader) {
             return;
         }
-
+        // fragment shader
         const fragmentShader = this.createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
         if(!fragmentShader) {
             gl.deleteShader(vertexShader);
             return;
         }
-
+        // shader program
         this.program = this.createProgram(gl, vertexShader, fragmentShader);
+        // delete shaders after program is generated
         gl.deleteShader(vertexShader);
         gl.deleteShader(fragmentShader);
+        // if program wasnt created
         if(!this.program) return;
-
-        for(const [key, name] of Object.entries(this.attributeNames))
-            this.attributes[key] = gl.getAttribLocation(this.program, name);
-
+        
+        // save attribute locations
+        for (const attribute of Object.values(this.attributes)) {
+            attribute.location = gl.getAttribLocation(this.program, attribute.variable);
+        }
     }
 }
 
@@ -100,7 +100,8 @@ class Mesh {
 
         // Vertex Buffer Layout
         for(const layout of this.vertexBufferLayout) {
-            const location = this.shader.attributes[layout.attribute];
+            const attribute = this.shader.attributes[layout.attribute];
+            const location = attribute.location;
             gl.enableVertexAttribArray(location);
             gl.vertexAttribPointer(location, layout.size, gl[layout.type], layout.normalized, layout.stride, layout.offset);
         }
@@ -110,6 +111,7 @@ class Mesh {
     }
 
     draw(gl) {
+        // set shader
         gl.useProgram(this.shader.program);
         gl.bindVertexArray(this.vao);
         gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
@@ -231,7 +233,11 @@ class App {
                 }
             `,
             attributes: { 
-                position: "a_position" 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                }
             }
         });
         // Add to RenderSystem
