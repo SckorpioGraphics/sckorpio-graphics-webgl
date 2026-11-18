@@ -236,10 +236,10 @@ class GUI {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
         this.state = {};
-        this.createTriangleFolder();
+        this.createGUIFolder();
     }
 
-    createTriangleFolder() {
+    createGUIFolder() {
         const triangle = this.renderSystem.getMesh("triangle");
 
         this.state = {
@@ -251,19 +251,19 @@ class GUI {
         const triangleFolder = this.gui.addFolder("Triangle");
 
         const vertex0Folder = triangleFolder.addFolder("Vertex 0");
-        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.updateTriangle());
-        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.updateTriangle());
+        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
 
         const vertex1Folder = triangleFolder.addFolder("Vertex 1");
-        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.updateTriangle());
-        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.updateTriangle());
+        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
 
         const vertex2Folder = triangleFolder.addFolder("Vertex 2");
-        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.updateTriangle());
-        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.updateTriangle());
+        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
     }
 
-    updateTriangle() {
+    onUpdateGUI() {
         const triangle = this.renderSystem.getMesh("triangle");
 
         const vertexData = new Float32Array([

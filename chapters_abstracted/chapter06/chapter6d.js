@@ -239,10 +239,10 @@ class GUI {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
         this.state = {};
-        this.createRectangleFolder();
+        this.createGUIFolder();
     }
 
-    createRectangleFolder() {
+    createGUIFolder() {
         const rectangle = this.renderSystem.getMesh("rectangle");
 
         this.state = {

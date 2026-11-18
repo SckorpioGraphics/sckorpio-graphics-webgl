@@ -236,10 +236,10 @@ class GUI {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
         this.state = {};
-        this.createRectangleFolder();
+        this.createGUIFolder();
     }
 
-    createRectangleFolder() {
+    createGUIFolder() {
         const rectangle = this.renderSystem.getMesh("rectangle");
 
         this.state = {
@@ -253,16 +253,16 @@ class GUI {
 
         // Center
         const centerFolder = rectangleFolder.addFolder("Center");
-        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(() => this.updateRectagle());
-        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(() => this.updateRectagle());
+        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(() => this.onUpdateGUI());
+        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(() => this.onUpdateGUI());
 
         // Dimension
         const dimFolder = rectangleFolder.addFolder("Dimensions");
-        dimFolder.add(this.state, "length", 0, 2).name("length").onChange(() => this.updateRectagle());
-        dimFolder.add(this.state, "width", 0, 2).name("width").onChange(() => this.updateRectagle());
+        dimFolder.add(this.state, "length", 0, 2).name("length").onChange(() => this.onUpdateGUI());
+        dimFolder.add(this.state, "width", 0, 2).name("width").onChange(() => this.onUpdateGUI());
     }
 
-    updateRectagle() {
+    onUpdateGUI() {
         const rectangle = this.renderSystem.getMesh("rectangle");
 
         const vertexData = new Float32Array([

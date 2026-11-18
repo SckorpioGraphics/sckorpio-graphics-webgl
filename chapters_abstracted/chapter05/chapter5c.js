@@ -242,12 +242,10 @@ class GUI {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
         this.state = {};
-        this.createPolygonFolder();
+        this.createGUIFolder();
     }
 
-    createPolygonFolder() {
-        const polygon = this.renderSystem.getMesh("polygon");
-
+    createGUIFolder() {
         this.state = {
             centerX: 0.0,
             centerY: 0.0,
@@ -259,16 +257,16 @@ class GUI {
 
         // Center
         const centerFolder = polygonFolder.addFolder("Center");
-        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(() => this.updatePolygon());
-        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(() => this.updatePolygon());
+        centerFolder.add(this.state, "centerX", -1, 1).name("centerX").onChange(() => this.onUpdateGUI());
+        centerFolder.add(this.state, "centerY", -1, 1).name("centerY").onChange(() => this.onUpdateGUI());
 
         // Dimension
         const dimFolder = polygonFolder.addFolder("Dimensions");
-        dimFolder.add(this.state, "radius", 0, 1).name("radius").onChange(() => this.updatePolygon());
-        dimFolder.add(this.state, "points", 3, 20, 1).name("points").onChange(() => this.updatePolygon());
+        dimFolder.add(this.state, "radius", 0, 1).name("radius").onChange(() => this.onUpdateGUI());
+        dimFolder.add(this.state, "points", 3, 20, 1).name("points").onChange(() => this.onUpdateGUI());
     }
 
-    updatePolygon() {
+    onUpdateGUI() {
         const polygon = this.renderSystem.getMesh("polygon");
 
         // Vertex and index data CPU side
