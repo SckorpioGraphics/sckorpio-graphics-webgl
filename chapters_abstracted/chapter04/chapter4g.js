@@ -67,8 +67,6 @@ class Shader {
         for(const [key, name] of Object.entries(this.attributeNames))
             this.attributes[key] = gl.getAttribLocation(this.program, name);
 
-        for(const [key, name] of Object.entries(this.uniformNames))
-            this.uniforms[key] = gl.getUniformLocation(this.program, name);
     }
 }
 
@@ -252,8 +250,7 @@ class App {
                     out_Color = vec4(0.39, 0.33, 0.58, 1.0);
                 }
             `,
-            attributes: { position: "a_position" },
-            uniforms: {}
+            attributes: { position: "a_position" }
         });
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);

@@ -70,8 +70,6 @@ class Shader {
         for(const [key, name] of Object.entries(this.attributeNames))
             this.attributes[key] = gl.getAttribLocation(this.program, name);
 
-        for(const [key, name] of Object.entries(this.uniformNames))
-            this.uniforms[key] = gl.getUniformLocation(this.program, name);
     }
 }
 
@@ -370,8 +368,7 @@ class App {
             attributes: { 
                 position: "a_position", 
                 color: "a_color" 
-            },
-            uniforms: {}
+            }
         });
         // Add to RenderSystem
         this.renderSystem.addShader("colorVertexShader",colorVertexShader);
