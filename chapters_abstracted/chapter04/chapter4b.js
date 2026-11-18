@@ -294,7 +294,7 @@ class App {
                     type: "FLOAT",
                     normalized: false,
                     stride: 2 * Float32Array.BYTES_PER_ELEMENT,
-                    offset: 0
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
                 }
             ],
 

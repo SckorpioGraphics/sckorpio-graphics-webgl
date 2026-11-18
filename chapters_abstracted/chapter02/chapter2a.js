@@ -31,7 +31,7 @@ layout; do not assume a fixed vertex format:
 
   const layout = [
       { attribute: "position", size: 2, type: "FLOAT",
-        normalized: false, stride: 20, offset: 0 },
+        normalized: false, stride: 20, offset: 0 * Float32Array.BYTES_PER_ELEMENT },
       { attribute: "color", size: 3, type: "FLOAT",
         normalized: false, stride: 20, offset: 8 }
   ];
