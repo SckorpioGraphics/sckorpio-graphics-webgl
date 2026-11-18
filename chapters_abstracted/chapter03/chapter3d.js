@@ -22,7 +22,6 @@ class Shader {
 
         this.program = null;
         this.attributes = {};
-        this.uniforms = {};
     }
 
     createShader(gl, type, source) {
