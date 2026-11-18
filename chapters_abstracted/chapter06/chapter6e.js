@@ -248,21 +248,25 @@ class GUI {
 
         this.state = {
             // Vertex Positions
-            v1x: -0.5, v1y: -0.5,
-            v2x: 0.5, v2y: -0.5,
-            v3x: 0.5, v3y: 0.5,
-            v4x: -0.5, v4y: 0.5,
+            v0x: -0.5, v0y: -0.5,
+            v1x: 0.5,  v1y: -0.5,
+            v2x: 0.5,  v2y: 0.5,
+            v3x: -0.5, v3y: 0.5,
 
             // Vertex Colors
+            // Triangle 0 Color
+            r0: 1.0, g0: 0.0, b0: 0.0,
             // Triangle 1 Color
-            r1: 1.0, g1: 0.0, b1: 0.0,
-            // Triangle 2 Color
-            r2: 0.0, g2: 0.0, b2: 1.0
+            r1: 0.0, g1: 0.0, b1: 1.0,
+            
         };
 
         const rectangleFolder = this.gui.addFolder("Rectangle");
 
         const vertexFolder = rectangleFolder.addFolder("Vertex");
+        const vertex0Folder = vertexFolder.addFolder("Vertex 0");
+        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.updateRectangle());
+        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.updateRectangle());
         const vertex1Folder = vertexFolder.addFolder("Vertex 1");
         vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.updateRectangle());
         vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.updateRectangle());
@@ -272,26 +276,34 @@ class GUI {
         const vertex3Folder = vertexFolder.addFolder("Vertex 3");
         vertex3Folder.add(this.state, "v3x", -1, 1).name("X").onChange(() => this.updateRectangle());
         vertex3Folder.add(this.state, "v3y", -1, 1).name("Y").onChange(() => this.updateRectangle());
-        const vertex4Folder = vertexFolder.addFolder("Vertex 4");
-        vertex4Folder.add(this.state, "v4x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex4Folder.add(this.state, "v4y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        
 
         const colorFolder = rectangleFolder.addFolder("Color");
+        const color0Folder = colorFolder.addFolder("Triangle 0");
+        color0Folder.add(this.state, "r0", 0, 1).name("R").onChange(() => this.updateRectangle());
+        color0Folder.add(this.state, "g0", 0, 1).name("G").onChange(() => this.updateRectangle());
+        color0Folder.add(this.state, "b0", 0, 1).name("B").onChange(() => this.updateRectangle());
         const color1Folder = colorFolder.addFolder("Triangle 1");
         color1Folder.add(this.state, "r1", 0, 1).name("R").onChange(() => this.updateRectangle());
         color1Folder.add(this.state, "g1", 0, 1).name("G").onChange(() => this.updateRectangle());
         color1Folder.add(this.state, "b1", 0, 1).name("B").onChange(() => this.updateRectangle());
-        const color2Folder = colorFolder.addFolder("Triangle 2");
-        color2Folder.add(this.state, "r2", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color2Folder.add(this.state, "g2", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color2Folder.add(this.state, "b2", 0, 1).name("B").onChange(() => this.updateRectangle());
     }
 
     updateRectangle() {
         const rectangle = this.renderSystem.getMesh("rectangle");
 
         const vertexData = new Float32Array([
+            this.state.v0x, this.state.v0y,
+            this.state.r0, this.state.g0, this.state.b0,
+
             this.state.v1x, this.state.v1y,
+            this.state.r0, this.state.g0, this.state.b0,
+
+            this.state.v2x, this.state.v2y,
+            this.state.r0, this.state.g0, this.state.b0,
+
+            //------
+            this.state.v0x, this.state.v0y,
             this.state.r1, this.state.g1, this.state.b1,
 
             this.state.v2x, this.state.v2y,
@@ -299,15 +311,6 @@ class GUI {
 
             this.state.v3x, this.state.v3y,
             this.state.r1, this.state.g1, this.state.b1,
-
-            this.state.v1x, this.state.v1y,
-            this.state.r2, this.state.g2, this.state.b2,
-
-            this.state.v3x, this.state.v3y,
-            this.state.r2, this.state.g2, this.state.b2,
-
-            this.state.v4x, this.state.v4y,
-            this.state.r2, this.state.g2, this.state.b2
         ]);
 
         rectangle.updateVertexData(this.renderSystem.gl, vertexData);
