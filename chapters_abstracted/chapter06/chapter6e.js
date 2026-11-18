@@ -1,0 +1,455 @@
+/* #############################################################
+CHAPTER 6e: Rectangle Triangles with Different Colors
+
+Topics:
+- Making a rectangle with 2 different triangles
+- Each vertex has 3 point data, same coords but different colors
+###############################################################
+*/
+
+// =============================================================
+// SHADER
+// =============================================================
+class Shader {
+    constructor(options = {}) {
+        this.vertexShaderSource = options.vertexShaderSource;
+        this.fragmentShaderSource = options.fragmentShaderSource;
+
+        this.attributeNames = options.attributes || {};
+        this.uniformNames = options.uniforms || {};
+
+        this.program = null;
+        this.attributes = {};
+        this.uniforms = {};
+    }
+
+    createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+
+        if(gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+
+        console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
+    }
+
+    createProgram(gl, vertexShader, fragmentShader) {
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if(gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+
+        console.error("Program Linking Error:", gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+        return null;
+    }
+
+    init(gl) {
+        const vertexShader = this.createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        if(!vertexShader) {
+            return;
+        }
+
+        const fragmentShader = this.createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        if(!fragmentShader) {
+            gl.deleteShader(vertexShader);
+            return;
+        }
+
+        this.program = this.createProgram(gl, vertexShader, fragmentShader);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        if(!this.program) return;
+
+        for(const [key, name] of Object.entries(this.attributeNames))
+            this.attributes[key] = gl.getAttribLocation(this.program, name);
+
+        for(const [key, name] of Object.entries(this.uniformNames))
+            this.uniforms[key] = gl.getUniformLocation(this.program, name);
+    }
+}
+
+// =============================================================
+// MESH
+// =============================================================
+class Mesh {
+    constructor(options = {}) {
+        // CPU Data
+        this.vertexData = options.vertexData;
+        this.indexData = options.indexData || null;
+        this.dataUsage = options.dataUsage || "STATIC_DRAW";
+        this.vertexBufferLayout = options.vertexBufferLayout || [];
+
+        // GPU Data
+        this.shader = options.shader;
+        this.drawMode = options.drawMode || "TRIANGLES";
+        this.drawCount = options.drawCount || 0;
+        this.drawOffset = options.drawOffset || 0;
+        this.drawType = options.drawType || "UNSIGNED_SHORT";
+
+        // GPU Resources
+        this.vao = null;
+        this.vbo = null;
+        this.ibo = null;
+    }
+
+    init(gl) {
+        // Vertex Buffer
+        this.vbo = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl[this.dataUsage]);
+
+        // Vertex Array
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        // Vertex Buffer Layout
+        for(const layout of this.vertexBufferLayout) {
+            const location = this.shader.attributes[layout.attribute];
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+            gl.enableVertexAttribArray(location);
+            gl.vertexAttribPointer(location, layout.size, gl[layout.type], layout.normalized, layout.stride, layout.offset);
+        }
+
+        // Index Buffer
+        if(this.indexData) {
+            this.ibo = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
+            // also set draw count to index counts
+            this.drawCount = this.indexData.length;
+        }
+
+        // Draw Configuration
+        this.drawMode = gl[this.drawMode];
+        this.drawType = gl[this.drawType];
+    }
+
+    updateVertexData(gl, data) {
+        this.vertexData = data;
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+    }
+
+    draw(gl) {
+        gl.useProgram(this.shader.program);
+        gl.bindVertexArray(this.vao);
+        if(this.indexData) {
+            gl.drawElements(this.drawMode, this.drawCount, this.drawType, this.drawOffset);
+        }  
+        else {
+            gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
+        }   
+    }
+}
+
+// =============================================================
+// RENDER SYSTEM
+// =============================================================
+class RenderSystem {
+    constructor(options = {}) {
+        this.canvas = null;
+        this.gl = null;
+        this.clearColor = [];
+        this.shaders = {};
+        this.meshes = {};
+    }
+
+    initWebgl() {
+        this.canvas = document.querySelector("#c");
+        if(!this.canvas) {
+            console.error("Canvas element not found");
+            return;
+        }
+
+        this.gl = this.canvas.getContext("webgl2");
+        if(!this.gl) {
+            console.error("WebGL2 is not supported by this browser");
+            return;
+        }
+    }
+
+    resizeCanvasToDisplaySize(multiplier = 1) {
+        const width = (this.canvas.clientWidth * multiplier) | 0;
+        const height = (this.canvas.clientHeight * multiplier) | 0;
+
+        if(this.canvas.width !== width || this.canvas.height !== height) {
+            this.canvas.width = width;
+            this.canvas.height = height;
+        }
+    }
+
+    addShader(name, shader) {
+        this.shaders[name] = shader;
+    }
+
+    getShader(name) {
+        return this.shaders[name];
+    }
+
+    addMesh(name, mesh) {
+        this.meshes[name] = mesh;
+    }
+
+    getMesh(name) {
+        return this.meshes[name];
+    }
+
+    setClearColor(r,g,b,a){
+        this.clearColor = [r,g,b,a];
+    }
+
+    init() {
+        // webgl
+        this.initWebgl();
+        const gl = this.gl;
+        // shaders
+        for(const shader of Object.values(this.shaders)) {
+            shader.init(gl);
+        }
+        // meshes
+        for(const mesh of Object.values(this.meshes)) {
+            mesh.init(gl);
+        }
+    }
+
+    render() {
+        const gl = this.gl;
+        // viewport
+        this.resizeCanvasToDisplaySize();
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        // Background
+        gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // render meshes
+        for(const mesh of Object.values(this.meshes)){
+            mesh.draw(gl);
+        }  
+    }
+}
+
+// =============================================================
+// GUI
+// =============================================================
+class GUI {
+    constructor(options = {}) {
+        this.renderSystem = options.renderSystem;
+        this.gui = new lil.GUI();
+        this.state = {};
+        this.createRectangleFolder();
+    }
+
+    createRectangleFolder() {
+        const rectangle = this.renderSystem.getMesh("rectangle");
+
+        this.state = {
+            // Vertex Positions
+            v1x: -0.5, v1y: -0.5,
+            v2x: 0.5, v2y: -0.5,
+            v3x: 0.5, v3y: 0.5,
+            v4x: -0.5, v4y: 0.5,
+
+            // Vertex Colors
+            // Triangle 1 Color
+            r1: 1.0, g1: 0.0, b1: 0.0,
+            // Triangle 2 Color
+            r2: 0.0, g2: 0.0, b2: 1.0
+        };
+
+        const rectangleFolder = this.gui.addFolder("Rectangle");
+
+        const vertexFolder = rectangleFolder.addFolder("Vertex");
+        const vertex1Folder = vertexFolder.addFolder("Vertex 1");
+        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.updateRectangle());
+        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        const vertex2Folder = vertexFolder.addFolder("Vertex 2");
+        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.updateRectangle());
+        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        const vertex3Folder = vertexFolder.addFolder("Vertex 3");
+        vertex3Folder.add(this.state, "v3x", -1, 1).name("X").onChange(() => this.updateRectangle());
+        vertex3Folder.add(this.state, "v3y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        const vertex4Folder = vertexFolder.addFolder("Vertex 4");
+        vertex4Folder.add(this.state, "v4x", -1, 1).name("X").onChange(() => this.updateRectangle());
+        vertex4Folder.add(this.state, "v4y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+
+        const colorFolder = rectangleFolder.addFolder("Color");
+        const color1Folder = colorFolder.addFolder("Triangle 1");
+        color1Folder.add(this.state, "r1", 0, 1).name("R").onChange(() => this.updateRectangle());
+        color1Folder.add(this.state, "g1", 0, 1).name("G").onChange(() => this.updateRectangle());
+        color1Folder.add(this.state, "b1", 0, 1).name("B").onChange(() => this.updateRectangle());
+        const color2Folder = colorFolder.addFolder("Triangle 2");
+        color2Folder.add(this.state, "r2", 0, 1).name("R").onChange(() => this.updateRectangle());
+        color2Folder.add(this.state, "g2", 0, 1).name("G").onChange(() => this.updateRectangle());
+        color2Folder.add(this.state, "b2", 0, 1).name("B").onChange(() => this.updateRectangle());
+    }
+
+    updateRectangle() {
+        const rectangle = this.renderSystem.getMesh("rectangle");
+
+        const vertexData = new Float32Array([
+            this.state.v1x, this.state.v1y,
+            this.state.r1, this.state.g1, this.state.b1,
+
+            this.state.v2x, this.state.v2y,
+            this.state.r1, this.state.g1, this.state.b1,
+
+            this.state.v3x, this.state.v3y,
+            this.state.r1, this.state.g1, this.state.b1,
+
+            this.state.v1x, this.state.v1y,
+            this.state.r2, this.state.g2, this.state.b2,
+
+            this.state.v3x, this.state.v3y,
+            this.state.r2, this.state.g2, this.state.b2,
+
+            this.state.v4x, this.state.v4y,
+            this.state.r2, this.state.g2, this.state.b2
+        ]);
+
+        rectangle.updateVertexData(this.renderSystem.gl, vertexData);
+        this.renderSystem.render();
+    }
+}
+
+// =============================================================
+// APP
+// =============================================================
+class App {
+    constructor() {
+        this.renderSystem = new RenderSystem();
+        this.createBaseScene();
+        this.createScene();
+
+        this.gui = new GUI({
+            renderSystem: this.renderSystem
+        });
+
+        this.init();
+    }
+
+    createBaseScene() {
+        // Shaders
+        const colorVertexShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+                in vec3 a_color;
+
+                out vec4 v_color;
+
+                void main() {
+                    gl_Position = vec4(a_position, 0.0, 1.0);
+                    v_color = vec4(a_color, 1.0);
+                }
+            `,
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+                in vec4 v_color;
+                out vec4 out_Color;
+
+                void main() {
+                    out_Color = v_color;
+                }
+            `,
+            attributes: { 
+                position: "a_position", 
+                color: "a_color" 
+            },
+            uniforms: {}
+        });
+        // Add to RenderSystem
+        this.renderSystem.addShader("colorVertexShader",colorVertexShader);
+        // Set clear Color (Sckorpio Cyan)
+        this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
+    }
+
+    createScene() {
+        // Meshes
+        const rectangle = new Mesh({
+            shader: this.renderSystem.getShader("colorVertexShader"),
+
+            // CPU DATA
+            vertexData: new Float32Array([
+                /*
+                    v3--------v2
+                    |       /  |
+                    |    /     |
+                    |  /       |
+                    v0--------v1
+                */
+                
+                -0.5, -0.5,         //X, Y
+                1.0, 0.0, 0.0,      //R, G, B
+
+                0.5, -0.5,          //X, Y
+                1.0, 0.0, 0.0,      //R, G, B
+
+                0.5, 0.5,           //X, Y
+                1.0, 0.0, 0.0,      //R, G, B   
+
+                -0.5, -0.5,         //X, Y
+                0.0, 0.0, 1.0,      //R, G, B
+
+                0.5, 0.5,           //X, Y
+                0.0, 0.0, 1.0,      //R, G, B   
+
+                -0.5, 0.5,          //X, Y
+                0.0, 0.0, 1.0       //R, G, B   
+            ]),
+
+            indexData: new Uint16Array([
+                0, 1, 2,
+                3, 4, 5
+            ]),
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 5 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                },
+                {
+                    attribute: "color",
+                    size: 3,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 5 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 2 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            drawMode: "TRIANGLES",
+            drawType: "UNSIGNED_SHORT"
+        });
+        // Add to RenderSystem
+        this.renderSystem.addMesh("rectangle",rectangle);
+    }
+
+    init() {
+        this.renderSystem.init();
+        return true;
+    }
+    
+    play() {
+        this.renderSystem.render();
+        window.addEventListener("resize", () => this.renderSystem.render());
+    }
+}
+
+// =============================================================
+// MAIN
+// =============================================================
+function main() {
+    const app = new App();
+    app.play();
+}
+
+window.addEventListener("DOMContentLoaded", main);
+
+export { main };
