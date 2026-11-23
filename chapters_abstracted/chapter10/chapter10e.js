@@ -4,12 +4,11 @@ CHAPTER 10e: 2D World with Axis
 Topics:
 - Creating a grid in pixel space
 - Also adding X-Axis and Y-Axis
+- Observe axis not fully visible
 - Creating a rectangle in pixel space
 - Vertex data in pixel space
 - projectionMatrix as a uniform mat3
 - Pixel space -> clip space
-- Inverted Y
-- Multiple objects in pixel space
 ###############################################################
 */
 
@@ -246,7 +245,7 @@ class RenderSystem {
         this.meshes = {};
         this.camera = new Camera();
         this.commonUniforms = {
-            cameraBounds: null
+            projectionMatrix: null
         };
     }
 

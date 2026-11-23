@@ -245,7 +245,7 @@ class RenderSystem {
         this.meshes = {};
         this.camera = new Camera();
         this.commonUniforms = {
-            cameraBounds: null
+            projectionMatrix: null
         };
     }
 
