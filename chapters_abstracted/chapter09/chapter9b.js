@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 9a: 2D Space
+CHAPTER 9b: 2D Space
 
 Topics:
 - Creating a basic rectangle
@@ -271,10 +271,15 @@ class RenderSystem {
         }
     }
 
+    update() {
+        const gl = this.gl;
+        // resize canvas
+        this.resizeCanvasToDisplaySize();
+    }
+
     render() {
         const gl = this.gl;
         // viewport
-        this.resizeCanvasToDisplaySize();
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // Background
         gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
@@ -312,18 +317,30 @@ class GUI {
 // =============================================================
 class App {
     constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.create();
+        this.init();
+    }
+
+    create() {
         this.renderSystem = new RenderSystem();
+        this.createShaders();
         this.createBaseScene();
         this.createScene();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-
-        this.init();
     }
 
-    createBaseScene() {
+    init() {
+        this.renderSystem.init();
+        window.addEventListener("resize", () => this.play());
+        this.play();
+    }
+
+    createShaders() {
         // Shaders
         const basicShader = new Shader({
             vertexShaderSource: `#version 300 es
@@ -377,6 +394,9 @@ class App {
         });
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);
+    }
+
+    createBaseScene() {
         // Set clear Color (Sckorpio Cyan)
         this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
     }
@@ -473,15 +493,10 @@ class App {
         this.renderSystem.addMesh("triangle",triangle);
         this.renderSystem.addMesh("rectangle",rectangle);
     }
-
-    init() {
-        this.renderSystem.init();
-        return true;
-    }
     
     play() {
+        this.renderSystem.update();
         this.renderSystem.render();
-        window.addEventListener("resize", () => this.renderSystem.render());
     }
 }
 
@@ -490,7 +505,6 @@ class App {
 // =============================================================
 function main() {
     const app = new App();
-    app.play();
 }
 
 window.addEventListener("DOMContentLoaded", main);
