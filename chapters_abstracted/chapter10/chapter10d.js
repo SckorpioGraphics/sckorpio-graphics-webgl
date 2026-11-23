@@ -155,7 +155,6 @@ class Camera {
 class Mesh {
     constructor(options = {}) {
         // CPU Data
-        this.renderOrder = options.renderOrder || 0;
         this.vertexData = options.vertexData;
         this.indexData = options.indexData || null;
         this.dataUsage = options.dataUsage || "STATIC_DRAW";
@@ -226,11 +225,9 @@ class Mesh {
 
         gl.bindVertexArray(this.vao);
         if(this.indexData) {
-            console.log(this.vertexData);
             gl.drawElements(this.drawMode, this.drawCount, this.drawType, this.drawOffset);
         }  
         else {
-            console.log(this.vertexData);
             gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
         }   
     }
@@ -312,13 +309,15 @@ class RenderSystem {
 
     update() {
         const gl = this.gl;
+        // resize canvas
+        this.resizeCanvasToDisplaySize();
+        // update camera
         this.camera.update(gl);
     }
 
     render() {
         const gl = this.gl;
         // viewport
-        this.resizeCanvasToDisplaySize();
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         // Background
@@ -369,17 +368,75 @@ class GUI {
 // =============================================================
 class App {
     constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.create();
+        this.init();
+    }
+
+    create() {
         this.renderSystem = new RenderSystem();
+        this.createShaders();
         this.createBaseScene();
         this.createScene();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
+    }
 
-        this.init();
-        this.play();
+    init() {
+        this.renderSystem.init();
         window.addEventListener("resize", () => this.play());
+        this.play();
+    }
+
+    createShaders() {
+        // Shaders
+        const basicShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+                uniform mat3 u_projectionMatrix;
+
+                void main() {
+                    vec3 clipPosition = u_projectionMatrix * vec3(a_position, 1.0);
+                    gl_Position = vec4(clipPosition.xy,0.0,1.0);
+                }
+            `,
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+
+                uniform vec4 u_color;
+
+                out vec4 out_Color;
+
+                void main() {
+                    out_Color = u_color;
+                }
+            `,
+            attributes: { 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                }
+            },
+            uniforms: { 
+                projectionMatrix: {
+                    variable: "u_projectionMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                color: {
+                    variable: "u_color",
+                    type: "vec4",
+                    location: null
+                }
+            },
+
+        });
+        // Add to RenderSystem
+        this.renderSystem.addShader("basicShader",basicShader);
     }
 
     createGrid() {
@@ -448,55 +505,10 @@ class App {
     }
 
     createBaseScene() {
-        // Shaders
-        const basicShader = new Shader({
-            vertexShaderSource: `#version 300 es
-                in vec2 a_position;
-                uniform mat3 u_projectionMatrix;
-
-                void main() {
-                    vec3 clipPosition = u_projectionMatrix * vec3(a_position, 1.0);
-                    gl_Position = vec4(clipPosition.xy,0.0,1.0);
-                }
-            `,
-            fragmentShaderSource: `#version 300 es
-                precision mediump float;
-
-                uniform vec4 u_color;
-
-                out vec4 out_Color;
-
-                void main() {
-                    out_Color = u_color;
-                }
-            `,
-            attributes: { 
-                position: {
-                    variable: "a_position",
-                    type: "vec2",
-                    location: null
-                }
-            },
-            uniforms: { 
-                projectionMatrix: {
-                    variable: "u_projectionMatrix",
-                    type: "mat3",
-                    location: null
-                },
-                color: {
-                    variable: "u_color",
-                    type: "vec4",
-                    location: null
-                }
-            },
-
-        });
-        // Add to RenderSystem
-        this.renderSystem.addShader("basicShader",basicShader);
         // Set clear Color (Sckorpio Cyan)
         this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
 
-        //Create BaseScene Meshes
+        // Create BaseScene Meshes
         this.createGrid();
     }
 
@@ -591,10 +603,6 @@ class App {
         this.renderSystem.addMesh("triangle",triangle);
         this.renderSystem.addMesh("rectangle",rectangle);
     }
-
-    init() {
-        this.renderSystem.init();
-    }
     
     play() {
         this.renderSystem.update();
@@ -607,7 +615,6 @@ class App {
 // =============================================================
 function main() {
     const app = new App();
-    app.play();
 }
 
 window.addEventListener("DOMContentLoaded", main);

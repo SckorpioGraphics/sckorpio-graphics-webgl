@@ -306,13 +306,15 @@ class RenderSystem {
 
     update() {
         const gl = this.gl;
+        // resize canvas
+        this.resizeCanvasToDisplaySize();
+        // update camera
         this.camera.update(gl);
     }
 
     render() {
         const gl = this.gl;
         // viewport
-        this.resizeCanvasToDisplaySize();
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         // Background
@@ -350,7 +352,7 @@ class GUI {
     }
 
     createGUIFolder() {
-       
+        
     }
 
     onUpdateGUI() {
@@ -363,20 +365,30 @@ class GUI {
 // =============================================================
 class App {
     constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.create();
+        this.init();
+    }
+
+    create() {
         this.renderSystem = new RenderSystem();
+        this.createShaders();
         this.createBaseScene();
         this.createScene();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-
-        this.init();
-        this.play();
-        window.addEventListener("resize", () => this.play());
     }
 
-    createBaseScene() {
+    init() {
+        this.renderSystem.init();
+        window.addEventListener("resize", () => this.play());
+        this.play();
+    }
+
+    createShaders() {
         // Shaders
         const basicShader = new Shader({
             vertexShaderSource: `#version 300 es
@@ -422,6 +434,9 @@ class App {
         });
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);
+    }
+
+    createBaseScene() {
         // Set clear Color (Sckorpio Cyan)
         this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
     }
@@ -490,10 +505,6 @@ class App {
             this.renderSystem.addMesh("rectangle"+i,rectangle);
         }
     }
-
-    init() {
-        this.renderSystem.init();
-    }
     
     play() {
         this.renderSystem.update();
@@ -506,7 +517,6 @@ class App {
 // =============================================================
 function main() {
     const app = new App();
-    app.play();
 }
 
 window.addEventListener("DOMContentLoaded", main);
