@@ -313,18 +313,28 @@ class GUI {
 // =============================================================
 class App {
     constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.create();
+        this.init();
+    }
+
+    create() {
         this.renderSystem = new RenderSystem();
+        this.createShaders();
         this.createBaseScene();
         this.createScene();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-
-        this.init();
     }
 
-    createBaseScene() {
+    init() {
+        this.renderSystem.init();
+    }
+
+    createShaders() {
         // Shaders
         const basicShader = new Shader({
             vertexShaderSource: `#version 300 es
@@ -400,7 +410,9 @@ class App {
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);
         this.renderSystem.addShader("colorVertexShader",colorVertexShader);
+    }
 
+    createBaseScene() {
         // Set clear Color (Sckorpio Cyan)
         this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
     }
@@ -505,11 +517,6 @@ class App {
         // Add to RenderSystem
         this.renderSystem.addMesh("triangle",triangle);
         this.renderSystem.addMesh("rectangle",rectangle);
-    }
-
-    init() {
-        this.renderSystem.init();
-        return true;
     }
     
     play() {

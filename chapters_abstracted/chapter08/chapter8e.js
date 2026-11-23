@@ -311,18 +311,28 @@ class GUI {
 // =============================================================
 class App {
     constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.create();
+        this.init();
+    }
+
+    create() {
         this.renderSystem = new RenderSystem();
+        this.createShaders();
         this.createBaseScene();
         this.createScene();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-
-        this.init();
     }
 
-    createBaseScene() {
+    init() {
+        this.renderSystem.init();
+    }
+
+    createShaders() {
         // Shaders
         const basicShader = new Shader({
             vertexShaderSource: `#version 300 es
@@ -359,8 +369,48 @@ class App {
             },
 
         });
+
+        const colorVertexShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+                in vec3 a_color;
+
+                out vec4 v_color;
+
+                void main() {
+                    gl_Position = vec4(a_position, 0.0, 1.0);
+                    v_color = vec4(a_color, 1.0);
+                }
+            `,
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+                in vec4 v_color;
+                out vec4 out_Color;
+
+                void main() {
+                    out_Color = v_color;
+                }
+            `,
+            attributes: { 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                },
+                color: {
+                    variable: "a_color",
+                    type: "vec3",
+                    location: null
+                }
+            }
+        });
+
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);
+        this.renderSystem.addShader("colorVertexShader",colorVertexShader);
+    }
+
+    createBaseScene() {
         // Set clear Color (Sckorpio Cyan)
         this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
     }
@@ -409,23 +459,29 @@ class App {
         });
 
         const rectangle = new Mesh({
-            shader: this.renderSystem.getShader("basicShader"),
+            shader: this.renderSystem.getShader("colorVertexShader"),
 
             // CPU DATA
             vertexData: new Float32Array([
                 /*
-                    v1--------v3
-                    | \        |
-                    |   \      |
-                    |     \    |
-                    |       \  |
-                    v0________v2
+                    v3--------v2
+                    |       /  |
+                    |    /     |
+                    |  /       |
+                    v0--------v1
                 */
                 
-                0.2, -0.2,
-                0.6, -0.2,
-                0.6, 0.2,
-                0.2, 0.2
+                0.2, -0.2,          //X, Y
+                1.0, 0.0, 0.0,      //R, G, B
+
+                0.6, -0.2,          //X, Y
+                0.0, 1.0, 0.0,      //R, G, B
+
+                0.6, 0.2,           //X, Y
+                0.0, 0.0, 1.0,      //R, G, B   
+
+                0.2, 0.2,           //X, Y
+                1.0, 1.0, 0.0       //R, G, B   
             ]),
 
             indexData: new Uint16Array([
@@ -439,14 +495,18 @@ class App {
                     size: 2,
                     type: "FLOAT",
                     normalized: false,
-                    stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                    stride: 5 * Float32Array.BYTES_PER_ELEMENT,
                     offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                },
+                {
+                    attribute: "color",
+                    size: 3,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 5 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 2 * Float32Array.BYTES_PER_ELEMENT
                 }
             ],
-
-            uniforms: {
-                color: [0.0, 1.0, 1.0, 1.0]
-            },
 
             drawMode: "TRIANGLES",
             drawType: "UNSIGNED_SHORT"
@@ -515,11 +575,6 @@ class App {
         this.renderSystem.addMesh("triangle",triangle);
         this.renderSystem.addMesh("rectangle",rectangle);
         this.renderSystem.addMesh("grid",grid);
-    }
-
-    init() {
-        this.renderSystem.init();
-        return true;
     }
     
     play() {
