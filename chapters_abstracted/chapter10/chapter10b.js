@@ -350,36 +350,11 @@ class GUI {
     }
 
     createGUIFolder() {
-        const triangle = this.renderSystem.getMesh("triangle");
-
-        this.state = {
-            triangle: {
-                colorR: 1.0, colorG: 0.0, colorB: 0.0
-            },
-            rectangle: {
-                colorR: 0.0, colorG: 0.0, colorB: 1.0
-            },
-        };
-
-        const triangleFolder = this.gui.addFolder("Triangle");
-        triangleFolder.add(this.state.triangle, "colorR", 0, 1).name("R").onChange(() => this.onUpdateGUI());
-        triangleFolder.add(this.state.triangle, "colorG", 0, 1).name("G").onChange(() => this.onUpdateGUI());
-        triangleFolder.add(this.state.triangle, "colorB", 0, 1).name("B").onChange(() => this.onUpdateGUI());
-
-        const rectangleFolder = this.gui.addFolder("Rectangle");
-        rectangleFolder.add(this.state.rectangle, "colorR", 0, 1).name("R").onChange(() => this.onUpdateGUI());
-        rectangleFolder.add(this.state.rectangle, "colorG", 0, 1).name("G").onChange(() => this.onUpdateGUI());
-        rectangleFolder.add(this.state.rectangle, "colorB", 0, 1).name("B").onChange(() => this.onUpdateGUI());
+        
     }
 
     onUpdateGUI() {
-        const triangle = this.renderSystem.getMesh("triangle");
-        triangle.uniforms["color"] = [this.state.triangle.colorR, this.state.triangle.colorG, this.state.triangle.colorB, 1.0];
-
-        const rectangle = this.renderSystem.getMesh("rectangle");
-        rectangle.uniforms["color"] = [this.state.rectangle.colorR, this.state.rectangle.colorG, this.state.rectangle.colorB, 1.0];
         
-        this.renderSystem.render();
     }
 }
 
@@ -466,9 +441,9 @@ class App {
                     v0------v1
                 */
                 
-                400, 400,
-                600, 400,
-                500, 600
+                200, 200,
+                400, 200,
+                300, 400
             ]),
 
             indexData: new Uint16Array([
@@ -487,7 +462,7 @@ class App {
             ],
 
             uniforms: {
-                color: [1.0, 0.0, 0.0, 1.0]
+                color: [0.39, 0.33, 0.58, 1.0] // Sckorpio Purple
             },
 
             drawMode: "TRIANGLES",
@@ -508,10 +483,10 @@ class App {
                     v0________v1
                 */
                 
-                800, 300,
-                1200, 300,
-                1200, 500,
-                800, 500
+                500, 100,
+                900, 100,
+                900, 300,
+                500, 300
             ]),
 
             indexData: new Uint16Array([
@@ -531,7 +506,7 @@ class App {
             ],
 
             uniforms: {
-                color: [0.0, 0.0, 1.0, 1.0]
+                color: [0.0, 1.0, 1.0, 1.0]
             },
 
             drawMode: "TRIANGLES",
