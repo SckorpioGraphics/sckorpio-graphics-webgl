@@ -208,9 +208,20 @@ class RenderSystem {
 // =============================================================
 class App {
     constructor() {
-        this.renderSystem = new RenderSystem();
+        this.renderSystem = null;
         this.create();
         this.init();
+    }
+
+    create() {
+        this.renderSystem = new RenderSystem();
+        this.createShaders();
+        this.createBaseScene();
+        this.createScene();
+    }
+
+    init() {
+        this.renderSystem.init();
     }
 
     createShaders() {
@@ -283,16 +294,6 @@ class App {
         });
         // Add to RenderSystem
         this.renderSystem.addMesh("triangle",triangle);
-    }
-
-    create() {
-        this.createShaders();
-        this.createBaseScene();
-        this.createScene();
-    }
-
-    init() {
-        this.renderSystem.init();
     }
     
     play() {
