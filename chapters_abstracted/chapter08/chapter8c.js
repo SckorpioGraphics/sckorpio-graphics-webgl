@@ -402,7 +402,7 @@ class App {
             ],
 
             uniforms: {
-                color: [1.0, 0.0, 0.0, 1.0]
+                color: [0.39, 0.33, 0.58, 1.0] // Sckorpio Purple
             },
 
             drawMode: "TRIANGLES",
@@ -447,7 +447,7 @@ class App {
             ],
 
             uniforms: {
-                color: [0.0, 0.0, 1.0, 1.0]
+                color: [0.0, 1.0, 1.0, 1.0]
             },
 
             drawMode: "LINE_LOOP",

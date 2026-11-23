@@ -305,10 +305,10 @@ class GUI {
 
         this.state = {
             triangle: {
-                colorR: 1.0, colorG: 0.0, colorB: 0.0
+                colorR: 0.39, colorG: 0.33, colorB: 0.58
             },
             rectangle: {
-                colorR: 0.0, colorG: 0.0, colorB: 1.0
+                colorR: 0.0, colorG: 1.0, colorB: 1.0
             },
         };
 
@@ -429,7 +429,7 @@ class App {
             ],
 
             uniforms: {
-                color: [1.0, 0.0, 0.0, 1.0]
+                color: [0.39, 0.33, 0.58, 1.0] // Sckorpio Purple
             },
 
             drawMode: "TRIANGLES",
@@ -473,7 +473,7 @@ class App {
             ],
 
             uniforms: {
-                color: [0.0, 0.0, 1.0, 1.0]
+                color: [0.0, 1.0, 1.0, 1.0]
             },
 
             drawMode: "TRIANGLES",
