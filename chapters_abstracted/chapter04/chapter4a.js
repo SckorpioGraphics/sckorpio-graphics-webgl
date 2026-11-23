@@ -224,13 +224,23 @@ class RenderSystem {
 // =============================================================
 class App {
     constructor() {
-        this.renderSystem = new RenderSystem();
-        this.createBaseScene();
-        this.createScene();
+        this.renderSystem = null;
+        this.create();
         this.init();
     }
 
-    createBaseScene() {
+    create() {
+        this.renderSystem = new RenderSystem();
+        this.createShaders();
+        this.createBaseScene();
+        this.createScene();
+    }
+
+    init() {
+        this.renderSystem.init();
+    }
+
+    createShaders() {
         // Shaders
         const basicShader = new Shader({
             vertexShaderSource: `#version 300 es
@@ -259,6 +269,9 @@ class App {
         });
         // Add to RenderSystem
         this.renderSystem.addShader("basicShader",basicShader);
+    }
+
+    createBaseScene() {
         // Set clear Color (Sckorpio Cyan)
         this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
     }
@@ -303,11 +316,6 @@ class App {
         });
         // Add to RenderSystem
         this.renderSystem.addMesh("points",points);
-    }
-
-    init() {
-        this.renderSystem.init();
-        return true;
     }
     
     play() {
