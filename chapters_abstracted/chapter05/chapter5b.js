@@ -213,10 +213,15 @@ class RenderSystem {
         }
     }
 
+    update() {
+        const gl = this.gl;
+        // resize canvas
+        this.resizeCanvasToDisplaySize();
+    }
+
     render() {
         const gl = this.gl;
         // viewport
-        this.resizeCanvasToDisplaySize();
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // Background
         gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
@@ -308,6 +313,8 @@ class App {
 
     init() {
         this.renderSystem.init();
+        window.addEventListener("resize", () => this.play());
+        this.play();
     }
 
     createShaders() {
@@ -390,8 +397,8 @@ class App {
     }
     
     play() {
+        this.renderSystem.update();
         this.renderSystem.render();
-        window.addEventListener("resize", () => this.renderSystem.render());
     }
 }
 
@@ -400,7 +407,6 @@ class App {
 // =============================================================
 function main() {
     const app = new App();
-    app.play();
 }
 
 window.addEventListener("DOMContentLoaded", main);
