@@ -240,20 +240,16 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-        this.onUpdateGUI();
-    }
-
-    createGUIFolder() {
-        const triangle = this.renderSystem.getMesh("triangle");
-
         this.state = {
             v0x: -0.5, v0y: 0.0,
             v1x: 0.0, v1y: 0.5,
             v2x: 0.5, v2y: 0.0
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
 
+    createGUIFolder() {
         const triangleFolder = this.gui.addFolder("Triangle");
 
         const vertex0Folder = triangleFolder.addFolder("Vertex 0");

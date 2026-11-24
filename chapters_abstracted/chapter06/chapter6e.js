@@ -240,14 +240,6 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-        this.onUpdateGUI();
-    }
-
-    createGUIFolder() {
-        const rectangle = this.renderSystem.getMesh("rectangle");
-
         this.state = {
             // Vertex Positions
             v0x: -0.5, v0y: -0.5,
@@ -262,7 +254,11 @@ class GUI {
             r1: 0.0, g1: 0.0, b1: 1.0,
             
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
 
+    createGUIFolder() {
         const rectangleFolder = this.gui.addFolder("Rectangle");
 
         const vertexFolder = rectangleFolder.addFolder("Vertex");
