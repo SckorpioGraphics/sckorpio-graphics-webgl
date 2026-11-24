@@ -280,8 +280,6 @@ class GUI {
     }
 
     createGUIFolder() {
-        const triangle = this.renderSystem.getMesh("triangle");
-
         const triangleFolder = this.gui.addFolder("Triangle");
 
         const vertex0Folder = triangleFolder.addFolder("Vertex 0");
@@ -338,7 +336,6 @@ class App {
             renderSystem: this.renderSystem
         });
 
-        window.addEventListener("resize", () => this.play());
     }
 
     createShaders() {
@@ -434,6 +431,7 @@ class App {
     play() {
         this.renderSystem.update();
         this.renderSystem.render();
+        requestAnimationFrame(() => this.play());
     }
 }
 

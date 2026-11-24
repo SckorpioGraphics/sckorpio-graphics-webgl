@@ -317,7 +317,6 @@ class App {
             renderSystem: this.renderSystem
         });
 
-        window.addEventListener("resize", () => this.play());
     }
 
     createShaders() {
@@ -402,6 +401,7 @@ class App {
     play() {
         this.renderSystem.update();
         this.renderSystem.render();
+        requestAnimationFrame(() => this.play());
     }
 }
 

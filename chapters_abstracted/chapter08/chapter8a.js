@@ -301,42 +301,18 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
         this.createGUIFolder();
-        this.onUpdateGUI();
     }
 
     createGUIFolder() {
         const triangle = this.renderSystem.getMesh("triangle");
-
-        this.state = {
-            triangle: {
-                colorR: 0.39, colorG: 0.33, colorB: 0.58
-            },
-            rectangle: {
-                colorR: 0.0, colorG: 1.0, colorB: 1.0
-            },
-        };
+        const rectangle = this.renderSystem.getMesh("rectangle");
 
         const triangleFolder = this.gui.addFolder("Triangle");
-        triangleFolder.add(this.state.triangle, "colorR", 0, 1).name("R").onChange(() => this.onUpdateGUI());
-        triangleFolder.add(this.state.triangle, "colorG", 0, 1).name("G").onChange(() => this.onUpdateGUI());
-        triangleFolder.add(this.state.triangle, "colorB", 0, 1).name("B").onChange(() => this.onUpdateGUI());
+        triangleFolder.addColor(triangle.uniforms, "color");
 
         const rectangleFolder = this.gui.addFolder("Rectangle");
-        rectangleFolder.add(this.state.rectangle, "colorR", 0, 1).name("R").onChange(() => this.onUpdateGUI());
-        rectangleFolder.add(this.state.rectangle, "colorG", 0, 1).name("G").onChange(() => this.onUpdateGUI());
-        rectangleFolder.add(this.state.rectangle, "colorB", 0, 1).name("B").onChange(() => this.onUpdateGUI());
-    }
-
-    onUpdateGUI() {
-        const triangle = this.renderSystem.getMesh("triangle");
-        triangle.uniforms["color"] = [this.state.triangle.colorR, this.state.triangle.colorG, this.state.triangle.colorB, 1.0];
-
-        const rectangle = this.renderSystem.getMesh("rectangle");
-        rectangle.uniforms["color"] = [this.state.rectangle.colorR, this.state.rectangle.colorG, this.state.rectangle.colorB, 1.0];
-        
-        this.renderSystem.render();
+        rectangleFolder.addColor(rectangle.uniforms, "color");
     }
 }
 
@@ -361,8 +337,6 @@ class App {
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-
-        window.addEventListener("resize", () => this.play());
     }
 
     createShaders() {
@@ -505,6 +479,7 @@ class App {
     play() {
         this.renderSystem.update();
         this.renderSystem.render();
+        requestAnimationFrame(() => this.play());
     }
 }
 

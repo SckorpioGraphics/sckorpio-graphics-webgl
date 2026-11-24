@@ -531,7 +531,6 @@ class KeyControls {
                     break;
                 default:
             }
-            this.onUpdateKeyEvents();
         });
 
         window.addEventListener("keyup", event => {
@@ -558,13 +557,7 @@ class KeyControls {
                     break;
                 default:
             }
-            this.onUpdateKeyEvents();
         });
-    }
-
-    onUpdateKeyEvents() {
-        this.renderSystem.update();
-        this.renderSystem.render();
     }
 }
 
