@@ -385,27 +385,21 @@ class GUI {
         const cameraControls = {
             up: () => {
                 this.renderSystem.camera.positionY += this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             left: () => {
                 this.renderSystem.camera.positionX -= this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             down: () => {
                 this.renderSystem.camera.positionY -= this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             right: () => {
                 this.renderSystem.camera.positionX += this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             zoomIn: () => {
                 this.renderSystem.camera.zoom += this.renderSystem.camera.zoomSpeed;
-                this.onUpdateGUI();
             },
             zoomOut: () => {
                 this.renderSystem.camera.zoom = Math.max(0.1, this.renderSystem.camera.zoom - this.renderSystem.camera.zoomSpeed);
-                this.onUpdateGUI();
             }
         };
 
@@ -418,8 +412,7 @@ class GUI {
     }
 
     onUpdateGUI() {
-        this.renderSystem.update();
-        this.renderSystem.render();
+
     }
 }
 

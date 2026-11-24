@@ -312,7 +312,6 @@ class GUI {
         ]);
 
         rectangle.updateVertexData(this.renderSystem.gl, vertexData);
-        this.renderSystem.render();
     }
 }
 

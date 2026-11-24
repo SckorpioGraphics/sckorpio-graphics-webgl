@@ -410,37 +410,26 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {
-            translationX: 300,
-            translationY: 200,
-            rotation: 30,
-            scaleX: 1.4,
-            scaleY: 1.4,
-        };
+        this.state = {};
         this.createGUIFolder();
         this.onUpdateGUI();
     }
 
     createGUIFolder() {
+        const letterF = this.renderSystem.getMesh("letterF");
         const letterFFolder = this.gui.addFolder("LetterF");
 
-        const transformFolder = letterFFolder.addFolder("Translation");
-        transformFolder.add(this.state, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
-        transformFolder.add(this.state, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
-        transformFolder.add(this.state, "rotation", 0, 360).name("rotation").onChange(() => this.onUpdateGUI());
-        transformFolder.add(this.state, "scaleX", -5, 5).name("scaleX").onChange(() => this.onUpdateGUI());
-        transformFolder.add(this.state, "scaleY", -5, 5).name("scaleY").onChange(() => this.onUpdateGUI());
+        // Transform
+        const transformFolder = letterFFolder.addFolder("Transform");
+        transformFolder.add(letterF.transform.translation, 0, -1000, 1000).name("translationX");
+        transformFolder.add(letterF.transform.translation, 1, -1000, 1000).name("translationY");
+        transformFolder.add(letterF.transform, "rotation", 0, 360).name("rotation");
+        transformFolder.add(letterF.transform.scale, 0, -5, 5).name("scaleX");
+        transformFolder.add(letterF.transform.scale, 1, -5, 5).name("scaleY");
     }
 
     onUpdateGUI() {
-        const letterF = this.renderSystem.getMesh("letterF");
-        letterF.transform.translation[0] = this.state.translationX;
-        letterF.transform.translation[1] = this.state.translationY;
-        letterF.transform.rotation = this.state.rotation;
-        letterF.transform.scale[0] = this.state.scaleX;
-        letterF.transform.scale[1] = this.state.scaleY;
-
-        this.renderSystem.render();
+        
     }
 }
 

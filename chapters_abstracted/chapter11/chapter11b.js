@@ -374,19 +374,15 @@ class GUI {
         const cameraControls = {
             up: () => {
                 this.renderSystem.camera.positionY += this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             left: () => {
                 this.renderSystem.camera.positionX -= this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             down: () => {
                 this.renderSystem.camera.positionY -= this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             },
             right: () => {
                 this.renderSystem.camera.positionX += this.renderSystem.camera.panSpeed;
-                this.onUpdateGUI();
             }
         };
 
@@ -397,8 +393,7 @@ class GUI {
     }
 
     onUpdateGUI() {
-        this.renderSystem.update();
-        this.renderSystem.render();
+
     }
 }
 

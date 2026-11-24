@@ -323,7 +323,6 @@ class GUI {
 
         triangle.updateVertexData(this.renderSystem.gl, vertexData);
         triangle.updateColorData(this.renderSystem.gl, colorData);
-        this.renderSystem.render();
     }
 }
 

@@ -291,7 +291,6 @@ class GUI {
 
         polygon.updateVertexData(this.renderSystem.gl, vertexData);
         polygon.updateIndexData(this.renderSystem.gl, indexData);
-        this.renderSystem.render();
     }
 }
 

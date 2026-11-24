@@ -275,7 +275,6 @@ class GUI {
         ]);
 
         triangle.updateVertexData(this.renderSystem.gl, vertexData);
-        this.renderSystem.render();
     }
 }
 

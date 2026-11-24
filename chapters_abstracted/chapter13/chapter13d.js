@@ -419,36 +419,21 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-
-        this.letterF = this.renderSystem.getMesh("letterF");
-
-        this.state = {
-            translationX: this.letterF.transform.translation[0],
-            translationY: this.letterF.transform.translation[1],
-            rotation: this.letterF.transform.rotation,
-            pivotX: this.letterF.transform.pivot[0],
-            pivotY: this.letterF.transform.pivot[1]
-        };
-
+        this.state = {};
         this.createGUIFolder();
     }
 
     createGUIFolder() {
-        const folder = this.gui.addFolder("Letter F Transform");
+        const letterF = this.renderSystem.getMesh("letterF");
+        const letterFFolder = this.gui.addFolder("LetterF");
 
-        const translationFolder = folder.addFolder("Translation");
-        translationFolder.add(this.state, "translationX", -1000, 1000)
-            .onChange(value => this.letterF.transform.translation[0] = value);
-        translationFolder.add(this.state, "translationY", -1000, 1000)
-            .onChange(value => this.letterF.transform.translation[1] = value);
-        translationFolder.add(this.state, "rotation", 0, 360)
-            .onChange(value => this.letterF.transform.rotation = value);
-
-        const pivotFolder = folder.addFolder("Pivot");
-        pivotFolder.add(this.state, "pivotX", -200, 200)
-            .onChange(value => this.letterF.transform.pivot[0] = value);
-        pivotFolder.add(this.state, "pivotY", -200, 200)
-            .onChange(value => this.letterF.transform.pivot[1] = value);
+        // Transform
+        const transformFolder = letterFFolder.addFolder("Transform");
+        transformFolder.add(letterF.transform.translation, 0, -1000, 1000).name("translationX");
+        transformFolder.add(letterF.transform.translation, 1, -1000, 1000).name("translationX");
+        transformFolder.add(letterF.transform, "rotation", 0, 360).name("rotation");
+        transformFolder.add(letterF.transform.pivot, 0, -200, 200).name("pivotX");
+        transformFolder.add(letterF.transform.pivot, 1, -200, 200).name("pivotY");
     }
 }
 

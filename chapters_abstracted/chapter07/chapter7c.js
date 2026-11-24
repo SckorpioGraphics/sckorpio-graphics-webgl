@@ -269,57 +269,21 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {
-            v0x: -0.5, v0y: 0.0,
-            v1x: 0.0, v1y: 0.5,
-            v2x: 0.5, v2y: 0.0,
-
-            colorR: 0.39, colorG: 0.33, colorB: 0.58,
-            intensity: 1.0
-        };
         this.createGUIFolder();
         this.onUpdateGUI();
     }
 
     createGUIFolder() {
         const triangle = this.renderSystem.getMesh("triangle");
-
+        
         const triangleFolder = this.gui.addFolder("Triangle");
-
-        const vertex0Folder = triangleFolder.addFolder("Vertex 0");
-        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
-        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
-
-        const vertex1Folder = triangleFolder.addFolder("Vertex 1");
-        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
-        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
-
-        const vertex2Folder = triangleFolder.addFolder("Vertex 2");
-        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
-        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
-
-        const colorFolder = triangleFolder.addFolder("Color");
-        colorFolder.add(this.state, "colorR", 0, 1).name("R").onChange(() => this.onUpdateGUI());
-        colorFolder.add(this.state, "colorG", 0, 1).name("G").onChange(() => this.onUpdateGUI());
-        colorFolder.add(this.state, "colorB", 0, 1).name("B").onChange(() => this.onUpdateGUI());
-        colorFolder.add(this.state, "intensity", 0, 1).name("intensity").onChange(() => this.onUpdateGUI());
+        const uniformFolder = triangleFolder.addFolder("Uniform");
+        uniformFolder.add(triangle.uniforms, "intensity", 0, 1).name("Intensity");
+        uniformFolder.addColor(triangle.uniforms, "color");
     }
 
     onUpdateGUI() {
-        const triangle = this.renderSystem.getMesh("triangle");
-
-        const vertexData = new Float32Array([
-            this.state.v0x, this.state.v0y,
-            this.state.v1x, this.state.v1y,
-            this.state.v2x, this.state.v2y
-        ]);
-
-        triangle.updateVertexData(this.renderSystem.gl, vertexData);
-
-        triangle.uniforms["color"] = [this.state.colorR, this.state.colorG, this.state.colorB];
-        triangle.uniforms["intensity"] = this.state.intensity;
-
-        this.renderSystem.render();
+        
     }
 }
 

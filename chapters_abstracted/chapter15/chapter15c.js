@@ -420,83 +420,44 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {
-            letterF: {
-                translationX: 0,
-                translationY: 0,
-                rotation: 0,
-                scaleX: 1.0,
-                scaleY: 1.0
-            },
-            triangle: {
-                translationX: 0,
-                translationY: 300,
-                rotation: 0,
-                scaleX: 1.0,
-                scaleY: 1.0
-            },
-            rectangle: {
-                translationX: 600,
-                translationY: 300,
-                rotation: 0,
-                scaleX: 1.0,
-                scaleY: 1.0
-            },
-        };
+        this.state = {};
         this.createGUIFolder();
         this.onUpdateGUI();
     }
 
     createGUIFolder() {
+
+        const triangle = this.renderSystem.getMesh("triangle");
         const triangleFolder = this.gui.addFolder("Triangle");
+        const triangleTransformFolder = triangleFolder.addFolder("Transform");
+        triangleTransformFolder.add(triangle.transform.translation, 0, -1000, 1000).name("translationX");
+        triangleTransformFolder.add(triangle.transform.translation, 1, -1000, 1000).name("translationY");
+        triangleTransformFolder.add(triangle.transform, "rotation", 0, 360).name("rotation");
+        triangleTransformFolder.add(triangle.transform.scale, 0, -5, 5).name("scaleX");
+        triangleTransformFolder.add(triangle.transform.scale, 1, -5, 5).name("scaleY");
+
+        const rectangle = this.renderSystem.getMesh("rectangle");
         const rectangleFolder = this.gui.addFolder("Rectangle");
+        const rectangleTransformFolder = rectangleFolder.addFolder("Transform");
+        rectangleTransformFolder.add(rectangle.transform.translation, 0, -1000, 1000).name("translationX");
+        rectangleTransformFolder.add(rectangle.transform.translation, 1, -1000, 1000).name("translationY");
+        rectangleTransformFolder.add(rectangle.transform, "rotation", 0, 360).name("rotation");
+        rectangleTransformFolder.add(rectangle.transform.scale, 0, -5, 5).name("scaleX");
+        rectangleTransformFolder.add(rectangle.transform.scale, 1, -5, 5).name("scaleY");
+
+
+        const letterF = this.renderSystem.getMesh("letterF");
         const letterFFolder = this.gui.addFolder("LetterF");
-
-        const transformFolderTriangle = triangleFolder.addFolder("Translation");
-        transformFolderTriangle.add(this.state.triangle, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
-        transformFolderTriangle.add(this.state.triangle, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
-        transformFolderTriangle.add(this.state.triangle, "rotation", 0, 360).name("rotation").onChange(() => this.onUpdateGUI());
-        transformFolderTriangle.add(this.state.triangle, "scaleX", -5, 5).name("scaleX").onChange(() => this.onUpdateGUI());
-        transformFolderTriangle.add(this.state.triangle, "scaleY", -5, 5).name("scaleY").onChange(() => this.onUpdateGUI());
-
-        const transformFolderRectangle = rectangleFolder.addFolder("Translation");
-        transformFolderRectangle.add(this.state.rectangle, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
-        transformFolderRectangle.add(this.state.rectangle, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
-        transformFolderRectangle.add(this.state.rectangle, "rotation", 0, 360).name("rotation").onChange(() => this.onUpdateGUI());
-        transformFolderRectangle.add(this.state.rectangle, "scaleX", -5, 5).name("scaleX").onChange(() => this.onUpdateGUI());
-        transformFolderRectangle.add(this.state.rectangle, "scaleY", -5, 5).name("scaleY").onChange(() => this.onUpdateGUI());
-
-        const transformFolderLetterF = letterFFolder.addFolder("Translation");
-        transformFolderLetterF.add(this.state.letterF, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
-        transformFolderLetterF.add(this.state.letterF, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
-        transformFolderLetterF.add(this.state.letterF, "rotation", 0, 360).name("rotation").onChange(() => this.onUpdateGUI());
-        transformFolderLetterF.add(this.state.letterF, "scaleX", -5, 5).name("scaleX").onChange(() => this.onUpdateGUI());
-        transformFolderLetterF.add(this.state.letterF, "scaleY", -5, 5).name("scaleY").onChange(() => this.onUpdateGUI());
+        const letterFTransformFolder = letterFFolder.addFolder("Transform");
+        letterFTransformFolder.add(letterF.transform.translation, 0, -1000, 1000).name("translationX");
+        letterFTransformFolder.add(letterF.transform.translation, 1, -1000, 1000).name("translationY");
+        letterFTransformFolder.add(letterF.transform, "rotation", 0, 360).name("rotation");
+        letterFTransformFolder.add(letterF.transform.scale, 0, -5, 5).name("scaleX");
+        letterFTransformFolder.add(letterF.transform.scale, 1, -5, 5).name("scaleY");
     }
 
     onUpdateGUI() {
-        const triangle = this.renderSystem.getMesh("triangle");
-        triangle.transform.translation[0] = this.state.triangle.translationX;
-        triangle.transform.translation[1] = this.state.triangle.translationY;
-        triangle.transform.rotation = this.state.triangle.rotation;
-        triangle.transform.scale[0] = this.state.triangle.scaleX;
-        triangle.transform.scale[1] = this.state.triangle.scaleY;
-
-        const rectangle = this.renderSystem.getMesh("rectangle");
-        rectangle.transform.translation[0] = this.state.rectangle.translationX;
-        rectangle.transform.translation[1] = this.state.rectangle.translationY;
-        rectangle.transform.rotation = this.state.rectangle.rotation;
-        rectangle.transform.scale[0] = this.state.rectangle.scaleX;
-        rectangle.transform.scale[1] = this.state.rectangle.scaleY;
-
-        const letterF = this.renderSystem.getMesh("letterF");
-        letterF.transform.translation[0] = this.state.letterF.translationX;
-        letterF.transform.translation[1] = this.state.letterF.translationY;
-        letterF.transform.rotation = this.state.letterF.rotation;
-        letterF.transform.scale[0] = this.state.letterF.scaleX;
-        letterF.transform.scale[1] = this.state.letterF.scaleY;
-
-        this.renderSystem.render();
+        
     }
 }
 

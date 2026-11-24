@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 12d: 2D Transformations — Translation
+   CHAPTER 12d: 2D Transformations — Translation Matrix in shader
 
    Topics:
    - Translating a letterF
@@ -408,29 +408,23 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {
-            translationX: 300,
-            translationY: 200
-        };
+        this.state = {};
         this.createGUIFolder();
         this.onUpdateGUI();
     }
 
     createGUIFolder() {
+        const letterF = this.renderSystem.getMesh("letterF");
         const letterFFolder = this.gui.addFolder("LetterF");
 
         // Transform
         const transformFolder = letterFFolder.addFolder("Transform");
-        transformFolder.add(this.state, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
-        transformFolder.add(this.state, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
+        transformFolder.add(letterF.transform.translation, 0, -1000, 1000).name("translationX");
+        transformFolder.add(letterF.transform.translation, 0, -1000, 1000).name("translationX");
     }
 
     onUpdateGUI() {
-        const letterF = this.renderSystem.getMesh("letterF");
-        letterF.transform.translation[0] = this.state.translationX;
-        letterF.transform.translation[1] = this.state.translationY;
-
-        this.renderSystem.render();
+        
     }
 }
 
