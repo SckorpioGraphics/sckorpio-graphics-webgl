@@ -240,21 +240,20 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-    }
-
-    createGUIFolder() {
-        const triangle = this.renderSystem.getMesh("triangle");
-
         this.state = {
             v0x: -0.5, v0y: 0.0,
             v1x: 0.0, v1y: 0.5,
             v2x: 0.5, v2y: 0.0
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+        this.onUpdateGUI();
+    }
+
+    createGUIFolder() {
+        const triangle = this.renderSystem.getMesh("triangle");
 
         const triangleFolder = this.gui.addFolder("Triangle");
-
         const vertex0Folder = triangleFolder.addFolder("Vertex 0");
         vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
         vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
@@ -289,25 +288,22 @@ class App {
     constructor() {
         this.renderSystem = null;
         this.gui = null;
-        this.create();
         this.init();
+        this.play();
     }
 
-    create() {
+    init() {
         this.renderSystem = new RenderSystem();
         this.createShaders();
         this.createBaseScene();
         this.createScene();
+        this.renderSystem.init();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-    }
 
-    init() {
-        this.renderSystem.init();
         window.addEventListener("resize", () => this.play());
-        this.play();
     }
 
     createShaders() {
