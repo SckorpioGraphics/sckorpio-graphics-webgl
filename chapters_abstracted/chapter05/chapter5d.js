@@ -246,21 +246,17 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-        this.onUpdateGUI();
-    }
-
-    createGUIFolder() {
-        const polygon = this.renderSystem.getMesh("polygon");
-
         this.state = {
             centerX: 0.0,
             centerY: 0.0,
             radius: 0.5,
             points: 6
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
 
+    createGUIFolder() {
         const polygonFolder = this.gui.addFolder("Polygon");
 
         // Center

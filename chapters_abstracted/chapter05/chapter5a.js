@@ -247,7 +247,6 @@ class GUI {
         };
         this.createGUIFolder();
         this.onUpdateGUI();
-        this.onUpdateGUI();
     }
 
     createGUIFolder() {

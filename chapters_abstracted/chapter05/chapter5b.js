@@ -240,20 +240,18 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-        this.onUpdateGUI();
-    }
-
-    createGUIFolder() {
-        const rectangle = this.renderSystem.getMesh("rectangle");
-
         this.state = {
             centerX: 0.0,
             centerY: 0.0,
             length: 1.0,
             width: 1.0
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
+
+    createGUIFolder() {
+        const rectangle = this.renderSystem.getMesh("rectangle");
 
         const rectangleFolder = this.gui.addFolder("Rectangle");
 

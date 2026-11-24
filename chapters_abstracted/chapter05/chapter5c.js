@@ -246,19 +246,17 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-        this.onUpdateGUI();
-    }
-
-    createGUIFolder() {
         this.state = {
             centerX: 0.0,
             centerY: 0.0,
             radius: 0.5,
             points: 6
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
 
+    createGUIFolder() {
         const polygonFolder = this.gui.addFolder("Polygon");
 
         // Center
@@ -287,8 +285,6 @@ class GUI {
             vertices.push(y);
             indices.push(i);
         }
-
-        console.log(vertices);
 
         const vertexData = new Float32Array(vertices);
         const indexData = new Uint16Array(indices);
