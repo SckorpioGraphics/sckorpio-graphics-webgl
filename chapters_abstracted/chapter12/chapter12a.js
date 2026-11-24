@@ -399,10 +399,10 @@ class GUI {
     createGUIFolder() {
         const rectangleFolder = this.gui.addFolder("Rectangle");
 
-        // Center
-        const centerFolder = rectangleFolder.addFolder("Translation");
-        centerFolder.add(this.state, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
-        centerFolder.add(this.state, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
+        // Transform
+        const transformFolder = rectangleFolder.addFolder("Transform");
+        transformFolder.add(this.state, "translationX", -1000, 1000).name("translationX").onChange(() => this.onUpdateGUI());
+        transformFolder.add(this.state, "translationY", -1000, 1000).name("translationY").onChange(() => this.onUpdateGUI());
     }
 
     onUpdateGUI() {
