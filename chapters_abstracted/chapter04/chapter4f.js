@@ -264,21 +264,18 @@ class RenderSystem {
 class App {
     constructor() {
         this.renderSystem = null;
-        this.create();
         this.init();
+        this.play();
     }
 
-    create() {
+    init() {
         this.renderSystem = new RenderSystem();
         this.createShaders();
         this.createBaseScene();
         this.createScene();
-    }
-
-    init() {
         this.renderSystem.init();
+
         window.addEventListener("resize", () => this.play());
-        this.play();
     }
 
     createShaders() {
