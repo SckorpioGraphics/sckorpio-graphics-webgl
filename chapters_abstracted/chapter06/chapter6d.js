@@ -245,6 +245,7 @@ class GUI {
         this.gui = new lil.GUI();
         this.state = {};
         this.createGUIFolder();
+        this.onUpdateGUI();
     }
 
     createGUIFolder() {
@@ -266,38 +267,38 @@ class GUI {
 
         const vertexFolder = rectangleFolder.addFolder("Vertex");
         const vertex0Folder = vertexFolder.addFolder("Vertex 0");
-        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         const vertex1Folder = vertexFolder.addFolder("Vertex 1");
-        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         const vertex2Folder = vertexFolder.addFolder("Vertex 2");
-        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         const vertex3Folder = vertexFolder.addFolder("Vertex 3");
-        vertex3Folder.add(this.state, "v3x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex3Folder.add(this.state, "v3y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex3Folder.add(this.state, "v3x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex3Folder.add(this.state, "v3y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
 
         const colorFolder = rectangleFolder.addFolder("Color");
         const color0Folder = colorFolder.addFolder("Vertex 0");
-        color0Folder.add(this.state, "v0r", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color0Folder.add(this.state, "v0g", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color0Folder.add(this.state, "v0b", 0, 1).name("B").onChange(() => this.updateRectangle());
+        color0Folder.add(this.state, "v0r", 0, 1).name("R").onChange(() => this.onUpdateGUI());
+        color0Folder.add(this.state, "v0g", 0, 1).name("G").onChange(() => this.onUpdateGUI());
+        color0Folder.add(this.state, "v0b", 0, 1).name("B").onChange(() => this.onUpdateGUI());
         const color1Folder = colorFolder.addFolder("Vertex 1");
-        color1Folder.add(this.state, "v1r", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color1Folder.add(this.state, "v1g", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color1Folder.add(this.state, "v1b", 0, 1).name("B").onChange(() => this.updateRectangle());
+        color1Folder.add(this.state, "v1r", 0, 1).name("R").onChange(() => this.onUpdateGUI());
+        color1Folder.add(this.state, "v1g", 0, 1).name("G").onChange(() => this.onUpdateGUI());
+        color1Folder.add(this.state, "v1b", 0, 1).name("B").onChange(() => this.onUpdateGUI());
         const color2Folder = colorFolder.addFolder("Vertex 2");
-        color2Folder.add(this.state, "v2r", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color2Folder.add(this.state, "v2g", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color2Folder.add(this.state, "v2b", 0, 1).name("B").onChange(() => this.updateRectangle());
+        color2Folder.add(this.state, "v2r", 0, 1).name("R").onChange(() => this.onUpdateGUI());
+        color2Folder.add(this.state, "v2g", 0, 1).name("G").onChange(() => this.onUpdateGUI());
+        color2Folder.add(this.state, "v2b", 0, 1).name("B").onChange(() => this.onUpdateGUI());
         const color3Folder = colorFolder.addFolder("Vertex 3");
-        color3Folder.add(this.state, "v3r", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color3Folder.add(this.state, "v3g", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color3Folder.add(this.state, "v3b", 0, 1).name("B").onChange(() => this.updateRectangle());
+        color3Folder.add(this.state, "v3r", 0, 1).name("R").onChange(() => this.onUpdateGUI());
+        color3Folder.add(this.state, "v3g", 0, 1).name("G").onChange(() => this.onUpdateGUI());
+        color3Folder.add(this.state, "v3b", 0, 1).name("B").onChange(() => this.onUpdateGUI());
     }
 
-    updateRectangle() {
+    onUpdateGUI() {
         const rectangle = this.renderSystem.getMesh("rectangle");
 
         const vertexData = new Float32Array([
@@ -326,25 +327,22 @@ class App {
     constructor() {
         this.renderSystem = null;
         this.gui = null;
-        this.create();
         this.init();
+        this.play();
     }
 
-    create() {
+    init() {
         this.renderSystem = new RenderSystem();
         this.createShaders();
         this.createBaseScene();
         this.createScene();
+        this.renderSystem.init();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-    }
 
-    init() {
-        this.renderSystem.init();
         window.addEventListener("resize", () => this.play());
-        this.play();
     }
 
     createShaders() {

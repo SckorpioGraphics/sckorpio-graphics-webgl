@@ -242,6 +242,7 @@ class GUI {
         this.gui = new lil.GUI();
         this.state = {};
         this.createGUIFolder();
+        this.onUpdateGUI();
     }
 
     createGUIFolder() {
@@ -266,31 +267,31 @@ class GUI {
 
         const vertexFolder = rectangleFolder.addFolder("Vertex");
         const vertex0Folder = vertexFolder.addFolder("Vertex 0");
-        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex0Folder.add(this.state, "v0x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex0Folder.add(this.state, "v0y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         const vertex1Folder = vertexFolder.addFolder("Vertex 1");
-        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex1Folder.add(this.state, "v1x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex1Folder.add(this.state, "v1y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         const vertex2Folder = vertexFolder.addFolder("Vertex 2");
-        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex2Folder.add(this.state, "v2x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex2Folder.add(this.state, "v2y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         const vertex3Folder = vertexFolder.addFolder("Vertex 3");
-        vertex3Folder.add(this.state, "v3x", -1, 1).name("X").onChange(() => this.updateRectangle());
-        vertex3Folder.add(this.state, "v3y", -1, 1).name("Y").onChange(() => this.updateRectangle());
+        vertex3Folder.add(this.state, "v3x", -1, 1).name("X").onChange(() => this.onUpdateGUI());
+        vertex3Folder.add(this.state, "v3y", -1, 1).name("Y").onChange(() => this.onUpdateGUI());
         
 
         const colorFolder = rectangleFolder.addFolder("Color");
         const color0Folder = colorFolder.addFolder("Triangle 0");
-        color0Folder.add(this.state, "r0", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color0Folder.add(this.state, "g0", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color0Folder.add(this.state, "b0", 0, 1).name("B").onChange(() => this.updateRectangle());
+        color0Folder.add(this.state, "r0", 0, 1).name("R").onChange(() => this.onUpdateGUI());
+        color0Folder.add(this.state, "g0", 0, 1).name("G").onChange(() => this.onUpdateGUI());
+        color0Folder.add(this.state, "b0", 0, 1).name("B").onChange(() => this.onUpdateGUI());
         const color1Folder = colorFolder.addFolder("Triangle 1");
-        color1Folder.add(this.state, "r1", 0, 1).name("R").onChange(() => this.updateRectangle());
-        color1Folder.add(this.state, "g1", 0, 1).name("G").onChange(() => this.updateRectangle());
-        color1Folder.add(this.state, "b1", 0, 1).name("B").onChange(() => this.updateRectangle());
+        color1Folder.add(this.state, "r1", 0, 1).name("R").onChange(() => this.onUpdateGUI());
+        color1Folder.add(this.state, "g1", 0, 1).name("G").onChange(() => this.onUpdateGUI());
+        color1Folder.add(this.state, "b1", 0, 1).name("B").onChange(() => this.onUpdateGUI());
     }
 
-    updateRectangle() {
+    onUpdateGUI() {
         const rectangle = this.renderSystem.getMesh("rectangle");
 
         const vertexData = new Float32Array([
@@ -326,25 +327,22 @@ class App {
     constructor() {
         this.renderSystem = null;
         this.gui = null;
-        this.create();
         this.init();
+        this.play();
     }
 
-    create() {
+    init() {
         this.renderSystem = new RenderSystem();
         this.createShaders();
         this.createBaseScene();
         this.createScene();
+        this.renderSystem.init();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-    }
 
-    init() {
-        this.renderSystem.init();
         window.addEventListener("resize", () => this.play());
-        this.play();
     }
 
     createShaders() {
