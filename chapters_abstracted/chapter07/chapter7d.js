@@ -275,13 +275,6 @@ class GUI {
     constructor(options = {}) {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
-        this.state = {};
-        this.createGUIFolder();
-    }
-
-    createGUIFolder() {
-        const triangle = this.renderSystem.getMesh("triangle");
-
         this.state = {
             v0x: -0.5, v0y: 0.0,
             v1x: 0.0, v1y: 0.5,
@@ -291,9 +284,15 @@ class GUI {
             v1r: 0.0, v1g: 1.0, v1b: 0.0,
             v2r: 0.0, v2g: 0.0, v2b: 1.0,
 
-            colorR: 0.58, colorG: 0.33, colorB: 0.58,
+            colorR: 0.39, colorG: 0.33, colorB: 0.58,
             intensity: 1.0
         };
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
+
+    createGUIFolder() {
+        const triangle = this.renderSystem.getMesh("triangle");
 
         const triangleFolder = this.gui.addFolder("Triangle");
 
@@ -358,25 +357,22 @@ class App {
     constructor() {
         this.renderSystem = null;
         this.gui = null;
-        this.create();
         this.init();
+        this.play();
     }
 
-    create() {
+    init() {
         this.renderSystem = new RenderSystem();
         this.createShaders();
         this.createBaseScene();
         this.createScene();
+        this.renderSystem.init();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
         });
-    }
 
-    init() {
-        this.renderSystem.init();
         window.addEventListener("resize", () => this.play());
-        this.play();
     }
 
     createShaders() {
