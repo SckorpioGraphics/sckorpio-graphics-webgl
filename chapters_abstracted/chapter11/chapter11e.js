@@ -375,6 +375,7 @@ class GUI {
         this.gui = new lil.GUI();
         this.state = {};
         this.createGUIFolder();
+        this.onUpdateGUI();
     }
 
     createGUIFolder() {
@@ -472,15 +473,16 @@ class App {
         this.renderSystem = null;
         this.gui = null;
         this.keyControls = null;
-        this.create();
         this.init();
+        this.play();
     }
 
-    create() {
+    init() {
         this.renderSystem = new RenderSystem();
         this.createShaders();
         this.createBaseScene();
         this.createScene();
+        this.renderSystem.init();
 
         this.gui = new GUI({
             renderSystem: this.renderSystem
@@ -489,12 +491,8 @@ class App {
         this.keyControls = new KeyControls({
             renderSystem: this.renderSystem
         });
-    }
 
-    init() {
-        this.renderSystem.init();
         window.addEventListener("resize", () => this.play());
-        this.play();
     }
 
     createShaders() {
