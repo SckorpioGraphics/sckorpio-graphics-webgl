@@ -1,298 +1,243 @@
 /* #############################################################
-   CHAPTER 16c: Using multiple Textures
+   CHAPTER 16c: Multiple objects using same Texture
    Topics:
    - Creating a square and rectangle
-   - Use different textures
+   - Keep using same texture texture
    - Keep texture in renderable object
+   - Aplying on a square
    #############################################################
 */
 
 // =============================================================
-// SHADER OBJECTS
+// SHADER
 // =============================================================
-//Shader Object1
-const basicShader = {
-    vertexShaderSource: `#version 300 es
-    in vec2 a_position;
+class Shader {
+    constructor(options = {}) {
+        this.vertexShaderSource = options.vertexShaderSource;
+        this.fragmentShaderSource = options.fragmentShaderSource;
 
-    uniform mat3 u_modelMatrix;
-    uniform mat3 u_viewMatrix;
-    uniform mat3 u_projectionMatrix;
-
-    void main() {
-        vec3 localPosition = vec3(a_position, 1.0);
-        vec3 clipPosition = u_projectionMatrix * u_viewMatrix * u_modelMatrix * localPosition;
-        gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+        this.program = null;
+        this.attributes = options.attributes || {};
+        this.uniforms = options.uniforms || {};
     }
-`,
-    fragmentShaderSource: `#version 300 es
-    precision mediump float;
 
-    uniform vec3 u_color;
+    createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
 
-    out vec4 out_color;
+        if(gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
 
-    void main() {
-        out_color = vec4(u_color, 1.0);
+        console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
     }
-`,
-    program: null,
-    attributes: {
-        position: null
-    },
-    uniforms: {
-        modelMatrix: null,
-        viewMatrix: null,
-        projectionMatrix: null,
-        color: null
-    },
 
-    //FUNCTIONS
-    init(gl) {
-        // Compile shaders
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
-        // Create shader program
-        this.program = createProgram(gl, vertexShader, fragmentShader);
-        // Attributes
-        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
-        // uniforms
-        this.uniforms.modelMatrix = gl.getUniformLocation(this.program, "u_modelMatrix");
-        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
-        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
-        this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
+    createProgram(gl, vertexShader, fragmentShader) {
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if(gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+
+        console.error("Program Linking Error:", gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+        return null;
     }
-};
-
-const textureShader = {
-    vertexShaderSource: `#version 300 es
-        in vec2 a_position;
-        in vec2 a_texCoord;
-
-        uniform mat3 u_modelMatrix;
-        uniform mat3 u_viewMatrix;
-        uniform mat3 u_projectionMatrix;
-
-        out vec2 v_texCoord;
-
-        void main() {
-            vec3 localPosition = vec3(a_position, 1.0);
-            vec3 clipPosition = u_projectionMatrix * u_viewMatrix * u_modelMatrix * localPosition;
-            gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
-            v_texCoord = a_texCoord;
-        }
-    `,
-
-    fragmentShaderSource: `#version 300 es
-        precision mediump float;
-
-        uniform sampler2D u_texture;
-        in vec2 v_texCoord;
-        out vec4 out_color;
-
-        void main() {
-            out_color = texture(u_texture, v_texCoord);
-        }
-    `,
-
-    program: null,
-
-    attributes: {
-        position: null,
-        texCoord: null
-    },
-
-    uniforms: {
-        modelMatrix: null,
-        viewMatrix: null,
-        projectionMatrix: null,
-        texture: null
-    },
 
     init(gl) {
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
-        // program
-        this.program = createProgram(gl, vertexShader, fragmentShader);
-        // attribute
-        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
-        this.attributes.texCoord = gl.getAttribLocation(this.program, "a_texCoord");
-        // uniform
-        this.uniforms.modelMatrix = gl.getUniformLocation(this.program, "u_modelMatrix");
-        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
-        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
-        this.uniforms.texture = gl.getUniformLocation(this.program, "u_texture");
+        const vertexShader = this.createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        if(!vertexShader) {
+            return;
+        }
+
+        const fragmentShader = this.createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        if(!fragmentShader) {
+            gl.deleteShader(vertexShader);
+            return;
+        }
+
+        this.program = this.createProgram(gl, vertexShader, fragmentShader);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        if(!this.program) return;
+
+        // save attribute locations
+        for (const attribute of Object.values(this.attributes)) {
+            attribute.location = gl.getAttribLocation(this.program, attribute.variable);
+        }
+
+        // save uniform locations
+        for (const uniform of Object.values(this.uniforms)) {
+            uniform.location = gl.getUniformLocation(this.program, uniform.variable);
+        }
     }
-};
 
-// Compile Shader
-function createShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+    setUniform(gl, key, value) {
+        const uniform = this.uniforms[key];
 
-    const compileStatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!uniform || uniform.location === null) return;
 
-    if(compileStatus) return shader;
+        switch (uniform.type) {
+            case "float":
+                gl.uniform1f(uniform.location, value);
+                break;
 
-    console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-}
+            case "int": 
+                gl.uniform1i(uniform.location, value);
+                break;
 
-// Link Program
-function createProgram(gl, vertexShader, fragmentShader) {
-    const program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
+            case "vec2":
+                gl.uniform2fv(uniform.location, value);
+                break;
 
-    const linkStatus = gl.getProgramParameter(program, gl.LINK_STATUS);
+            case "vec3":
+                gl.uniform3fv(uniform.location, value);
+                break;
 
-    if(linkStatus) return program;
+            case "vec4":
+                gl.uniform4fv(uniform.location, value);
+                break;
 
-    console.error("Program Linking Error:", gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
+            case "mat3":
+                gl.uniformMatrix3fv(uniform.location, false, value);
+                break;
+
+            case "mat4":
+                gl.uniformMatrix4fv(uniform.location, false, value);
+                break;
+
+            case "sampler2D":
+                gl.uniform1i(uniform.location, value);
+                break;
+        }
+    }
 }
 
 // =============================================================
-// TEXTURE OBJECTS
+// TEXTURE
 // =============================================================
-
-const sckorpioTexture = {
-    imagePath: "chapters/chapter16/assets/sckorpio_Texture.png",
-
-    image: null,
-    handle: null,
-    loaded: false,
-
-    init(gl) {
-        createTexture(gl, this);
-    },
+class Texture {
+    constructor(options) {
+        this.filePath = options.filePath;
+        this.handle = null;
+        this.image = null;
+        this.loaded = false;
+    }
 
     bind(gl, textureUnit = 0) {
         gl.activeTexture(gl.TEXTURE0 + textureUnit);
         gl.bindTexture(gl.TEXTURE_2D, this.handle);
     }
-};
-
-const titleTexture = {
-    imagePath: "chapters/chapter16/assets/title_Texture.png",
-
-    image: null,
-    handle: null,
-    loaded: false,
 
     init(gl) {
-        createTexture(gl, this);
-    },
+        this.handle = gl.createTexture();
 
-    bind(gl, textureUnit = 0) {
-        gl.activeTexture(gl.TEXTURE0 + textureUnit);
         gl.bindTexture(gl.TEXTURE_2D, this.handle);
-    }
-};
 
-function createTexture(gl, texture) {
-    texture.handle = gl.createTexture();
-
-    gl.bindTexture(gl.TEXTURE_2D, texture.handle);
-
-    // Temporary cyan pixel while the image loads.
-    gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGBA,
-        1,
-        1,
-        0,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
-        new Uint8Array([82, 161, 171, 255])
-    );
-
-    // No mipmaps yet.
-    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-
-    texture.image = new Image();
-
-    texture.image.onload = () => {
-        gl.bindTexture(gl.TEXTURE_2D, texture.handle);
-
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-
+        // Temporary cyan pixel while the image loads.
         gl.texImage2D(
             gl.TEXTURE_2D,
             0,
             gl.RGBA,
+            1,
+            1,
+            0,
             gl.RGBA,
             gl.UNSIGNED_BYTE,
-            texture.image
+            new Uint8Array([82, 161, 171, 255])
         );
 
-        texture.loaded = true;
-        console.log("Texture loaded:", texture.imagePath);
-    };
+        // No mipmaps yet.
+        gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
 
-    texture.image.onerror = () => {
-        console.error(
-            "Could not load texture image:",
-            texture.imagePath
-        );
-    };
+        this.image = new Image();
 
-    texture.image.src = texture.imagePath;
+        this.image.onload = () => {
+            gl.bindTexture(gl.TEXTURE_2D, this.handle);
+
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+            gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGBA,
+                gl.RGBA,
+                gl.UNSIGNED_BYTE,
+                this.image
+            );
+
+            this.loaded = true;
+            console.log("Texture loaded:", this.filePath);
+        };
+
+        this.image.onerror = () => {
+            console.error(
+                "Could not load texture image:",
+                this.imagePath
+            );
+        };
+
+        this.image.src = this.filePath;
+    }
 }
 
 // =============================================================
 // CAMERA
 // =============================================================
-const camera = {
-    // Camera Data
-    width: 0,
-    height: 0,
-    positionX: -300,
-    positionY: -200,
-    zoom: 1.0,
-    panSpeed: 20,
-    zoomSpeed: 0.1,
+class Camera {
+    // Camera bounds
+    width = 0;
+    height = 0;
+
+    // Camera Position
+    positionX = -300;
+    positionY = -200;
+    // Camera Zoom
+    zoom = 1.0;
+    // Speed
+    panSpeed = 10;
+    zoomSpeed = 0.1;
 
     // Control state
-    state: {
+    state = {
         panUp: false,
         panDown: false,
         panLeft: false,
         panRight: false,
         zoomIn: false,
         zoomOut: false
-    },
+    };
 
     // View Matrix
-    viewMatrix: mat3.create(),
+    viewMatrix = mat3.create();
     // Projection matrix
-    projectionMatrix: mat3.create(),
+    projectionMatrix = mat3.create();
 
     // FUNCTIONs
     update(gl) {
         // Match the camera's viewing region
         this.width = gl.canvas.width;
         this.height = gl.canvas.height;
-        // Update the pos and zooms
+        // Update according to camers states
         if(this.state.panUp) this.positionY += this.panSpeed;
         if(this.state.panDown) this.positionY -= this.panSpeed;
         if(this.state.panLeft) this.positionX -= this.panSpeed;
         if(this.state.panRight) this.positionX += this.panSpeed;
         if(this.state.zoomIn) this.zoom += this.zoomSpeed;
         if(this.state.zoomOut) this.zoom = Math.max(0.1, this.zoom - this.zoomSpeed);
-    },
+        // update camera matrices
+        this.updateViewMatrix(gl);
+        this.updateProjectionMatrix(gl);
+    }
     updateViewMatrix(gl) {
-        // Update Camera values first
-        this.update(gl);
-        // Create View matrix
+        // create View matrix
         const matrix = mat3.create();
-        mat3.fromTranslation(matrix, [-camera.positionX, -camera.positionY]);
-        mat3.scale(matrix, matrix, [camera.zoom, camera.zoom]);
-        camera.viewMatrix = matrix;
-    },
+        mat3.fromTranslation(matrix, [-this.positionX, -this.positionY]);
+        mat3.scale(matrix, matrix, [this.zoom, this.zoom]);
+        this.viewMatrix = matrix;
+    }
     updateProjectionMatrix(gl) {
         // Camera bounds
         this.width = gl.canvas.width;
@@ -305,439 +250,168 @@ const camera = {
             -1,              -1,                 1,
         );
     }
-};
+}
 
 // =============================================================
-// MESHES
+// TRANSFORM
 // =============================================================
-const square = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
+class Transform {
+    constructor(options = {}) {
+        this.translation = options.translation ?? [0, 0];
+        this.rotation = options.rotation ?? 0;
+        this.scale = options.scale ?? [1.0, 1.0];
+        this.modelMatrix = mat3.create();
+        this.updateModelMatrix();
+    }
 
-    // CPU DATA
-    vertexData: new Float32Array([
-        // Position     // UV
-        -100, -100,     0, 0,
-        100, -100,      1, 0,
-        -100,  100,     0, 1,
+    updateModelMatrix() {
+        const matrix = mat3.create();
+        mat3.translate(matrix, matrix, [this.translation[0], this.translation[1]]);
+        mat3.rotate(matrix, matrix, this.rotation * Math.PI / 180);
+        mat3.scale(matrix, matrix, [this.scale[0], this.scale[1]]);
+        this.modelMatrix = matrix;
+    }
+}
 
-        -100,  100,     0, 1,
-        100, -100,      1, 0,
-        100,  100,      1, 1
-    ]),
+// =============================================================
+// MESH
+// =============================================================
+class Mesh {
+    constructor(options = {}) {
+        // CPU Data
+        this.vertexData = options.vertexData;
+        this.indexData = options.indexData || null;
+        this.dataUsage = options.dataUsage || "STATIC_DRAW";
+        this.vertexBufferLayout = options.vertexBufferLayout || [];
 
-    translationX: 100,
-    translationY: 100,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
+        // Transforms
+        this.transform = new Transform(options.transform);
 
-    //GPU DATA
-    shader: null,
-    texture: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
+        // Uniforms
+        this.uniforms = options.uniforms || {};
 
-    //FUNCTIONS
-    init(gl, shader, texture) {
-        // Connect shader to mesh
-        this.shader = shader;
-        this.texture = texture;
+        // GPU Data
+        this.shader = options.shader;
+        this.texture = options.texture;
+        this.drawMode = options.drawMode || "TRIANGLES";
+        this.drawCount = options.drawCount || 0;
+        this.drawOffset = options.drawOffset || 0;
+        this.drawType = options.drawType || "UNSIGNED_SHORT";
 
+        // GPU Resources
+        this.vao = null;
+        this.vbo = null;
+        this.ibo = null;
+    }
+
+    init(gl) {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl[this.dataUsage]);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Texture coordinates: u, v
-        gl.enableVertexAttribArray(this.shader.attributes.texCoord);
-        gl.vertexAttribPointer(
-            this.shader.attributes.texCoord,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            2 * Float32Array.BYTES_PER_ELEMENT
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 6;
-    },
-    draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Modle Matrix
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        // Texture
-        this.texture.bind(gl, 0);
-        gl.uniform1i(this.shader.uniforms.texture, 0);
-        // vao
-        gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const rectangle = {
-    //    v1--------v2
-    //    | \        |
-    //    |    \     |
-    //    |       \  |
-    //    v0--------v1
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        // Position     // UV
-        -300, -100,     0, 0,
-        300, -100,      1, 0,
-        -300,  100,     0, 1,
-
-        -300,  100,     0, 1,
-        300, -100,      1, 0,
-        300,  100,      1, 1
-    ]),
-
-    translationX: 600,
-    translationY: 100,
-    rotation: 0,
-    scaleX: 1.0,
-    scaleY: 1.0,
-    modelMatrix: mat3.create(),
-
-    //GPU DATA
-    shader: null,
-    texture: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader, texture) {
-        // Connect shader to mesh
-        this.shader = shader;
-        this.texture = texture;
-
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        // Bind Vertex Buffer
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,          // size: 2 components (X, Y)
-            gl.FLOAT,   // type: 32-bit float
-            false,      // normalize
-            4 * Float32Array.BYTES_PER_ELEMENT, // stride: 4(tightly packed)
-            0           // offset: start of buffer
-        );
-
-        // Texture coordinates: u, v
-        gl.enableVertexAttribArray(this.shader.attributes.texCoord);
-        gl.vertexAttribPointer(
-            this.shader.attributes.texCoord,
-            2,
-            gl.FLOAT,
-            false,
-            4 * Float32Array.BYTES_PER_ELEMENT,
-            2 * Float32Array.BYTES_PER_ELEMENT
-        );
-
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 6;
-    },
-    draw(gl) {
-        // Shader
-        gl.useProgram(this.shader.program);
-        // Modle Matrix
-        setupModelMatrix(this);
-        gl.uniformMatrix3fv(this.shader.uniforms.modelMatrix,false,this.modelMatrix);
-        // Texture
-        this.texture.bind(gl, 0);
-        gl.uniform1i(this.shader.uniforms.texture, 0);
-        // vao
-        gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const grid = {
-    //    v1------------v2
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    v0------------v1
-
-    // CPU DATA
-    vertexData: new Float32Array(),
-    spacing: 100,
-    range: 10000,
-    color: [0.39, 0.33, 0.58], // Sckorpio Purple
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        this.shader = shader;
-
-        const positions = [];
-
-        // Vertical lines
-        for(let x = -this.range; x <= this.range; x += this.spacing) {
-            positions.push(
-                x, -this.range,
-                x, this.range
-            );
+        // Vertex Buffer Layout
+        for(const layout of this.vertexBufferLayout) {
+            const attribute = this.shader.attributes[layout.attribute];
+            const location = attribute.location;
+            gl.enableVertexAttribArray(location);
+            gl.vertexAttribPointer(location, layout.size, gl[layout.type], layout.normalized, layout.stride, layout.offset);
         }
 
-        // Horizontal lines
-        for(let y = -this.range; y <= this.range; y += this.spacing) {
-            positions.push(
-                -this.range, y,
-                this.range, y
-            );
+        // Index Buffer
+        if(this.indexData) {
+            this.ibo = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
+            // also set draw count to index counts
+            this.drawCount = this.indexData.length;
         }
 
-        this.vertexData = new Float32Array(positions);
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
+        // Draw Configuration
+        this.drawMode = gl[this.drawMode];
+        this.drawType = gl[this.drawType];
+    }
 
+    updateVertexData(gl, data) {
+        this.vertexData = data;
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+    }
+
+    setupShader(gl) {
+        gl.useProgram(this.shader.program);
+
+        // Model Matrix Uniform
+        this.shader.setUniform(gl, "modelMatrix", this.transform.modelMatrix);
+
+        // Other uniforms
+        for (const [key, value] of Object.entries(this.uniforms)) {
+            this.shader.setUniform(gl, key, value);
+        }
+    }
+
+    setupTexture(gl) {
+        if (!this.texture) return;
+
+        this.texture.bind(gl, 0);
+        this.shader.setUniform(gl, "texture", 0);
+    }
+
+    draw(gl) {
+        // Update Model Matrix
+        this.transform.updateModelMatrix();
+        // Setup shader and uniforms
+        this.setupShader(gl);
+        // Bind Texture
+        this.setupTexture(gl);
         // Vertex Array
-        this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
-
-        // Attrib
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        //Draw Data
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = positions.length / 2;
-    },
-    draw(gl) {
-        gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
+        // Draw Call
+        if(this.indexData) {
+            gl.drawElements(this.drawMode, this.drawCount, this.drawType, this.drawOffset);
+        }  
+        else {
+            gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
+        }   
     }
-};
-
-const xAxis = {
-    //    -x------0------+x
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        -grid.range, 0,
-        grid.range, 0
-    ]),
-    color: [1.0, 0.0, 0.0], // Red
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        this.shader = shader;
-
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = 2;
-    },
-    draw(gl) {
-        gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const yAxis = {
-    //      +y
-    //      |
-    //      |
-    //      0
-    //      |
-    //      |
-    //      -y
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        0, -grid.range,
-        0, grid.range
-    ]),
-    color: [0.0, 1.0, 0.0], // Green
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        this.shader = shader;
-
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = 2;
-    },
-    draw(gl) {
-        gl.useProgram(this.shader.program);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-function setupModelMatrix(mesh) {
-    const matrix = mat3.create();
-
-    mat3.translate(matrix, matrix, [mesh.translationX, mesh.translationY]);
-    mat3.rotate(matrix, matrix, mesh.rotation * Math.PI / 180);
-    mat3.scale(matrix, matrix, [mesh.scaleX, mesh.scaleY]);
-
-    mesh.modelMatrix = matrix;
 }
 
 // =============================================================
 // RENDER SYSTEM
 // =============================================================
-const renderSystem = {
-    canvas: null,
-    gl: null,
+class RenderSystem {
+    constructor(options = {}) {
+        this.canvas = null;
+        this.gl = null;
+        this.clearColor = [];
+        this.shaders = {};
+        this.textures = {};
+        this.meshes = {};
+        this.camera = new Camera();
+        this.commonUniforms = {
+            projectionMatrix: null,
+            viewMatrix: null
+        };
+    }
 
     initWebgl() {
-        // Canvas
         this.canvas = document.querySelector("#c");
-
-        if (!this.canvas) {
+        if(!this.canvas) {
             console.error("Canvas element not found");
             return;
         }
 
-        // Context
         this.gl = this.canvas.getContext("webgl2");
-
-        if (!this.gl) {
+        if(!this.gl) {
             console.error("WebGL2 is not supported by this browser");
             return;
         }
-    },
-    // RESIZE
+    }
+
     resizeCanvasToDisplaySize(multiplier = 1) {
         const width = (this.canvas.clientWidth * multiplier) | 0;
         const height = (this.canvas.clientHeight * multiplier) | 0;
@@ -745,125 +419,148 @@ const renderSystem = {
         if(this.canvas.width !== width || this.canvas.height !== height) {
             this.canvas.width = width;
             this.canvas.height = height;
-
         }
-    },
-    // INIT
+    }
+
+    addShader(name, shader) {
+        this.shaders[name] = shader;
+    }
+
+    getShader(name) {
+        return this.shaders[name];
+    }
+
+    addTexture(name, texture) {
+        this.textures[name] = texture;
+    }
+
+    getTexture(name) {
+        return this.textures[name];
+    }
+
+    addMesh(name, mesh) {
+        this.meshes[name] = mesh;
+    }
+
+    getMesh(name) {
+        return this.meshes[name];
+    }
+
+    setClearColor(r,g,b,a){
+        this.clearColor = [r,g,b,a];
+    }
+
     init() {
+        // webgl
         this.initWebgl();
         const gl = this.gl;
+        // shaders
+        for(const shader of Object.values(this.shaders)) {
+            shader.init(gl);
+        }
+        // textures
+        for(const texture of Object.values(this.textures)) {
+            texture.init(gl);
+        }
+        // meshes
+        for(const mesh of Object.values(this.meshes)) {
+            mesh.init(gl);
+        }
+    }
 
-        // Resources Initialise
-        basicShader.init(gl);
-        textureShader.init(gl);
-        sckorpioTexture.init(gl);
-        titleTexture.init(gl);
-        square.init(gl, textureShader, sckorpioTexture);
-        rectangle.init(gl, textureShader, titleTexture);
-        grid.init(gl, basicShader);
-        xAxis.init(gl, basicShader);
-        yAxis.init(gl, basicShader);
-    },
-    // UPDATE
     update() {
         const gl = this.gl;
+        // resize canvas
+        this.resizeCanvasToDisplaySize();
+        // update camera
+        this.camera.update(gl);
+    }
 
-        camera.updateProjectionMatrix(gl);
-        camera.updateViewMatrix(gl);
-    },
-    // RENDER
     render() {
         const gl = this.gl;
-        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+        // viewport
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         // Background
-        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        // set common uniforms
+        this.commonUniforms["projectionMatrix"] = this.camera.projectionMatrix;
+        this.commonUniforms["viewMatrix"] = this.camera.viewMatrix;
 
-        // COMMON UNIFORMS
-        //---------------------------------------------------
-        // Shader 1
-        gl.useProgram(basicShader.program);
-        // Pass MVP Matrices
-        gl.uniformMatrix3fv(basicShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-        gl.uniformMatrix3fv(basicShader.uniforms.viewMatrix,false,camera.viewMatrix);
-        gl.uniformMatrix3fv(basicShader.uniforms.modelMatrix,false,mat3.create());
+        // apply common uniforms to shaders
+        for(const shader of Object.values(this.shaders)){
+            gl.useProgram(shader.program);
 
-        // Shader 2
-        gl.useProgram(textureShader.program);
-        // Pass MVP Matrices
-        gl.uniformMatrix3fv(textureShader.uniforms.viewMatrix,false,camera.viewMatrix);
-        gl.uniformMatrix3fv(textureShader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-        gl.uniformMatrix3fv(textureShader.uniforms.modelMatrix,false,mat3.create());
-
-        // RENDER MESHES
-        //---------------------------------------------------
-        // Grid
-        grid.draw(gl);
-        // X-Axis
-        xAxis.draw(gl);
-        // Y-Axis
-        yAxis.draw(gl);
-        // Square
-        square.draw(gl);
-        // Rectangle
-        rectangle.draw(gl);
+            for (const [key, value] of Object.entries(this.commonUniforms)) {
+                shader.setUniform(gl, key, value);
+            }
+        }
         
-    },
-};
+        // render meshes
+        for(const mesh of Object.values(this.meshes)){
+            mesh.draw(gl);
+        }  
+    }
+}
 
 // =============================================================
 // GUI
 // =============================================================
-const gui = {
-    init() {
-        const gui = new lil.GUI();
-
-        // Square
-        const squareFolder = gui.addFolder("Square");
-        squareFolder.add(square, "translationX", -1000, 1000).name("translationX");
-        squareFolder.add(square, "translationY", -1000, 1000).name("translationY");
-        squareFolder.add(square, "rotation", 0, 360).name("rotation");
-        squareFolder.add(square, "scaleX", 0.1, 3.0).name("scaleX");
-        squareFolder.add(square, "scaleY", 0.1, 3.0).name("scaleY");
-
-        // Rectangle
-        const rectangleFolder = gui.addFolder("Rectangle");
-        rectangleFolder.add(rectangle, "translationX", -1000, 1000).name("translationX");
-        rectangleFolder.add(rectangle, "translationY", -1000, 1000).name("translationY");
-        rectangleFolder.add(rectangle, "rotation", 0, 360).name("rotation");
-        rectangleFolder.add(rectangle, "scaleX", 0.1, 3.0).name("scaleX");
-        rectangleFolder.add(rectangle, "scaleY", 0.1, 3.0).name("scaleY");
+class GUI {
+    constructor(options = {}) {
+        this.renderSystem = options.renderSystem;
+        this.gui = new lil.GUI();
+        this.state = {};
+        this.createGUIFolder();
+        this.onUpdateGUI();
     }
-};
 
-// =============================================================
-// KEY EVENTS
-// =============================================================
-const keyEvent = {
-    init(func) {
+    createGUIFolder() {
+        const square = this.renderSystem.getMesh("square");
+        const squareFolder = this.gui.addFolder("Square");
+        const squareTransformFolder = squareFolder.addFolder("Transform");
+        squareTransformFolder.add(square.transform.translation, 0, -1000, 1000).name("translationX");
+        squareTransformFolder.add(square.transform.translation, 1, -1000, 1000).name("translationY");
+        squareTransformFolder.add(square.transform, "rotation", 0, 360).name("rotation");
+        squareTransformFolder.add(square.transform.scale, 0, -5, 5).name("scaleX");
+        squareTransformFolder.add(square.transform.scale, 1, -5, 5).name("scaleY");
+    }
+
+    onUpdateGUI() {
+        
+    }
+}
+
+class KeyControls {
+    constructor(options = {}) {
+        this.renderSystem = options.renderSystem;
+        this.createKeyEvents();
+    }
+
+    createKeyEvents() {
         window.addEventListener("keydown", event => {
             switch(event.key) {
                 case "ArrowUp":
-                    camera.state.panUp = true;
+                    this.renderSystem.camera.state.panUp = true;
                     break;
                 case "ArrowLeft":
-                    camera.state.panLeft = true;
+                    this.renderSystem.camera.state.panLeft = true;
                     break;
                 case "ArrowDown":
-                    camera.state.panDown = true;
+                    this.renderSystem.camera.state.panDown = true;
                     break;
                 case "ArrowRight":
-                    camera.state.panRight = true;
+                    this.renderSystem.camera.state.panRight = true;
                     break;
                 case "+":
                 case "=":
-                    camera.state.zoomIn = true;
+                    this.renderSystem.camera.state.zoomIn = true;
                     break;
                 case "-":
                 case "_":
-                    camera.state.zoomOut = true;
+                    this.renderSystem.camera.state.zoomOut = true;
                     break;
                 default:
             }
@@ -872,56 +569,501 @@ const keyEvent = {
         window.addEventListener("keyup", event => {
             switch(event.key) {
                 case "ArrowUp":
-                    camera.state.panUp = false;
+                    this.renderSystem.camera.state.panUp = false;
                     break;
                 case "ArrowLeft":
-                    camera.state.panLeft = false;
+                    this.renderSystem.camera.state.panLeft = false;
                     break;
                 case "ArrowDown":
-                    camera.state.panDown = false;
+                    this.renderSystem.camera.state.panDown = false;
                     break;
                 case "ArrowRight":
-                    camera.state.panRight = false;
+                    this.renderSystem.camera.state.panRight = false;
                     break;
                 case "+":
                 case "=":
-                    camera.state.zoomIn = false;
+                    this.renderSystem.camera.state.zoomIn = false;
                     break;
                 case "-":
                 case "_":
-                    camera.state.zoomOut = false;
+                    this.renderSystem.camera.state.zoomOut = false;
                     break;
                 default:
             }
         });
     }
-};
+}
+
+// =============================================================
+// APP
+// =============================================================
+class App {
+    constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.keyControls = null;
+        this.init();
+        this.play();
+    }
+
+    init() {
+        this.renderSystem = new RenderSystem();
+        this.createShaders();
+        this.createTextures();
+        this.createBaseScene();
+        this.createScene();
+        this.renderSystem.init();
+
+        this.gui = new GUI({
+            renderSystem: this.renderSystem
+        });
+
+        this.keyControls = new KeyControls({
+            renderSystem: this.renderSystem
+        });
+    }
+
+    createShaders() {
+        // Shaders
+        const basicShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+
+                uniform mat3 u_modelMatrix;
+                uniform mat3 u_viewMatrix;
+                uniform mat3 u_projectionMatrix;
+
+                void main() {
+                    vec3 modelPosition = u_modelMatrix * vec3(a_position, 1.0);
+                    vec3 viewPosition = u_viewMatrix * modelPosition;
+                    vec3 clipPosition = u_projectionMatrix * viewPosition;
+                    gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+                }
+            `,
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+
+                uniform vec4 u_color;
+
+                out vec4 out_Color;
+
+                void main() {
+                    out_Color = u_color;
+                }
+            `,
+            attributes: { 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                }
+            },
+            uniforms: { 
+                projectionMatrix: {
+                    variable: "u_projectionMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                viewMatrix: {
+                    variable: "u_viewMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                modelMatrix: {
+                    variable: "u_modelMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                color: {
+                    variable: "u_color",
+                    type: "vec4",
+                    location: null
+                }
+            },
+
+        });
+
+        const textureShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+                in vec2 a_texCoord;
+
+                uniform mat3 u_modelMatrix;
+                uniform mat3 u_viewMatrix;
+                uniform mat3 u_projectionMatrix;
+
+                out vec2 v_texCoord;
+
+                void main() {
+                    v_texCoord = a_texCoord;
+                    vec3 modelPosition = u_modelMatrix * vec3(a_position, 1.0);
+                    vec3 viewPosition = u_viewMatrix * modelPosition;
+                    vec3 clipPosition = u_projectionMatrix * viewPosition;
+                    gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+                }
+            `,
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+
+                uniform sampler2D u_texture;
+                in vec2 v_texCoord;
+                out vec4 out_color;
+
+                void main() {
+                    out_color = texture(u_texture, v_texCoord);
+                }
+            `,
+            attributes: { 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                },
+                texCoord: {
+                    variable: "a_texCoord",
+                    type: "vec2",
+                    location: null
+                },
+            },
+            uniforms: { 
+                projectionMatrix: {
+                    variable: "u_projectionMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                viewMatrix: {
+                    variable: "u_viewMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                modelMatrix: {
+                    variable: "u_modelMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                texture: {
+                    variable: "u_texture",
+                    type: "sampler2D",
+                    location: null
+                }
+            },
+
+        });
+
+        // Add to RenderSystem
+        this.renderSystem.addShader("basicShader",basicShader);
+        this.renderSystem.addShader("textureShader",textureShader);
+    }
+
+    createTextures() {
+        // Textures
+        const sckorpioTexture = new Texture({
+            filePath: "chapters/chapter16/assets/sckorpio_Texture.png"
+        });
+
+        // Add to RenderSystem
+        this.renderSystem.addTexture("sckorpioTexture",sckorpioTexture);
+    }
+
+    createGrid() {
+        const gridRange = 10000;
+        const gridSpacing = 100;
+        const gridPositionsData = [];
+
+        // Vertical lines
+        for(let x = -gridRange; x <= gridRange; x += gridSpacing) {
+            gridPositionsData.push(
+                x, -gridRange,
+                x, gridRange
+            );
+        }
+
+        // Horizontal lines
+        for(let y = -gridRange; y <= gridRange; y += gridSpacing) {
+            gridPositionsData.push(
+                -gridRange, y,
+                gridRange, y
+            );
+        }
+
+        const gridVertexData = new Float32Array(gridPositionsData);
+        const gridDrawCount = gridPositionsData.length / 2.0;
+
+        const grid = new Mesh({
+            renderOrder: 1,
+
+            shader: this.renderSystem.getShader("basicShader"),
+
+            // CPU DATA
+            vertexData: gridVertexData,
+                /*
+                    v1------------v2
+                    |--|--|--|--|--|
+                    |--|--|--|--|--|
+                    |--|--|--|--|--|
+                    |--|--|--|--|--|
+                    |--|--|--|--|--|
+                    v0------------v1
+                */
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            uniforms: {
+                color: [0.5, 0.8, 0.8, 1.0] // Sckorpio Grid Cyan
+            },
+
+            drawMode: "LINES",
+            drawType: "UNSIGNED_SHORT",
+            drawCount: gridDrawCount
+        });
+
+        // Add to RenderSystem
+        this.renderSystem.addMesh("grid",grid);
+    }
+
+    createAxis() {
+        const axisRange = 10000;
+
+        const xAxis = new Mesh({
+            renderOrder: 2,
+
+            shader: this.renderSystem.getShader("basicShader"),
+
+            // CPU DATA
+            vertexData: new Float32Array([
+                /*
+                    -x------0------+x
+                */
+                
+                -axisRange, 0,
+                axisRange,  0
+            ]),
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            uniforms: {
+                color: [1.0, 0.0, 0.0, 1.0] // RED
+            },
+
+            drawMode: "LINES",
+            drawType: "UNSIGNED_SHORT",
+            drawCount: 2
+        });
+
+        const yAxis = new Mesh({
+            renderOrder: 2,
+
+            shader: this.renderSystem.getShader("basicShader"),
+
+            // CPU DATA
+            vertexData: new Float32Array([
+                /*
+                    +y
+                    |
+                    |
+                    0
+                    |
+                    |
+                    -y
+                */
+                
+                0, -axisRange,
+                0, axisRange,
+            ]),
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            uniforms: {
+                color: [0.0, 1.0, 0.0, 1.0] // GREEN
+            },
+
+            drawMode: "LINES",
+            drawType: "UNSIGNED_SHORT",
+            drawCount: 2
+        });
+
+        // Add to RenderSystem
+        this.renderSystem.addMesh("xAxis",xAxis);
+        this.renderSystem.addMesh("yAxis",yAxis);
+    }
+
+    createBaseScene() {
+        // Set clear Color (Sckorpio Cyan)
+        this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
+
+        // Create BaseScene Meshes
+        this.createGrid();
+        this.createAxis();
+    }
+
+    createScene() {
+        // Meshes
+        const square = new Mesh({
+            shader: this.renderSystem.getShader("textureShader"),
+            texture: this.renderSystem.getTexture("sckorpioTexture"),
+
+            // CPU DATA
+            vertexData: new Float32Array([
+                /*
+                    v3--------v2
+                    |       / |
+                    |     /   |
+                    |   /     |
+                    | /       |
+                    v0________v1
+                */
+                
+                // Position    // UV
+                -100, -100,     0, 0,
+                100,  -100,     1, 0,
+                100,   100,     1, 1,
+                -100,  100,     0, 1,
+            ]),
+
+            indexData: new Uint16Array([
+                0, 1, 2,
+                0, 2, 3
+            ]),
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 4 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                },
+                {
+                    attribute: "texCoord",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 4 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 2 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            transform: {
+                translation: [100, 100],
+                rotation: 0,
+                scale: [1.0, 1.0]
+            },
+
+            uniforms: {
+                color: [0.39, 0.33, 0.58, 1.0] // Sckorpio Purple
+            },
+
+            drawMode: "TRIANGLES",
+            drawType: "UNSIGNED_SHORT"
+        });
+
+        const rectangle = new Mesh({
+            shader: this.renderSystem.getShader("textureShader"),
+            texture: this.renderSystem.getTexture("sckorpioTexture"),
+
+            // CPU DATA
+            vertexData: new Float32Array([
+                /*
+                    v3--------v2
+                    |       / |
+                    |     /   |
+                    |   /     |
+                    | /       |
+                    v0________v1
+                */
+                
+                // Position    // UV
+                -300, -100,     0, 0,
+                300,  -100,     1, 0,
+                300,   100,     1, 1,
+                -300,  100,     0, 1,
+            ]),
+
+            indexData: new Uint16Array([
+                0, 1, 2,
+                0, 2, 3
+            ]),
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 4 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                },
+                {
+                    attribute: "texCoord",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 4 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 2 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            transform: {
+                translation: [600, 100],
+                rotation: 0,
+                scale: [1.0, 1.0]
+            },
+
+            uniforms: {
+                color: [0.39, 0.33, 0.58, 1.0] // Sckorpio Purple
+            },
+
+            drawMode: "TRIANGLES",
+            drawType: "UNSIGNED_SHORT"
+        });
+
+        // Add to RenderSystem
+        this.renderSystem.addMesh("square",square);
+        this.renderSystem.addMesh("rectangle",rectangle);
+    }
+    
+    play() {
+        this.renderSystem.update();
+        this.renderSystem.render();
+        requestAnimationFrame(() => this.play());
+    }
+}
+
 // =============================================================
 // MAIN
 // =============================================================
-function appLoop() {
-    renderSystem.resizeCanvasToDisplaySize();
-    renderSystem.update();
-    renderSystem.render();
-    requestAnimationFrame(appLoop);
-}
-
-function appInit() {
-    renderSystem.init();
-    gui.init();
-    keyEvent.init(() => appLoop());
-}
-
 function main() {
-    appInit();
-    appLoop();
+    const app = new App();
 }
 
-// =============================================================
-// STARTUP AND EXPORTS
-// =============================================================
 window.addEventListener("DOMContentLoaded", main);
 
-export {
-    main
-};
+export { main };

@@ -8,789 +8,867 @@
    #############################################################
 */
 
-/* #############################################################
-   CHAPTER 13d: 2D Transformations — Rotation Around a Pivot
-   Topics:
-   - Rotating a letterF around a pivot
-   - Pivot position
-   - Translation to and from the pivot
-   - Visualizing the pivot
-   #############################################################
-*/
-
 // =============================================================
-// SHADER OBJECTS
+// SHADER
 // =============================================================
-//Shader Object1
-const shader = {
-    vertexShaderSource: `#version 300 es
-    in vec2 a_position;
+class Shader {
+    constructor(options = {}) {
+        this.vertexShaderSource = options.vertexShaderSource;
+        this.fragmentShaderSource = options.fragmentShaderSource;
 
-    uniform mat3 u_viewMatrix;
-    uniform mat3 u_projectionMatrix;
-
-    uniform float u_translationX;
-    uniform float u_translationY;
-    uniform float u_rotation;
-    uniform float u_pivotX;
-    uniform float u_pivotY;
-
-    void main() {
-
-        vec3 localPosition = vec3(a_position, 1.0);
-
-        // Translate to pivot
-        mat3 translateToPivot = mat3(
-            1.0,       0.0,       0.0,
-            0.0,       1.0,       0.0,
-            -u_pivotX, -u_pivotY, 1.0
-        );
-
-        // Rotation
-        mat3 rotationMatrix = mat3(
-            cos(radians(u_rotation)),  sin(radians(u_rotation)), 0.0,
-           -sin(radians(u_rotation)),  cos(radians(u_rotation)), 0.0,
-            0.0,                       0.0,                      1.0
-        );
-
-        // Translate back from pivot
-        mat3 translateBack = mat3(
-            1.0,       0.0,       0.0,
-            0.0,       1.0,       0.0,
-            u_pivotX,  u_pivotY,  1.0
-        );
-
-        // Translation
-        mat3 translationMatrix = mat3(
-            1.0,            0.0,            0.0,
-            0.0,            1.0,            0.0,
-            u_translationX, u_translationY, 1.0
-        );
-
-        vec3 worldPosition =
-            translationMatrix *
-            translateBack *
-            rotationMatrix *
-            translateToPivot *
-            localPosition;
-
-        vec3 viewPosition = u_viewMatrix * worldPosition;
-        vec3 clipPosition = u_projectionMatrix * viewPosition;
-
-        gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+        this.program = null;
+        this.attributes = options.attributes || {};
+        this.uniforms = options.uniforms || {};
     }
-`,
-    fragmentShaderSource: `#version 300 es
-    precision mediump float;
 
-    uniform vec3 u_color;
+    createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
 
-    out vec4 out_color;
+        if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
 
-    void main() {
-        out_color = vec4(u_color, 1.0);
+        console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
     }
-`,
-    program: null,
-    attributes: {
-        position: null
-    },
-    uniforms: {
-        translationX: null,
-        translationY: null,
-        rotation: null,
-        pivotX: null,
-        pivotY: null,
-        viewMatrix: null,
-        projectionMatrix: null,
-        color: null
-    },
 
-    //FUNCTIONS
+    createProgram(gl, vertexShader, fragmentShader) {
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+
+        console.error("Program Linking Error:", gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+        return null;
+    }
+
     init(gl) {
-        // Compile shaders
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
-        // Create shader program
-        this.program = createProgram(gl, vertexShader, fragmentShader);
-        // Attributes
-        this.attributes.position = gl.getAttribLocation(this.program, "a_position");
-        // uniforms
-        this.uniforms.viewMatrix = gl.getUniformLocation(this.program, "u_viewMatrix");
-        this.uniforms.projectionMatrix = gl.getUniformLocation(this.program, "u_projectionMatrix");
-        this.uniforms.translationX = gl.getUniformLocation(this.program, "u_translationX");
-        this.uniforms.translationY = gl.getUniformLocation(this.program, "u_translationY");
-        this.uniforms.rotation = gl.getUniformLocation(this.program, "u_rotation");
-        this.uniforms.pivotX = gl.getUniformLocation(this.program, "u_pivotX");
-        this.uniforms.pivotY = gl.getUniformLocation(this.program, "u_pivotY");
-        this.uniforms.color = gl.getUniformLocation(this.program, "u_color");
+        const vertexShader = this.createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        if (!vertexShader) return false;
+
+        const fragmentShader = this.createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        if (!fragmentShader) {
+            gl.deleteShader(vertexShader);
+            return false;
+        }
+
+        this.program = this.createProgram(gl, vertexShader, fragmentShader);
+
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+
+        if (!this.program) return false;
+
+        // Attribute locations
+        for (const attribute of Object.values(this.attributes)) {
+            attribute.location = gl.getAttribLocation(this.program, attribute.variable);
+        }
+
+        // Uniform locations
+        for (const uniform of Object.values(this.uniforms)) {
+            uniform.location = gl.getUniformLocation(this.program, uniform.variable);
+        }
+
+        return true;
     }
-};
 
-// Compile Shader
-function createShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+    setUniform(gl, key, value) {
+        const uniform = this.uniforms[key];
 
-    const compileStatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!uniform || uniform.location === null) return;
 
-    if(compileStatus) return shader;
-
-    console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-}
-
-// Link Program
-function createProgram(gl, vertexShader, fragmentShader) {
-    const program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    const linkStatus = gl.getProgramParameter(program, gl.LINK_STATUS);
-
-    if(linkStatus) return program;
-
-    console.error("Program Linking Error:", gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
+        switch (uniform.type) {
+            case "float":
+                gl.uniform1f(uniform.location, value);
+                break;
+            case "int":
+            case "sampler2D":
+                gl.uniform1i(uniform.location, value);
+                break;
+            case "vec2":
+                gl.uniform2fv(uniform.location, value);
+                break;
+            case "vec3":
+                gl.uniform3fv(uniform.location, value);
+                break;
+            case "vec4":
+                gl.uniform4fv(uniform.location, value);
+                break;
+            case "mat3":
+                gl.uniformMatrix3fv(uniform.location, false, value);
+                break;
+            case "mat4":
+                gl.uniformMatrix4fv(uniform.location, false, value);
+                break;
+        }
+    }
 }
 
 // =============================================================
 // CAMERA
 // =============================================================
-const camera = {
-    // Camera Data
-    width: 0,
-    height: 0,
-    positionX: -300,
-    positionY: -200,
-    zoom: 1.0,
-    panSpeed: 20,
-    zoomSpeed: 0.1,
+class Camera {
+    width = 0;
+    height = 0;
 
-    // Control state
-    state: {
+    positionX = -300;
+    positionY = -200;
+    zoom = 1.0;
+
+    panSpeed = 10;
+    zoomSpeed = 0.1;
+
+    state = {
         panUp: false,
         panDown: false,
         panLeft: false,
         panRight: false,
         zoomIn: false,
         zoomOut: false
-    },
+    };
 
-    // View Matrix
-    viewMatrix: mat3.create(),
-    // Projection matrix
-    projectionMatrix: mat3.create(),
+    viewMatrix = mat3.create();
+    projectionMatrix = mat3.create();
 
-    // FUNCTIONs
     update(gl) {
-        // Match the camera's viewing region
-        this.width = gl.canvas.width;
-        this.height = gl.canvas.height;
-        // Update the pos and zooms
-        if(this.state.panUp) this.positionY += this.panSpeed;
-        if(this.state.panDown) this.positionY -= this.panSpeed;
-        if(this.state.panLeft) this.positionX -= this.panSpeed;
-        if(this.state.panRight) this.positionX += this.panSpeed;
-        if(this.state.zoomIn) this.zoom += this.zoomSpeed;
-        if(this.state.zoomOut) this.zoom = Math.max(0.1, this.zoom - this.zoomSpeed);
-    },
-    updateViewMatrix(gl) {
-        // Update Camera values first
-        this.update(gl);
-        // Create View matrix
-        const matrix = mat3.create();
-        mat3.fromTranslation(matrix, [-camera.positionX, -camera.positionY]);
-        mat3.scale(matrix, matrix, [camera.zoom, camera.zoom]);
-        camera.viewMatrix = matrix;
-    },
-    updateProjectionMatrix(gl) {
-        // Camera bounds
         this.width = gl.canvas.width;
         this.height = gl.canvas.height;
 
-        // Create projection matrix
+        if (this.state.panUp) this.positionY += this.panSpeed;
+        if (this.state.panDown) this.positionY -= this.panSpeed;
+        if (this.state.panLeft) this.positionX -= this.panSpeed;
+        if (this.state.panRight) this.positionX += this.panSpeed;
+        if (this.state.zoomIn) this.zoom += this.zoomSpeed;
+        if (this.state.zoomOut) this.zoom = Math.max(0.1, this.zoom - this.zoomSpeed);
+
+        this.updateViewMatrix();
+        this.updateProjectionMatrix();
+    }
+
+    updateViewMatrix() {
+        const matrix = mat3.create();
+
+        mat3.fromTranslation(matrix, [-this.positionX, -this.positionY]);
+        mat3.scale(matrix, matrix, [this.zoom, this.zoom]);
+
+        this.viewMatrix = matrix;
+    }
+
+    updateProjectionMatrix() {
         this.projectionMatrix = mat3.fromValues(
-            2 / this.width,  0,                  0,
-            0,               2 / this.height,    0,
-            -1,              -1,                 1,
+            2 / this.width, 0, 0,
+            0, 2 / this.height, 0,
+            -1, -1, 1
         );
     }
-};
+}
 
 // =============================================================
-// MESHES
+// TRANSFORM
 // =============================================================
-const letterF = {
-    /*
-        v2-------v3--------v4
-        |\       |\         |
-        |\       |   \      |
-        | \      |      \   |
-        |  \     v6________v5
-        |   \    |
-        |    \   v7_____v8
-        |     \  |  \    |
-        |      \ |    \  |
-        |       \v10____v9
-        |        |
-        |        |
-        v0_______v1
-    */
+class Transform {
+    constructor(options = {}) {
+        this.translation = options.translation ?? [0, 0];
+        this.rotation = options.rotation ?? 0;
+        this.pivot = options.pivot ?? [0, 0];
+    }
+}
 
-    // CPU DATA
-    vertexData: new Float32Array([
-        -100, -100,
-        -60 , -100,
-        -100,  100,
-        -60 ,  100,
+// =============================================================
+// MESH
+// =============================================================
+class Mesh {
+    constructor(options = {}) {
+        // CPU Data
+        this.vertexData = options.vertexData;
+        this.indexData = options.indexData || null;
+        this.dataUsage = options.dataUsage || "STATIC_DRAW";
+        this.vertexBufferLayout = options.vertexBufferLayout || [];
 
-        // Top bar
-        40  ,  100,
-        40  ,   60,
-        -60,   60,
+        // Transform
+        this.transform = new Transform(options.transform);
 
-        // Middle bar
-        -60,  20,
-        0   ,  20,
-        0   , -20,
-        -60, -20
-    ]),
-    indices: new Uint16Array([
-        // LEFT COLUMN
-        0, 1, 2,
-        2, 1, 3,
+        // Shader and uniforms
+        this.shader = options.shader;
+        this.uniforms = options.uniforms || {};
 
-        // TOP BAR
-        3, 6, 5,
-        3, 5, 4,
+        // Draw configuration
+        this.drawMode = options.drawMode || "TRIANGLES";
+        this.drawCount = options.drawCount || 0;
+        this.drawOffset = options.drawOffset || 0;
+        this.drawType = options.drawType || "UNSIGNED_SHORT";
+        this.renderOrder = options.renderOrder ?? 0;
 
-        // MIDDLE BAR
-        7, 10, 9,
-        7, 9, 8
-    ]),
-    translationX: 200,
-    translationY: 100,
-    rotation: 0,
-    pivotX: 0,
-    pivotY: 0,
-    color: [0.39, 0.33, 0.58], // Sckorpio Purple
+        // GPU Resources
+        this.vao = null;
+        this.vbo = null;
+        this.ibo = null;
+    }
 
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        // Shader
-        this.shader = shader;
-
+    init(gl) {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl[this.dataUsage]);
+
+        // Vertex Array
+        this.vao = gl.createVertexArray();
+        gl.bindVertexArray(this.vao);
+
+        // Vertex Buffer Layout
+        for (const layout of this.vertexBufferLayout) {
+            const attribute = this.shader.attributes[layout.attribute];
+            const location = attribute.location;
+
+            gl.enableVertexAttribArray(location);
+            gl.vertexAttribPointer(
+                location,
+                layout.size,
+                gl[layout.type],
+                layout.normalized,
+                layout.stride,
+                layout.offset
+            );
+        }
 
         // Index Buffer
-        this.ibo = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indices, gl.STATIC_DRAW);
+        if (this.indexData) {
+            this.ibo = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl[this.dataUsage]);
+            this.drawCount = this.indexData.length;
+        }
 
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
+        // Draw Configuration
+        this.drawMode = gl[this.drawMode];
+        this.drawType = gl[this.drawType];
 
-        // Attrib
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.vertexAttribPointer(this.shader.attributes.position, 2, gl.FLOAT, false, 0, 0);
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+        gl.bindVertexArray(null);
+    }
 
-        // Draw Data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = this.indices.length;
-        this.drawType = gl.UNSIGNED_SHORT;
-    },
-    draw(gl) {
-        // Shader
+    setupShader(gl) {
         gl.useProgram(this.shader.program);
-        gl.uniform1f(this.shader.uniforms.translationX,this.translationX);
-        gl.uniform1f(this.shader.uniforms.translationY,this.translationY);
-        gl.uniform1f(this.shader.uniforms.rotation,this.rotation);
-        gl.uniform1f(this.shader.uniforms.pivotX,this.pivotX);
-        gl.uniform1f(this.shader.uniforms.pivotY,this.pivotY);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        // VAO
-        gl.bindVertexArray(this.vao);
-        // draw call
-        gl.drawElements(this.drawMode,this.drawCount,this.drawType,this.drawOffset);
-    }
-};
 
-const pivot = {
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-    color: [1.0, 1.0, 1.0], // white
+        // Transform uniforms
+        this.shader.setUniform(gl, "translation", this.transform.translation);
+        this.shader.setUniform(gl, "rotation", this.transform.rotation);
+        this.shader.setUniform(gl, "pivot", this.transform.pivot);
 
-    init(gl, shader) {
-
-        this.shader = shader;
-
-        const size = 10;
-
-        const positions = new Float32Array([
-            -size, 0,
-             size, 0,
-             0, -size,
-             0,  size
-        ]);
-
-        this.vbo = gl.createBuffer();
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            positions,
-            gl.STATIC_DRAW
-        );
-
-        this.vao = gl.createVertexArray();
-
-        gl.bindVertexArray(this.vao);
-
-        gl.enableVertexAttribArray(
-            this.shader.attributes.position
-        );
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = 4;
-    },
-    draw(gl) {
-        gl.bindVertexArray(this.vao);
-        gl.uniform1f(this.shader.uniforms.translationX,letterF.translationX + letterF.pivotX);
-        gl.uniform1f(this.shader.uniforms.translationY,letterF.translationY + letterF.pivotY);
-        gl.uniform1f(this.shader.uniforms.rotation, 0);
-        gl.uniform1f(this.shader.uniforms.pivotX, 0);
-        gl.uniform1f(this.shader.uniforms.pivotY, 0);
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const grid = {
-    //    v1------------v2
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    |--|--|--|--|--|
-    //    v0------------v1
-
-    // CPU DATA
-    vertexData: new Float32Array(),
-    spacing: 100,
-    range: 10000,
-    color: [0.39, 0.33, 0.58], // Sckorpio Purple
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        this.shader = shader;
-
-        const positions = [];
-
-        // Vertical lines
-        for(let x = -this.range; x <= this.range; x += this.spacing) {
-            positions.push(
-                x, -this.range,
-                x, this.range
-            );
+        // Other uniforms
+        for (const [key, value] of Object.entries(this.uniforms)) {
+            this.shader.setUniform(gl, key, value);
         }
+    }
 
-        // Horizontal lines
-        for(let y = -this.range; y <= this.range; y += this.spacing) {
-            positions.push(
-                -this.range, y,
-                this.range, y
-            );
+    draw(gl) {
+        this.setupShader(gl);
+
+        gl.bindVertexArray(this.vao);
+
+        if (this.indexData) {
+            gl.drawElements(this.drawMode, this.drawCount, this.drawType, this.drawOffset);
+        } else {
+            gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
         }
-
-        this.vertexData = new Float32Array(positions);
-        // Vertex Buffer
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
-
-        // Vertex Array
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        // Attrib
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        //Draw Data
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = positions.length / 2;
-    },
-    draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
     }
-};
-
-const xAxis = {
-    //    -x------0------+x
-    // CPU DATA
-    vertexData: new Float32Array([
-        -grid.range, 0,
-        grid.range, 0
-    ]),
-    color: [1.0, 0.0, 0.0], // Red
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        this.shader = shader;
-
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = 2;
-    },
-    draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
-
-const yAxis = {
-    //      +y
-    //      |
-    //      |
-    //      0
-    //      |
-    //      |
-    //      -y
-
-    // CPU DATA
-    vertexData: new Float32Array([
-        0, -grid.range,
-        0, grid.range
-    ]),
-    color: [0.0, 1.0, 0.0], // Green
-
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
-
-    //FUNCTIONS
-    init(gl, shader) {
-        this.shader = shader;
-
-        this.vbo = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER,this.vertexData,gl.STATIC_DRAW);
-
-        this.vao = gl.createVertexArray();
-        gl.bindVertexArray(this.vao);
-
-        gl.enableVertexAttribArray(this.shader.attributes.position);
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-
-       // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
-
-        this.drawMode = gl.LINES;
-        this.drawOffset = 0;
-        this.drawCount = 2;
-    },
-    draw(gl) {
-        gl.uniform3fv(this.shader.uniforms.color,this.color);
-        gl.bindVertexArray(this.vao);
-        gl.drawArrays(this.drawMode,this.drawOffset,this.drawCount);
-    }
-};
+}
 
 // =============================================================
 // RENDER SYSTEM
 // =============================================================
-const renderSystem = {
-    canvas: null,
-    gl: null,
+class RenderSystem {
+    constructor() {
+        this.canvas = null;
+        this.gl = null;
+
+        this.clearColor = [0.32, 0.63, 0.67, 1.0];
+
+        this.shaders = {};
+        this.meshes = {};
+
+        this.camera = new Camera();
+
+        this.commonUniforms = {
+            projectionMatrix: null,
+            viewMatrix: null
+        };
+    }
 
     initWebgl() {
-        // Canvas
         this.canvas = document.querySelector("#c");
 
         if (!this.canvas) {
             console.error("Canvas element not found");
-            return;
+            return false;
         }
 
-        // Context
         this.gl = this.canvas.getContext("webgl2");
 
         if (!this.gl) {
             console.error("WebGL2 is not supported by this browser");
-            return;
+            return false;
         }
-    },
-    // RESIZE
+
+        return true;
+    }
+
     resizeCanvasToDisplaySize(multiplier = 1) {
         const width = (this.canvas.clientWidth * multiplier) | 0;
         const height = (this.canvas.clientHeight * multiplier) | 0;
 
-        if(this.canvas.width !== width || this.canvas.height !== height) {
+        if (this.canvas.width !== width || this.canvas.height !== height) {
             this.canvas.width = width;
             this.canvas.height = height;
-
         }
-    },
-    // INIT
+    }
+
+    addShader(name, shader) {
+        this.shaders[name] = shader;
+    }
+
+    getShader(name) {
+        return this.shaders[name];
+    }
+
+    addMesh(name, mesh) {
+        this.meshes[name] = mesh;
+    }
+
+    getMesh(name) {
+        return this.meshes[name];
+    }
+
+    setClearColor(r, g, b, a) {
+        this.clearColor = [r, g, b, a];
+    }
+
+    sortMeshes() {
+        this.meshes = Object.fromEntries(
+            Object.entries(this.meshes)
+                .sort(([, a], [, b]) => a.renderOrder - b.renderOrder)
+        );
+    }
+
     init() {
-        this.initWebgl();
+        if (!this.initWebgl()) return false;
+
         const gl = this.gl;
 
-        // Resources Initialise
-        shader.init(gl);
-        grid.init(gl, shader);
-        xAxis.init(gl, shader);
-        yAxis.init(gl, shader);
-        letterF.init(gl, shader);
-        pivot.init(gl, shader);
-    },
-    // UPDATE
+        // Initialize Shaders
+        for (const shader of Object.values(this.shaders)) {
+            if (!shader.init(gl)) return false;
+        }
+
+        // Initialize Meshes
+        for (const mesh of Object.values(this.meshes)) {
+            mesh.init(gl);
+        }
+
+        this.sortMeshes();
+
+        return true;
+    }
+
     update() {
-        const gl = this.gl;
+        this.resizeCanvasToDisplaySize();
+        this.camera.update(this.gl);
+    }
 
-        camera.updateProjectionMatrix(gl);
-        camera.updateViewMatrix(gl);
-    },
-    // RENDER
     render() {
         const gl = this.gl;
-        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
+
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         // Background
-        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clearColor(
+            this.clearColor[0],
+            this.clearColor[1],
+            this.clearColor[2],
+            this.clearColor[3]
+        );
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        // Common uniforms
+        this.commonUniforms.projectionMatrix = this.camera.projectionMatrix;
+        this.commonUniforms.viewMatrix = this.camera.viewMatrix;
 
-        // COMMON UNIFORMS
-        //---------------------------------------------------
-        // Shader
-        gl.useProgram(shader.program);
-        // Pass projection matrix to shader
-        gl.uniformMatrix3fv(shader.uniforms.projectionMatrix,false,camera.projectionMatrix);
-        // Pass View matrix to shader
-        gl.uniformMatrix3fv(shader.uniforms.viewMatrix,false,camera.viewMatrix);
-        // Use default translateX/Y & Rotations
-        gl.uniform1f(shader.uniforms.translationX, 0);
-        gl.uniform1f(shader.uniforms.translationY, 0);
-        gl.uniform1f(shader.uniforms.rotation, 0);
-        gl.uniform1f(shader.uniforms.pivotX, 0);
-        gl.uniform1f(shader.uniforms.pivotY, 0);
+        // Apply common uniforms to all shaders
+        for (const shader of Object.values(this.shaders)) {
+            gl.useProgram(shader.program);
 
-        // RENDER MESHES
-        //---------------------------------------------------
-        // Grid
-        grid.draw(gl);
-        // X-Axis
-        xAxis.draw(gl);
-        // Y-Axis
-        yAxis.draw(gl);
-        // Letter-F
-        letterF.draw(gl);
-        // Pivot
-        pivot.draw(gl);
+            for (const [key, value] of Object.entries(this.commonUniforms)) {
+                shader.setUniform(gl, key, value);
+            }
+        }
 
-        
-    },
-};
+        // Render meshes
+        for (const mesh of Object.values(this.meshes)) {
+            mesh.draw(gl);
+        }
+    }
+}
 
 // =============================================================
 // GUI
 // =============================================================
-const gui = {
-    init() {
-        const gui = new lil.GUI();
-
-        const letterFFolder = gui.addFolder("Translation");
-        letterFFolder.add(letterF, "translationX", -1000, 1000).name("translationX");
-        letterFFolder.add(letterF, "translationY", -1000, 1000).name("translationY");
-        letterFFolder.add(letterF, "rotation", 0, 360).name("rotation");
-        letterFFolder.add(letterF, "pivotX", -100, 100).name("pivotX");
-        letterFFolder.add(letterF, "pivotY", -100, 100).name("pivotY");
+class GUI {
+    constructor(options = {}) {
+        this.renderSystem = options.renderSystem;
+        this.gui = new lil.GUI();
+        this.state = {};
+        this.createGUIFolder();
     }
-};
+
+    createGUIFolder() {
+        const letterF = this.renderSystem.getMesh("letterF");
+        const letterFFolder = this.gui.addFolder("LetterF");
+
+        // Transform
+        const transformFolder = letterFFolder.addFolder("Transform");
+        transformFolder.add(letterF.transform.translation, 0, -1000, 1000).name("translationX");
+        transformFolder.add(letterF.transform.translation, 1, -1000, 1000).name("translationX");
+        transformFolder.add(letterF.transform, "rotation", 0, 360).name("rotation");
+        transformFolder.add(letterF.transform.pivot, 0, -200, 200).name("pivotX");
+        transformFolder.add(letterF.transform.pivot, 1, -200, 200).name("pivotY");
+    }
+}
 
 // =============================================================
-// KEY EVENTS
+// KEY CONTROLS
 // =============================================================
-const keyEvent = {
-    init(func) {
+class KeyControls {
+    constructor(options = {}) {
+        this.renderSystem = options.renderSystem;
+        this.createKeyEvents();
+    }
+
+    createKeyEvents() {
         window.addEventListener("keydown", event => {
-            switch(event.key) {
+            switch (event.key) {
                 case "ArrowUp":
-                    camera.state.panUp = true;
-                    break;
-                case "ArrowLeft":
-                    camera.state.panLeft = true;
+                    this.renderSystem.camera.state.panUp = true;
                     break;
                 case "ArrowDown":
-                    camera.state.panDown = true;
+                    this.renderSystem.camera.state.panDown = true;
+                    break;
+                case "ArrowLeft":
+                    this.renderSystem.camera.state.panLeft = true;
                     break;
                 case "ArrowRight":
-                    camera.state.panRight = true;
+                    this.renderSystem.camera.state.panRight = true;
                     break;
                 case "+":
                 case "=":
-                    camera.state.zoomIn = true;
+                    this.renderSystem.camera.state.zoomIn = true;
                     break;
                 case "-":
                 case "_":
-                    camera.state.zoomOut = true;
+                    this.renderSystem.camera.state.zoomOut = true;
                     break;
-                default:
             }
         });
 
         window.addEventListener("keyup", event => {
-            switch(event.key) {
+            switch (event.key) {
                 case "ArrowUp":
-                    camera.state.panUp = false;
-                    break;
-                case "ArrowLeft":
-                    camera.state.panLeft = false;
+                    this.renderSystem.camera.state.panUp = false;
                     break;
                 case "ArrowDown":
-                    camera.state.panDown = false;
+                    this.renderSystem.camera.state.panDown = false;
+                    break;
+                case "ArrowLeft":
+                    this.renderSystem.camera.state.panLeft = false;
                     break;
                 case "ArrowRight":
-                    camera.state.panRight = false;
+                    this.renderSystem.camera.state.panRight = false;
                     break;
                 case "+":
                 case "=":
-                    camera.state.zoomIn = false;
+                    this.renderSystem.camera.state.zoomIn = false;
                     break;
                 case "-":
                 case "_":
-                    camera.state.zoomOut = false;
+                    this.renderSystem.camera.state.zoomOut = false;
                     break;
-                default:
             }
         });
     }
-};
+}
+
+// =============================================================
+// APP
+// =============================================================
+class App {
+    constructor() {
+        this.renderSystem = new RenderSystem();
+
+        this.createShaders();
+        this.createBaseScene();
+        this.createScene();
+
+        if (!this.init()) return;
+
+        this.gui = new GUI({
+            renderSystem: this.renderSystem
+        });
+
+        this.keyControls = new KeyControls({
+            renderSystem: this.renderSystem
+        });
+
+        this.play();
+    }
+
+    createShaders() {
+        const basicShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+
+                uniform mat3 u_viewMatrix;
+                uniform mat3 u_projectionMatrix;
+
+                uniform vec2 u_translation;
+                uniform float u_rotation;
+                uniform vec2 u_pivot;
+
+                void main() {
+                    vec3 localPosition = vec3(a_position, 1.0);
+
+                    // Translate to pivot
+                    mat3 translateToPivot = mat3(
+                        1.0, 0.0, 0.0,
+                        0.0, 1.0, 0.0,
+                        -u_pivot.x, -u_pivot.y, 1.0
+                    );
+
+                    // Rotation
+                    mat3 rotationMatrix = mat3(
+                        cos(radians(u_rotation)), sin(radians(u_rotation)), 0.0,
+                        -sin(radians(u_rotation)), cos(radians(u_rotation)), 0.0,
+                        0.0, 0.0, 1.0
+                    );
+
+                    // Translate back from pivot
+                    mat3 translateBack = mat3(
+                        1.0, 0.0, 0.0,
+                        0.0, 1.0, 0.0,
+                        u_pivot.x, u_pivot.y, 1.0
+                    );
+
+                    // Object translation
+                    mat3 translationMatrix = mat3(
+                        1.0, 0.0, 0.0,
+                        0.0, 1.0, 0.0,
+                        u_translation.x, u_translation.y, 1.0
+                    );
+
+                    vec3 worldPosition =
+                        translationMatrix *
+                        translateBack *
+                        rotationMatrix *
+                        translateToPivot *
+                        localPosition;
+
+                    vec3 viewPosition = u_viewMatrix * worldPosition;
+                    vec3 clipPosition = u_projectionMatrix * viewPosition;
+
+                    gl_Position = vec4(clipPosition.xy, 0.0, 1.0);
+                }
+            `,
+
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+
+                uniform vec4 u_color;
+
+                out vec4 outColor;
+
+                void main() {
+                    outColor = u_color;
+                }
+            `,
+
+            attributes: {
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                }
+            },
+
+            uniforms: {
+                viewMatrix: {
+                    variable: "u_viewMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                projectionMatrix: {
+                    variable: "u_projectionMatrix",
+                    type: "mat3",
+                    location: null
+                },
+                translation: {
+                    variable: "u_translation",
+                    type: "vec2",
+                    location: null
+                },
+                rotation: {
+                    variable: "u_rotation",
+                    type: "float",
+                    location: null
+                },
+                pivot: {
+                    variable: "u_pivot",
+                    type: "vec2",
+                    location: null
+                },
+                color: {
+                    variable: "u_color",
+                    type: "vec4",
+                    location: null
+                }
+            }
+        });
+
+        this.renderSystem.addShader("basicShader", basicShader);
+    }
+
+    createGrid() {
+        const range = 10000;
+        const spacing = 100;
+        const positions = [];
+
+        for (let x = -range; x <= range; x += spacing) {
+            positions.push(x, -range, x, range);
+        }
+
+        for (let y = -range; y <= range; y += spacing) {
+            positions.push(-range, y, range, y);
+        }
+
+        const grid = new Mesh({
+            shader: this.renderSystem.getShader("basicShader"),
+            vertexData: new Float32Array(positions),
+
+            vertexBufferLayout: [{
+                attribute: "position",
+                size: 2,
+                type: "FLOAT",
+                normalized: false,
+                stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                offset: 0
+            }],
+
+            uniforms: {
+                color: [0.5, 0.8, 0.8, 1.0]
+            },
+
+            drawMode: "LINES",
+            drawCount: positions.length / 2,
+            renderOrder: 0
+        });
+
+        this.renderSystem.addMesh("grid", grid);
+    }
+
+    createAxis() {
+        const range = 10000;
+
+        const xAxis = new Mesh({
+            shader: this.renderSystem.getShader("basicShader"),
+
+            vertexData: new Float32Array([
+                -range, 0,
+                range, 0
+            ]),
+
+            vertexBufferLayout: [{
+                attribute: "position",
+                size: 2,
+                type: "FLOAT",
+                normalized: false,
+                stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                offset: 0
+            }],
+
+            uniforms: {
+                color: [1, 0, 0, 1]
+            },
+
+            drawMode: "LINES",
+            drawCount: 2,
+            renderOrder: 1
+        });
+
+        const yAxis = new Mesh({
+            shader: this.renderSystem.getShader("basicShader"),
+
+            vertexData: new Float32Array([
+                0, -range,
+                0, range
+            ]),
+
+            vertexBufferLayout: [{
+                attribute: "position",
+                size: 2,
+                type: "FLOAT",
+                normalized: false,
+                stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                offset: 0
+            }],
+
+            uniforms: {
+                color: [0, 1, 0, 1]
+            },
+
+            drawMode: "LINES",
+            drawCount: 2,
+            renderOrder: 1
+        });
+
+        this.renderSystem.addMesh("xAxis", xAxis);
+        this.renderSystem.addMesh("yAxis", yAxis);
+    }
+
+    createBaseScene() {
+        this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
+
+        this.createGrid();
+        this.createAxis();
+    }
+
+    createScene() {
+        const letterF = new Mesh({
+            shader: this.renderSystem.getShader("basicShader"),
+
+            vertexData: new Float32Array([
+                -100, -100,
+                -60, -100,
+                -100, 100,
+                -60, 100,
+
+                40, 100,
+                40, 60,
+                -60, 60,
+
+                -60, 20,
+                0, 20,
+                0, -20,
+                -60, -20
+            ]),
+
+            indexData: new Uint16Array([
+                0, 1, 2,
+                2, 1, 3,
+
+                3, 6, 5,
+                3, 5, 4,
+
+                7, 10, 9,
+                7, 9, 8
+            ]),
+
+            dataUsage: "STATIC_DRAW",
+
+            vertexBufferLayout: [{
+                attribute: "position",
+                size: 2,
+                type: "FLOAT",
+                normalized: false,
+                stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                offset: 0
+            }],
+
+            transform: {
+                translation: [200, 100],
+                rotation: 0,
+                pivot: [0, 0]
+            },
+
+            uniforms: {
+                color: [0.39, 0.33, 0.58, 1.0]
+            },
+
+            drawMode: "TRIANGLES",
+            drawType: "UNSIGNED_SHORT",
+            renderOrder: 2
+        });
+
+        const size = 10;
+
+        const pivot = new Mesh({
+            shader: this.renderSystem.getShader("basicShader"),
+
+            vertexData: new Float32Array([
+                -size, 0,
+                size, 0,
+                0, -size,
+                0, size
+            ]),
+
+            vertexBufferLayout: [{
+                attribute: "position",
+                size: 2,
+                type: "FLOAT",
+                normalized: false,
+                stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                offset: 0
+            }],
+
+            uniforms: {
+                color: [0, 0, 1, 1]
+            },
+
+            drawMode: "LINES",
+            drawCount: 4,
+            renderOrder: 3
+        });
+
+        this.renderSystem.addMesh("pivot", pivot);
+        this.renderSystem.addMesh("letterF", letterF);
+    }
+
+    init() {
+        return this.renderSystem.init();
+    }
+
+    updateScene() {
+        const letterF = this.renderSystem.getMesh("letterF");
+        const pivot = this.renderSystem.getMesh("pivot");
+
+        // Visual pivot position = object translation + local pivot
+        pivot.transform.translation[0] =
+            letterF.transform.translation[0] + letterF.transform.pivot[0];
+
+        pivot.transform.translation[1] =
+            letterF.transform.translation[1] + letterF.transform.pivot[1];
+
+        // The pivot marker itself should not rotate around its own pivot
+        pivot.transform.rotation = 0;
+        pivot.transform.pivot[0] = 0;
+        pivot.transform.pivot[1] = 0;
+    }
+
+    play() {
+        this.renderSystem.update();
+        this.updateScene();
+        this.renderSystem.render();
+
+        requestAnimationFrame(() => this.play());
+    }
+}
+
 // =============================================================
 // MAIN
 // =============================================================
-function appLoop() {
-    renderSystem.resizeCanvasToDisplaySize();
-    renderSystem.update();
-    renderSystem.render();
-    requestAnimationFrame(appLoop);
-}
-
-function appInit() {
-    renderSystem.init();
-    gui.init();
-    keyEvent.init(() => appLoop());
-}
-
 function main() {
-    appInit();
-    appLoop();
+    const app = new App();
 }
 
-// =============================================================
-// STARTUP AND EXPORTS
-// =============================================================
 window.addEventListener("DOMContentLoaded", main);
 
-export {
-    main
-};
+export { main };

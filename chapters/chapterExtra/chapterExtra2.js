@@ -15,8 +15,9 @@ Topics:
 // SHADER OBJECTS
 // =============================================================
 
-const shader = {
-    vertexShaderSource: `#version 300 es
+class BasicShader {
+    constructor() {
+        this.vertexShaderSource = `#version 300 es
     in vec2 a_position;
 
     uniform mat3 u_projectionMatrix;
@@ -30,9 +31,8 @@ const shader = {
 
         // Convert to clip-space position
         gl_Position = vec4(transformedPosition.xy, 0.0, 1.0);
-    }
-`,
-    fragmentShaderSource: `#version 300 es
+    }`;
+        this.fragmentShaderSource = `#version 300 es
     precision mediump float;
 
     uniform vec4 u_color;
@@ -41,16 +41,17 @@ const shader = {
 
     void main() {
         out_color = u_color;
+    }`;
+        this.program = null;
+        this.attributes = {
+            position: null
+        };
+        this.uniforms = {
+            projectionMatrix: null,
+            color: null
+        };
     }
-`,
-    program: null,
-    attributes: {
-        position: null
-    },
-    uniforms: {
-        projectionMatrix: null,
-        color: null
-    },
+
     init(gl) {
         const vertexShader = createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
         const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
@@ -90,16 +91,25 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // MESHES
 // =============================================================
 
-const rectangle = {
-    shader: null,
-    vao: null,
-    vbo: null,
-    vertexData: new Float32Array(12),
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 6,
-    init(gl, shader) {
+class Rectangle {
+    constructor(options = {}) {
+        const { shader, texture = null, ...config } = options;
         this.shader = shader;
+        this.texture = texture;
+        for (const [key, value] of Object.entries(config)) {
+            if (value !== undefined) this[key] = value;
+        }
+    }
+
+    shader = null;
+    vao = null;
+    vbo = null;
+    vertexData = new Float32Array(12);
+    drawMode = null;
+    drawOffset = 0;
+    drawCount = 6;
+    init(gl) {
+
         this.vbo = gl.createBuffer();
         this.vao = gl.createVertexArray();
 
@@ -109,7 +119,7 @@ const rectangle = {
         gl.vertexAttribPointer(this.shader.attributes.position, 2, gl.FLOAT, false, 0, 0);
 
         this.drawMode = gl.TRIANGLES;
-    },
+    }
     setGeometry(gl, x, y, width, height) {
         const x1 = x;
         const x2 = x + width;
@@ -126,7 +136,7 @@ const rectangle = {
         ]);
 
         gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
-    },
+    }
     draw(gl, width, height) {
         gl.bindVertexArray(this.vao);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
@@ -154,7 +164,7 @@ const rectangle = {
             gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
         }
     }
-};
+}
 
 function randomInt(range) {
     return Math.floor(Math.random() * range);
@@ -164,23 +174,34 @@ function randomInt(range) {
 // RENDER SYSTEM
 // =============================================================
 
-const renderSystem = {
-    canvas: null,
-    gl: null,
+class RenderSystem {
+    constructor(options = {}) {
+        const { camera = null, shaders = {}, textures = {}, meshes = {} } = options;
+        this.camera = camera;
+        this.shaders = shaders;
+        this.textures = textures;
+        this.meshes = meshes;
+    }
+
+    canvas = null;
+    gl = null;
+
     initWebgl() {
         this.canvas = document.querySelector("#c");
 
         if (!this.canvas) {
             console.error("Canvas element not found");
-            return;
+            return false;
         }
 
         this.gl = this.canvas.getContext("webgl2");
 
         if (!this.gl) {
             console.error("WebGL2 is not supported by this browser");
+            return false;
         }
-    },
+        return true;
+    }
     resizeCanvasToDisplaySize() {
         const width = this.canvas.clientWidth | 0;
         const height = this.canvas.clientHeight | 0;
@@ -189,18 +210,30 @@ const renderSystem = {
             this.canvas.width = width;
             this.canvas.height = height;
         }
-    },
+    }
     init() {
-        shader.init(this.gl);
-        rectangle.init(this.gl, shader);
-    },
+        if (!this.gl && !this.initWebgl()) return false;
+
+        const gl = this.gl;
+        // Initialize resources
+        for (const shader of Object.values(this.shaders)) shader.init(gl);
+        for (const texture of Object.values(this.textures)) texture.init(gl);
+        for (const meshOrMeshes of Object.values(this.meshes)) {
+            const meshes = Array.isArray(meshOrMeshes) ? meshOrMeshes : [meshOrMeshes];
+            for (const mesh of meshes) {
+                if (mesh.textureName) mesh.texture = this.textures[mesh.textureName];
+                mesh.init(gl);
+            }
+        }
+        return true;
+    }
     render() {
         const gl = this.gl;
-
+        const {shader} = this.shaders;
         gl.viewport(0, 0, this.canvas.width, this.canvas.height);
         gl.clearColor(0.32, 0.63, 0.67, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
-        gl.useProgram(rectangle.shader.program);
+        gl.useProgram(shader.program);
 
         // ---------------------------------------------------------
         // PIXEL SPACE -> CLIP SPACE MATRIX
@@ -229,29 +262,49 @@ const renderSystem = {
         );
 
         gl.uniformMatrix3fv(shader.uniforms.projectionMatrix, false, projectionMatrix);
-        rectangle.draw(gl, width, height);
+        // RENDER MESHES
+        for (const meshOrMeshes of Object.values(this.meshes)) {
+            const meshes = Array.isArray(meshOrMeshes) ? meshOrMeshes : [meshOrMeshes];
+            for (const mesh of meshes) mesh.draw(gl, this.canvas.width, this.canvas.height);
+        }
     }
-};
+}
 
 // =============================================================
 // MAIN
 // =============================================================
 
-function appLoop() {
-    renderSystem.resizeCanvasToDisplaySize();
-    renderSystem.render();
-    requestAnimationFrame(appLoop);
-}
+class App {
+    constructor() {
+        this.createScene();
+    }
+    createScene() {
+        const camera = new Camera();
+        const shader = new BasicShader();
+        const shaders = { shader };
+        const meshes = {};
+        meshes.rectangle = new Rectangle({ shader });
+        this.renderSystem = new RenderSystem({ camera, shaders, meshes });
+    }
 
-function appInit() {
-    // init renderSystem
-    renderSystem.initWebgl();
-    renderSystem.init();
+
+    init() {
+        // init renderSystem
+        if (!this.renderSystem.init()) return false;
+        return true;
+    }
+
+    loop() {
+        this.renderSystem.resizeCanvasToDisplaySize();
+        this.renderSystem.render();
+        requestAnimationFrame(() => this.loop());
+    }
 }
 
 function main() {
-    appInit();
-    appLoop();
+    const app = new App();
+    if (!app.init()) return;
+    app.loop();
 }
 
 // =============================================================

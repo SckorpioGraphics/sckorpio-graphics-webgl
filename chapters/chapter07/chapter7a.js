@@ -9,253 +9,410 @@ Topics:
 
 
 // =============================================================
-// SHADER OBJECTS
+// SHADER
 // =============================================================
-//Shader Object1
-const shader = {
-    vertexShaderSource: `#version 300 es
-    in vec2 a_position;
+class Shader {
+    constructor(options = {}) {
+        this.vertexShaderSource = options.vertexShaderSource;
+        this.fragmentShaderSource = options.fragmentShaderSource;
 
-    void main() {
-        gl_Position = vec4(a_position, 0.0, 1.0);
+        this.program = null;
+        this.attributes = options.attributes || {};
+        this.uniforms = options.uniforms || {};
     }
-`,
-    fragmentShaderSource: `#version 300 es
-    precision mediump float;
 
-    uniform float u_intensity;
+    createShader(gl, type, source) {
+        const shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
 
-    out vec4 out_color;
+        if(gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
 
-    void main() {
-        out_color = vec4(0.39, 0.33, 0.58, 1.0) * u_intensity;
+        console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
+        gl.deleteShader(shader);
+        return null;
     }
-`,
-    program: null,
-    attributes: {
-        position: null
-    },
-    uniforms: {
-        intensity: null
-    },
 
-    //FUNCTIONS
+    createProgram(gl, vertexShader, fragmentShader) {
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if(gl.getProgramParameter(program, gl.LINK_STATUS)) return program;
+
+        console.error("Program Linking Error:", gl.getProgramInfoLog(program));
+        gl.deleteProgram(program);
+        return null;
+    }
 
     init(gl) {
-        // Compile shaders
-        const vertexShader = createShader(gl, gl.VERTEX_SHADER, shader.vertexShaderSource);
-        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, shader.fragmentShaderSource);
-        // Create shader program
-        this.program = createProgram(gl, vertexShader, fragmentShader);
-        // Attributes
-        this.attributes.position = gl.getAttribLocation(shader.program, "a_position");
-        // uniforms
-        this.uniforms.intensity = gl.getUniformLocation(shader.program, "u_intensity");
+        const vertexShader = this.createShader(gl, gl.VERTEX_SHADER, this.vertexShaderSource);
+        if(!vertexShader) {
+            return;
+        }
+
+        const fragmentShader = this.createShader(gl, gl.FRAGMENT_SHADER, this.fragmentShaderSource);
+        if(!fragmentShader) {
+            gl.deleteShader(vertexShader);
+            return;
+        }
+
+        this.program = this.createProgram(gl, vertexShader, fragmentShader);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        if(!this.program) return;
+
+        // save attribute locations
+        for (const attribute of Object.values(this.attributes)) {
+            attribute.location = gl.getAttribLocation(this.program, attribute.variable);
+        }
+
+        // save uniform locations
+        for (const uniform of Object.values(this.uniforms)) {
+            uniform.location = gl.getUniformLocation(this.program, uniform.variable);
+        }
     }
-};
 
-// Compile Shader
-function createShader(gl, type, source) {
-    const shader = gl.createShader(type);
-    gl.shaderSource(shader, source);
-    gl.compileShader(shader);
+    setUniform(gl, key, value) {
+        const uniform = this.uniforms[key];
 
-    const compileStatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        if (!uniform || uniform.location === null) return;
 
-    if(compileStatus) return shader;
-
-    console.error("Shader Compilation Error:", gl.getShaderInfoLog(shader));
-    gl.deleteShader(shader);
-}
-
-// Link Program
-function createProgram(gl, vertexShader, fragmentShader) {
-    const program = gl.createProgram();
-    gl.attachShader(program, vertexShader);
-    gl.attachShader(program, fragmentShader);
-    gl.linkProgram(program);
-
-    const linkStatus = gl.getProgramParameter(program, gl.LINK_STATUS);
-
-    if(linkStatus) return program;
-
-    console.error("Program Linking Error:", gl.getProgramInfoLog(program));
-    gl.deleteProgram(program);
+        switch (uniform.type) {
+            case "float":
+                gl.uniform1f(uniform.location, value);
+            break;
+        }
+    }
 }
 
 // =============================================================
-// MESHES
+// MESH
 // =============================================================
-const triangle = {
-    //         v2
-    //         /\
-    //        /  \
-    //       /    \
-    //      /      \
-    //     /        \
-    //    v0--------v1
+class Mesh {
+    constructor(options = {}) {
+        // CPU Data
+        this.vertexData = options.vertexData;
+        this.indexData = options.indexData || null;
+        this.dataUsage = options.dataUsage || "STATIC_DRAW";
+        this.vertexBufferLayout = options.vertexBufferLayout || [];
+        this.uniforms = options.uniforms || {};
 
-    // CPU DATA
-    vertexData: new Float32Array([
-        -0.5,  0.0,  // v0
-        0.5, 0.0,    // v1
-        0.0,  0.5,   // v2
-    ]),
+        // GPU Data
+        this.shader = options.shader;
+        this.drawMode = options.drawMode || "TRIANGLES";
+        this.drawCount = options.drawCount || 0;
+        this.drawOffset = options.drawOffset || 0;
+        this.drawType = options.drawType || "UNSIGNED_SHORT";
 
-    //GPU DATA
-    shader: null,
-    vao: null,
-    vbo: null,
-    drawMode: null,
-    drawOffset: 0,
-    drawCount: 0,
+        // GPU Resources
+        this.vao = null;
+        this.vbo = null;
+        this.ibo = null;
+    }
 
-    //FUNCTIONS
-    init(gl, shader) {
-        // Connect shader to mesh
-        this.shader = shader;
-
+    init(gl) {
         // Vertex Buffer
         this.vbo = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
-        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this.vertexData, gl[this.dataUsage]);
 
         // Vertex Array
         this.vao = gl.createVertexArray();
         gl.bindVertexArray(this.vao);
 
-        // Enable position attribute
-        gl.enableVertexAttribArray(this.shader.attributes.position);
+        // Vertex Buffer Layout
+        for(const layout of this.vertexBufferLayout) {
+            const attribute = this.shader.attributes[layout.attribute];
+            const location = attribute.location;
+            gl.enableVertexAttribArray(location);
+            gl.vertexAttribPointer(location, layout.size, gl[layout.type], layout.normalized, layout.stride, layout.offset);
+        }
 
-        // Bind Vertex Buffer
+        // Index Buffer
+        if(this.indexData) {
+            this.ibo = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibo);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, this.indexData, gl.STATIC_DRAW);
+            // also set draw count to index counts
+            this.drawCount = this.indexData.length;
+        }
+
+        // Draw Configuration
+        this.drawMode = gl[this.drawMode];
+        this.drawType = gl[this.drawType];
+    }
+
+    updateVertexData(gl, data) {
+        this.vertexData = data;
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vbo);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+    }
 
-        // Vertex data format
-        gl.vertexAttribPointer(
-            this.shader.attributes.position,
-            2,                                      // size: 2 components (X, Y)
-            gl.FLOAT,                               // type: 32-bit float
-            false,                                  // normalize
-            2 * Float32Array.BYTES_PER_ELEMENT,     // stride: 2
-            0                                       // offset: start of buffer
-        );
+    setupShader(gl) {
+        gl.useProgram(this.shader.program);
 
-        // Draw data
-        this.drawMode = gl.TRIANGLES;
-        this.drawOffset = 0;
-        this.drawCount = 3;
-    },
+        for (const [key, value] of Object.entries(this.uniforms)) {
+            this.shader.setUniform(gl, key, value);
+        }
+    }
 
     draw(gl) {
-        gl.useProgram(this.shader.program);
-        gl.uniform1f(this.shader.uniforms.intensity,gui.state.intensity);
+        this.setupShader(gl);
+
         gl.bindVertexArray(this.vao);
-        gl.drawArrays(
-            this.drawMode,
-            this.drawOffset,
-            this.drawCount
-        );
+        if(this.indexData) {
+            gl.drawElements(this.drawMode, this.drawCount, this.drawType, this.drawOffset);
+        }  
+        else {
+            gl.drawArrays(this.drawMode, this.drawOffset, this.drawCount);
+        }   
     }
-};
+}
 
 // =============================================================
 // RENDER SYSTEM
 // =============================================================
-const renderSystem = {
-    canvas: null,
-    gl: null,
+class RenderSystem {
+    constructor(options = {}) {
+        this.canvas = null;
+        this.gl = null;
+        this.clearColor = [];
+        this.shaders = {};
+        this.meshes = {};
+    }
 
     initWebgl() {
-        // Canvas
         this.canvas = document.querySelector("#c");
-
-        if (!this.canvas) {
-            console.error("Canvas element #c not found.");
-            return false;
+        if(!this.canvas) {
+            console.error("Canvas element not found");
+            return;
         }
 
-        // Context
         this.gl = this.canvas.getContext("webgl2");
-
-        if (!this.gl) {
-            console.error("WebGL2 is not supported or unavailable.");
-            return false;
+        if(!this.gl) {
+            console.error("WebGL2 is not supported by this browser");
+            return;
         }
-    },
-    // RESIZE
+    }
+
     resizeCanvasToDisplaySize(multiplier = 1) {
         const width = (this.canvas.clientWidth * multiplier) | 0;
         const height = (this.canvas.clientHeight * multiplier) | 0;
 
-        if (this.canvas.width !== width ||
-            this.canvas.height !== height) {
+        if(this.canvas.width !== width || this.canvas.height !== height) {
             this.canvas.width = width;
             this.canvas.height = height;
         }
-    },
-    // INIT
+    }
+
+    addShader(name, shader) {
+        this.shaders[name] = shader;
+    }
+
+    getShader(name) {
+        return this.shaders[name];
+    }
+
+    addMesh(name, mesh) {
+        this.meshes[name] = mesh;
+    }
+
+    getMesh(name) {
+        return this.meshes[name];
+    }
+
+    setClearColor(r,g,b,a){
+        this.clearColor = [r,g,b,a];
+    }
+
     init() {
+        // webgl
         this.initWebgl();
         const gl = this.gl;
+        // shaders
+        for(const shader of Object.values(this.shaders)) {
+            shader.init(gl);
+        }
+        // meshes
+        for(const mesh of Object.values(this.meshes)) {
+            mesh.init(gl);
+        }
+    }
 
-        // Resources Initialise
-        shader.init(gl);
-        triangle.init(gl, shader);
-    },
-    // RENDER
+    update() {
+        const gl = this.gl;
+        // resize canvas
+        this.resizeCanvasToDisplaySize();
+    }
+
     render() {
         const gl = this.gl;
-        gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
-
+        // viewport
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         // Background
-        gl.clearColor(0.32, 0.63, 0.67, 1.0); // Sckorpio Cyan
+        gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
         gl.clear(gl.COLOR_BUFFER_BIT);
-
-        // RENDER MESHES
-        //---------------------------------------------------
-        // Set uniform value from UI
-        triangle.draw(gl);
-    },
-};
-
-// =============================================================
-// GUI Setup Functions
-// =============================================================
-const gui = {
-    state: {
-        intensity: 1.0
-    },
-
-    init(func) {
-        const gui = new lil.GUI();
-
-        const uniformFolder = gui.addFolder("Uniforms");
-        const intensityFolder = uniformFolder.addFolder("Intensity");
-        intensityFolder.add(this.state, "intensity", 0, 1).name("Intensity").onChange(func);
+        // render meshes
+        for(const mesh of Object.values(this.meshes)){
+            mesh.draw(gl);
+        }  
     }
-};
+}
+
+// =============================================================
+// GUI
+// =============================================================
+class GUI {
+    constructor(options = {}) {
+        this.renderSystem = options.renderSystem;
+        this.gui = new lil.GUI();
+        this.createGUIFolder();
+        this.onUpdateGUI();
+    }
+
+    createGUIFolder() {
+        const triangle = this.renderSystem.getMesh("triangle");
+
+        const triangleFolder = this.gui.addFolder("Triangle");
+        const uniformFolder = triangleFolder.addFolder("Uniform");
+        uniformFolder.add(triangle.uniforms, "intensity", 0, 1).name("Intensity");
+    }
+
+    onUpdateGUI() {
+        
+    }
+}
+
+// =============================================================
+// APP
+// =============================================================
+class App {
+    constructor() {
+        this.renderSystem = null;
+        this.gui = null;
+        this.init();
+        this.play();
+    }
+
+    init() {
+        this.renderSystem = new RenderSystem();
+        this.createShaders();
+        this.createBaseScene();
+        this.createScene();
+        this.renderSystem.init();
+
+        this.gui = new GUI({
+            renderSystem: this.renderSystem
+        });
+
+    }
+
+    createShaders() {
+        // Shaders
+        const basicShader = new Shader({
+            vertexShaderSource: `#version 300 es
+                in vec2 a_position;
+
+                void main() {
+                    gl_Position = vec4(a_position, 0.0, 1.0);
+                }
+            `,
+            fragmentShaderSource: `#version 300 es
+                precision mediump float;
+                uniform float u_intensity;
+                out vec4 out_Color;
+
+                void main() {
+                    out_Color = vec4(0.39, 0.33, 0.58, 1.0) * u_intensity;
+                }
+            `,
+            attributes: { 
+                position: {
+                    variable: "a_position",
+                    type: "vec2",
+                    location: null
+                }
+            },
+            uniforms: { 
+                intensity: {
+                    variable: "u_intensity",
+                    type: "float",
+                    location: null
+                }
+            },
+
+        });
+        // Add to RenderSystem
+        this.renderSystem.addShader("basicShader",basicShader);
+    }
+
+    createBaseScene() {
+        // Set clear Color (Sckorpio Cyan)
+        this.renderSystem.setClearColor(0.32, 0.63, 0.67, 1.0);
+    }
+
+    createScene() {
+        // Meshes
+        const triangle = new Mesh({
+            shader: this.renderSystem.getShader("basicShader"),
+
+            // CPU DATA
+            vertexData: new Float32Array([
+                /*
+                        v2
+                        /\
+                       /  \
+                      /    \
+                    v0------v1
+                */
+                
+                -0.5, 0.0,
+                 0.0, 0.5,
+                 0.5, 0.0   
+            ]),
+
+            indexData: new Uint16Array([
+                0, 1, 2
+            ]),
+
+            vertexBufferLayout: [
+                {
+                    attribute: "position",
+                    size: 2,
+                    type: "FLOAT",
+                    normalized: false,
+                    stride: 2 * Float32Array.BYTES_PER_ELEMENT,
+                    offset: 0 * Float32Array.BYTES_PER_ELEMENT
+                }
+            ],
+
+            uniforms: {
+                intensity: 1.0
+            },
+
+            drawMode: "TRIANGLES",
+            drawType: "UNSIGNED_SHORT"
+        });
+        // Add to RenderSystem
+        this.renderSystem.addMesh("triangle",triangle);
+    }
+    
+    play() {
+        this.renderSystem.update();
+        this.renderSystem.render();
+        requestAnimationFrame(() => this.play());
+    }
+}
+
 // =============================================================
 // MAIN
 // =============================================================
-function app() {
-    renderSystem.resizeCanvasToDisplaySize();
-    renderSystem.render();
-}
-
-function appInit() {
-    renderSystem.init();
-    gui.init(() => app());
-    window.addEventListener("resize", () => app());
-}
-
 function main() {
-    appInit();
-    app();
+    const app = new App();
 }
 
-// =============================================================
-// STARTUP AND EXPORTS
-// =============================================================
 window.addEventListener("DOMContentLoaded", main);
 
 export { main };
