@@ -527,12 +527,7 @@ class GUI {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
         this.state = {
-            UVs: {
-                uMin: 0.0,
-                vMin: 0.0,
-                uMax: 1.0,
-                vMax: 1.0
-            }
+            
         };
         
         this.wrapModes = {
@@ -570,16 +565,7 @@ class GUI {
     }
 
     onUpdateGUI() {
-        const square = this.renderSystem.getMesh("square");
-
-        const vertexData = new Float32Array([
-            -100, -100, this.state.UVs.uMin, this.state.UVs.vMin,
-            100,  -100, this.state.UVs.uMax, this.state.UVs.vMin,
-            100,   100, this.state.UVs.uMax, this.state.UVs.vMax,
-            -100,  100, this.state.UVs.uMin, this.state.UVs.vMax
-        ]);
-
-        square.updateVertexData(this.renderSystem.gl, vertexData);
+        
     }
 }
 
@@ -1006,9 +992,9 @@ class App {
                 
                 // Position    // UV
                 -100, -100,     0, 0,
-                100,  -100,     3, 0,
-                100,   100,     3, 2,
-                -100,  100,     0, 2,
+                100,  -100,     1, 0,
+                100,   100,     1, 1,
+                -100,  100,     0, 1,
             ]),
 
             indexData: new Uint16Array([

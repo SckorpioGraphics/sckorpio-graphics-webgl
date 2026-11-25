@@ -1,9 +1,7 @@
 /* #############################################################
-   CHAPTER 18d: GUI Connected with UVs & Wrapping
+   CHAPTER 19f: Final Texture, GUI + Wrap + Filter : everything
    Topics:
    - Creating a square
-   - Manioulate UVs by uniforms
-   - UV scale and UV offset
    #############################################################
 */
 
@@ -533,12 +531,6 @@ class GUI {
         this.renderSystem = options.renderSystem;
         this.gui = new lil.GUI();
         this.state = {
-            UVs: {
-                uMin: 0.0,
-                vMin: 0.0,
-                uMax: 1.0,
-                vMax: 1.0
-            }
         };
         
         this.textureModes = {
@@ -593,16 +585,7 @@ class GUI {
     }
 
     onUpdateGUI() {
-        const square = this.renderSystem.getMesh("square");
-
-        const vertexData = new Float32Array([
-            -100, -100, this.state.UVs.uMin, this.state.UVs.vMin,
-            100,  -100, this.state.UVs.uMax, this.state.UVs.vMin,
-            100,   100, this.state.UVs.uMax, this.state.UVs.vMax,
-            -100,  100, this.state.UVs.uMin, this.state.UVs.vMax
-        ]);
-
-        square.updateVertexData(this.renderSystem.gl, vertexData);
+        
     }
 }
 
