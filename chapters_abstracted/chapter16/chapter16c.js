@@ -119,8 +119,8 @@ class Shader {
 // TEXTURE
 // =============================================================
 class Texture {
-    constructor(filePath) {
-        this.filePath = filePath;
+    constructor(options) {
+        this.filePath = options.filePath;
         this.handle = null;
         this.image = null;
         this.loaded = false;
@@ -757,7 +757,9 @@ class App {
 
     createTextures() {
         // Textures
-        const sckorpioTexture = new Texture("chapters_abstracted/chapter16/assets/sckorpio_Texture.png");
+        const sckorpioTexture = new Texture({
+            filePath: "chapters_abstracted/chapter16/assets/sckorpio_Texture.png"
+        });
 
         // Add to RenderSystem
         this.renderSystem.addTexture("sckorpioTexture",sckorpioTexture);

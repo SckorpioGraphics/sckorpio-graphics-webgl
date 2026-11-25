@@ -778,12 +778,12 @@ class App {
 
     createTextures() {
         // Textures
-        const sckorpioTexture = new Texture({width:64, height:64, tileSize:3});
-        const titleTexture = new Texture({width:128, height:64, tileSize:8, color2:[0.0,1.0,1.0]});
+        const proceduralTexture1 = new Texture({width:64, height:64, tileSize:3});
+        const proceduralTexture2 = new Texture({width:128, height:64, tileSize:8, color2:[0.0,1.0,1.0]});
 
         // Add to RenderSystem
-        this.renderSystem.addTexture("sckorpioTexture",sckorpioTexture);
-        this.renderSystem.addTexture("titleTexture",titleTexture);
+        this.renderSystem.addTexture("proceduralTexture1",proceduralTexture1);
+        this.renderSystem.addTexture("proceduralTexture2",proceduralTexture2);
     }
 
     createGrid() {
@@ -948,7 +948,7 @@ class App {
         // Meshes
         const square = new Mesh({
             shader: this.renderSystem.getShader("textureShader"),
-            texture: this.renderSystem.getTexture("sckorpioTexture"),
+            texture: this.renderSystem.getTexture("proceduralTexture1"),
 
             // CPU DATA
             vertexData: new Float32Array([
@@ -1008,7 +1008,7 @@ class App {
 
         const rectangle = new Mesh({
             shader: this.renderSystem.getShader("textureShader"),
-            texture: this.renderSystem.getTexture("titleTexture"),
+            texture: this.renderSystem.getTexture("proceduralTexture2"),
 
             // CPU DATA
             vertexData: new Float32Array([
