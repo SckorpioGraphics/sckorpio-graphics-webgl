@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 16c: Multiple objects using same Texture
+   Chapter 16c: Multiple objects using same Texture
    Topics:
    - Creating a square and rectangle
    - Keep using same texture texture

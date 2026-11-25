@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4g: Learning Topology — TRIANGLES
+Chapter 4g: Learning Topology — TRIANGLES
 
 Topics:
 - Making Multiple Triangles

@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20f: Using Transparent Textures
+   Chapter 20f: Using Transparent Textures
    Topics:
    - Creating a square
    - Use transparent texture

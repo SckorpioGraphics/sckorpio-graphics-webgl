@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 7e: All Types of Uniforms
+Chapter 7e: All Types of Uniforms
 
 Topics:
 - Just showing all types of Uniforms passing ways

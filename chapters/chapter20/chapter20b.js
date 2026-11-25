@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20b: Introducing ALPHA
+   Chapter 20b: Introducing ALPHA
    Topics:
    - pass alpha also
    - Start keeping Alpha in square objects

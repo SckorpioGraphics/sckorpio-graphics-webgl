@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20a: Introducing ALPHA
+   Chapter 20a: Introducing ALPHA
    Topics:
    - See we are not passing alpha,
    - alpha is set to = 1 in shader

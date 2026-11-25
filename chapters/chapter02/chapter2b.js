@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 2b: Creating a Basic Triangle — Abstracted Structure
+Chapter 2b: Creating a Basic Triangle — Abstracted Structure
 - Template for the abstracted series
 ###############################################################
 */

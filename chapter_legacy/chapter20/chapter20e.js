@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20e: Using Opaque Textures
+   Chapter 20e: Using Opaque Textures
    Topics:
    - Creating a square
    - Use Sckorpio textures

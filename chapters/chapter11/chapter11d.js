@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 11d: 2D Camera — View Matrix
+   Chapter 11d: 2D Camera — View Matrix
 
    Topics:
    - Camera position

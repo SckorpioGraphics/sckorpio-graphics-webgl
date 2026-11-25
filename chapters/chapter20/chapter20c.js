@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20c: Introducing ALPHA
+   Chapter 20c: Introducing ALPHA
    Topics:
    - Blending is Enabled finally
    - Now make vec3 to vec4

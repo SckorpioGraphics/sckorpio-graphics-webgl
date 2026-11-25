@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 5c: Dynamic Polygon Outline
+Chapter 5c: Dynamic Polygon Outline
 
 Topics:
 - Learning Topology LINE_LOOP

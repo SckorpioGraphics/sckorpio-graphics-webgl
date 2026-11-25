@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20g: Using Transparent Textures
+   Chapter 20g: Using Transparent Textures
    Topics:
    - Blending is Enabled finally
    - Creating a square

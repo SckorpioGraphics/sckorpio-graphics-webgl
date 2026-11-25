@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 13c: 2D Transformations — Transform Order
+   Chapter 13c: 2D Transformations — Transform Order
 
    Topics:
    - Rotating a letterF around the origin

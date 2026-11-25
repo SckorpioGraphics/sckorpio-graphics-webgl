@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4h: Learning Topology — TRIANGLE_STRIP
+Chapter 4h: Learning Topology — TRIANGLE_STRIP
 
 Topics:
 - Making Strip of Triangles

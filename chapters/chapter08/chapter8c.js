@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 8c: Multiple Objects with Different topology
+Chapter 8c: Multiple Objects with Different topology
 
 Topics:
 - Rendering multiple objects

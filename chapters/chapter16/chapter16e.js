@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 16e: Using procedural Textures
+   Chapter 16e: Using procedural Textures
    Topics:
    - Creating a procedural texture
    - Use different textures

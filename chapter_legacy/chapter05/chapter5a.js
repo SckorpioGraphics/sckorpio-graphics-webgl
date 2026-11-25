@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 5a: Dynamic Triangle
+Chapter 5a: Dynamic Triangle
 
 Topics:
 - Adding a basic UI to manipulate

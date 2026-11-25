@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 19b: Mag Filtering NEAREST
+   Chapter 19b: Mag Filtering NEAREST
    Topics:
    - Creating texture of size 64*64
    - Aplying on multiple squares of size 64,128,256

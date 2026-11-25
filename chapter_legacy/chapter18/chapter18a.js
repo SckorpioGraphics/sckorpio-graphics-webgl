@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 18a: Using UVs beyond 0-1
+   Chapter 18a: Using UVs beyond 0-1
    Topics:
    - Creating a square
    - Use F textures

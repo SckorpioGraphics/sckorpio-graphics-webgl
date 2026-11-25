@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 12a: 2D Transformations — Translation
+   Chapter 12a: 2D Transformations — Translation
 
    Topics:
    - Translating a rectangle

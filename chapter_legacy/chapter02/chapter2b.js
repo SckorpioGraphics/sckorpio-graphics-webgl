@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 2b: Creating a Basic Triangle — Clean Structure
+Chapter 2b: Creating a Basic Triangle — Clean Structure
 — Clean Structure
 - Template for this series
 ###############################################################

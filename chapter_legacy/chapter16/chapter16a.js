@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 16: First Texture
+   Chapter 16: First Texture
    Topics:
    - Creating first texture
    - Aplying on a square

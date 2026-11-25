@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 11f: 2D Camera — Continuous Keyboard Controls
+   Chapter 11f: 2D Camera — Continuous Keyboard Controls
 
    Topics:
    - Camera position

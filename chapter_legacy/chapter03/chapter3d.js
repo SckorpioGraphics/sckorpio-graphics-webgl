@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 3d: Making Geometry Using Triangles (F Letter)
+Chapter 3d: Making Geometry Using Triangles (F Letter)
 
 Topics:
 - Letter F using Triangles

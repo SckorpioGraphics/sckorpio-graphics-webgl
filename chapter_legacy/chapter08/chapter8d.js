@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 8d: Multiple Objects
+Chapter 8d: Multiple Objects
 
 Topics:
 - Rendering multiple objects

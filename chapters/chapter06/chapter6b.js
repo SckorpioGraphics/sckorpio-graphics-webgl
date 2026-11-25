@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 6b: Multiple Buffers
+Chapter 6b: Multiple Buffers
 
 Topics:
 - Using Separate Buffer for Vertex Color

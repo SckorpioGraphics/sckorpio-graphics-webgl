@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 19e: Using MipMaps
+   Chapter 19e: Using MipMaps
    Topics:
    - Creating texture of size 512*512
    - Also create Mipmaps

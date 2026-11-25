@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4c: Learning Topology — LINE_STRIP
+Chapter 4c: Learning Topology — LINE_STRIP
 
 Topics:
 - Making Line Zig-Zag Connected

@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 8f: Multiple Objects and renderOrder
+Chapter 8f: Multiple Objects and renderOrder
 
 Topics:
 - Rendering multiple objects

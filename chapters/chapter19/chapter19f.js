@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 19f: Final Texture, GUI + Wrap + Filter : everything
+   Chapter 19f: Final Texture, GUI + Wrap + Filter : everything
    Topics:
    - Creating a square
    #############################################################

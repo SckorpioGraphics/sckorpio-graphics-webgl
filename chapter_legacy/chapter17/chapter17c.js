@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 17c: UV coords in circle
+   Chapter 17c: UV coords in circle
    Topics:
    - Making a circle
    - Add a circular texture

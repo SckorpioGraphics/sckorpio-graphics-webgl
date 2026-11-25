@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4e: Hexagon Outline
+Chapter 4e: Hexagon Outline
 
 Topics:
 - Making a Polygon — Hexagon

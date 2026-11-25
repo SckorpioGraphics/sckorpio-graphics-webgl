@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 18b: Using UVs
+   Chapter 18b: Using UVs
    Topics:
    - Creating a square and rectangle
    - Use different textures

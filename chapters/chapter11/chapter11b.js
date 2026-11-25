@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 11b: 2D Camera — Camera as Data
+   Chapter 11b: 2D Camera — Camera as Data
 
    Topics:
    - Camera position

@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 13d: 2D Transformations — Rotation Around a Pivot
+   Chapter 13d: 2D Transformations — Rotation Around a Pivot
    Topics:
    - Rotating a letterF around a pivot
    - Pivot position
@@ -9,7 +9,7 @@
 */
 
 /* #############################################################
-   CHAPTER 13d: 2D Transformations — Rotation Around a Pivot
+   Chapter 13d: 2D Transformations — Rotation Around a Pivot
    Topics:
    - Rotating a letterF around a pivot
    - Pivot position

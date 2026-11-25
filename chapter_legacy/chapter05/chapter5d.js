@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 5d: Dynamic Filled Polygon
+Chapter 5d: Dynamic Filled Polygon
 
 Topics:
 - Learning Topology TRIANGLE_FAN
@@ -8,7 +8,7 @@ Topics:
 */
 
 /* #############################################################
-CHAPTER 5c: Dynamic Polygon Outline
+Chapter 5c: Dynamic Polygon Outline
 
 Topics:
 - Learning Topology LINE_LOOP

@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 12d: 2D Transformations — Translation Matrix in shader
+   Chapter 12d: 2D Transformations — Translation Matrix in shader
 
    Topics:
    - Translating a letterF

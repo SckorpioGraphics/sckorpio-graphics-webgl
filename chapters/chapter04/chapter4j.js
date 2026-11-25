@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4j: Learning Topology — TRIANGLE_FAN
+Chapter 4j: Learning Topology — TRIANGLE_FAN
 
 Topics:
 - Fill a circle with TRIANGLE_FAN

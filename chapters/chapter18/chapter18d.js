@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 18d: GUI Connected with UVs & Wrapping
+   Chapter 18d: GUI Connected with UVs & Wrapping
    Topics:
    - Creating a square
    - Manioulate UVs by uniforms

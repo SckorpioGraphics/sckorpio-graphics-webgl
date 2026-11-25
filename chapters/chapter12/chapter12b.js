@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 12b: 2D Transformations
+   Chapter 12b: 2D Transformations
 
    Topics:
    - Translating a letterF

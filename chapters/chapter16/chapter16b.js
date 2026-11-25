@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 16b: First Texture applied to Mesh
+   Chapter 16b: First Texture applied to Mesh
    Topics:
    - Creating first texture
    - Aplying on a square

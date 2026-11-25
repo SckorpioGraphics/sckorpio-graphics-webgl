@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 6e: Rectangle Triangles with Different Colors
+Chapter 6e: Rectangle Triangles with Different Colors
 
 Topics:
 - Making a rectangle with 2 different triangles

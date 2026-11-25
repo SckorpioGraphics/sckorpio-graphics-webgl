@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 17b: UV coords
+   Chapter 17b: UV coords
    Topics:
    - Creating a letter F geometry
    - Apply texture on the letter F

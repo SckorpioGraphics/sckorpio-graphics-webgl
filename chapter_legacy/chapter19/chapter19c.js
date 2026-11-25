@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 19c: Min Filtering LINEAR
+   Chapter 19c: Min Filtering LINEAR
    Topics:
    - Creating texture of size 512*512
    - Aplying on multiple squares of size 64,128,256,512

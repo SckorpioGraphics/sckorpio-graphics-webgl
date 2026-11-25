@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4d: Learning Topology — LINE_LOOP
+Chapter 4d: Learning Topology — LINE_LOOP
 
 Topics:
 - Making Line Zig-Zag Connected

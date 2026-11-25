@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 19c: GUI for Filtering
+   Chapter 19c: GUI for Filtering
    Topics:
    - Creating texture of size 64*64
    - Aplying on multiple squares of size 64,128,256

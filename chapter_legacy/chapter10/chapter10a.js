@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 10a: 2D Projection Matrix
+Chapter 10a: 2D Projection Matrix
 
 Topics:
 - Creating a projection matrix in GLSL Shader itself

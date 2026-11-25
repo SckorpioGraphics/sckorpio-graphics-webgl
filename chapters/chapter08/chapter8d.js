@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 8d: Multiple Objects with Different shaders
+Chapter 8d: Multiple Objects with Different shaders
 
 Topics:
 - Rendering multiple objects

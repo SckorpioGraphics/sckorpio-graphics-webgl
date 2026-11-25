@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 5b: Dynamic Rectangle
+Chapter 5b: Dynamic Rectangle
 
 Topics:
 - Making a rectangle

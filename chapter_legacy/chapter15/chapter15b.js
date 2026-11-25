@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 15b: Model Matrix — Pass a Matrix as a Uniform
+   Chapter 15b: Model Matrix — Pass a Matrix as a Uniform
 
    Topics:
    - Building a Model Matrix(passing as Uniform)

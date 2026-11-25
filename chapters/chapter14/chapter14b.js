@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 14b: 2D Transformations — Scale
+   Chapter 14b: 2D Transformations — Scale
 
    Topics:
    - X/Y scaling of a letterF

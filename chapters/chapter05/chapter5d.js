@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 5d: Dynamic Filled Polygon
+Chapter 5d: Dynamic Filled Polygon
 
 Topics:
 - Learning Topology TRIANGLE_FAN

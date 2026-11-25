@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4b: Learning Topology — LINES
+Chapter 4b: Learning Topology — LINES
 
 Topics:
 - Making Lines Parallel

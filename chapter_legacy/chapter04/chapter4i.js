@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4i: Learning Topology — TRIANGLE_FAN
+Chapter 4i: Learning Topology — TRIANGLE_FAN
 
 Topics:
 - Fill a hexagon with TRIANGLE_FAN

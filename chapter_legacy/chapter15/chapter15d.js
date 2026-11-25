@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 15d: Model Matrix — Multiple Object Composition
+   Chapter 15d: Model Matrix — Multiple Object Composition
 
    Topics:
    - Multiple objects each having their own model matrix

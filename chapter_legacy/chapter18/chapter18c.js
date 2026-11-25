@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 18c: GUI Connected with UVs & Wrapping
+   Chapter 18c: GUI Connected with UVs & Wrapping
    Topics:
    - Creating a square
    #############################################################

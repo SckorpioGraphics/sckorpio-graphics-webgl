@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 6d: Rectangle with Two Rectangles and Vertex Colors
+Chapter 6d: Rectangle with Two Rectangles and Vertex Colors
 
 Topics:
 - Making a rectangle with 2 different rectangles

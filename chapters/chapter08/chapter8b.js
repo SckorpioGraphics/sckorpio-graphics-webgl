@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 8b: Multiple Objects with Different colors
+Chapter 8b: Multiple Objects with Different colors
 
 Topics:
 - No UI now

@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 16d: Using multiple Textures
+   Chapter 16d: Using multiple Textures
    Topics:
    - Creating a square and rectangle
    - Use different textures

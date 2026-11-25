@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 10e: 2D World with Axis
+Chapter 10e: 2D World with Axis
 
 Topics:
 - Creating a grid in pixel space

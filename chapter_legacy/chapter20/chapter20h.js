@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20h: Using Transparent Textures
+   Chapter 20h: Using Transparent Textures
    Topics:
    - Finally Ending with Sckorpio Mascot
    - And SCKOPRIO GRAPHICS TITLE

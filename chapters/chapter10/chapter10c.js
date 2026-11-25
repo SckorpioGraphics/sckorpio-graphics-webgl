@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 10c: 2D World with Multiple Rectangles
+Chapter 10c: 2D World with Multiple Rectangles
 
 Topics:
 - Creating multiple random rectangles

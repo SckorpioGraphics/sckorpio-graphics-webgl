@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 7c: Uniform
+Chapter 7c: Uniform
 
 Topics:
 - Adding a basic UI to manipulate

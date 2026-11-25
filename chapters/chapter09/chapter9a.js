@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 9a: 2D Space
+Chapter 9a: 2D Space
 
 Topics:
 - Creating a basic rectangle

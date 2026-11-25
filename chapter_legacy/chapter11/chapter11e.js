@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 11e: 2D Camera — Keyboard Controls
+   Chapter 11e: 2D Camera — Keyboard Controls
 
    Topics:
    - Camera position

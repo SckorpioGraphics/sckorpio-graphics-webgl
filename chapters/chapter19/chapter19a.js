@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 19a: Mag Filtering LINEAR
+   Chapter 19a: Mag Filtering LINEAR
    Topics:
    - Creating texture of size 64*64
    - Aplying on multiple squares of size 64,128,256

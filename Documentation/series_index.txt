@@ -8,7 +8,7 @@ mapping and texture wrapping.
 The optional `chapterExtra` folder contains supplemental pixel-space and
 render-loop experiments.
 
-CHAPTER 0 — SERIES INTRODUCTION
+Chapter 0 — SERIES INTRODUCTION
 -------------------------------
 
 PHASE 1 — WEBGL FOUNDATIONS

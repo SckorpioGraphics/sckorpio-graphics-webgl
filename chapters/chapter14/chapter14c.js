@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 14c: 2D Transformations — Scale Matrix
+   Chapter 14c: 2D Transformations — Scale Matrix
 
    Topics:
    - Uniform and non-uniform scaling

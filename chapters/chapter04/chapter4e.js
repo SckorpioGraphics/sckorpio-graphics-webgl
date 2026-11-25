@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4e: Hexagon Outline - LINE_LOOP
+Chapter 4e: Hexagon Outline - LINE_LOOP
 
 Topics:
 - Making a Polygon — Hexagon

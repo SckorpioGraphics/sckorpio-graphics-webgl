@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 13b: 2D Transformations — Rotation Matrix
+   Chapter 13b: 2D Transformations — Rotation Matrix
 
    Topics:
    - Rotating a letterF around the origin

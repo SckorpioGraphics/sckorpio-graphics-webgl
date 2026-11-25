@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 17a: UV coords
+   Chapter 17a: UV coords
    Topics:
    - Creating texture
    - Aplying on a square

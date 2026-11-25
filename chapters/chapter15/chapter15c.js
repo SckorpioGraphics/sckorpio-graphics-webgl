@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 15c: Model Matrix — Independent Object Matrices
+   Chapter 15c: Model Matrix — Independent Object Matrices
 
    Topics:
    - Model → View → Projection

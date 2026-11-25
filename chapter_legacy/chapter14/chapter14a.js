@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 14a: 2D Transformations — Scale
+   Chapter 14a: 2D Transformations — Scale
 
    Topics:
    - Uniform scaling of a letterF

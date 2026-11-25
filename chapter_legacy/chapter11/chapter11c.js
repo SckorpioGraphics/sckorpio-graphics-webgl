@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 11c: 2D Camera — Zoom
+   Chapter 11c: 2D Camera — Zoom
 
    Topics:
    - Camera position

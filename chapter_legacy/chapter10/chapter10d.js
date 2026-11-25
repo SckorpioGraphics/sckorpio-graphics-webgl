@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 10d: 2D World with Grid
+Chapter 10d: 2D World with Grid
 
 Topics:
 - Creating a grid in pixel space

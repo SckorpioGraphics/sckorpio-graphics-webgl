@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 2c: 
+Chapter 2c: 
 - Adding render loop in template
 - Template for the abstracted series
 ###############################################################

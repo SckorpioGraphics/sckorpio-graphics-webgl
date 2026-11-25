@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 1a: Creating a Basic Triangle
+Chapter 1a: Creating a Basic Triangle
 
 Topics:
 - Webgl Canvas

@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20d: Introducing ALPHA
+   Chapter 20d: Introducing ALPHA
    Topics:
    - Blending is Enabled finally
    - Explain Render Order also

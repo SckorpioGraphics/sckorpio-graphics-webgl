@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 8b: Multiple Objects
+Chapter 8b: Multiple Objects
 
 Topics:
 - But now using draw() in each object

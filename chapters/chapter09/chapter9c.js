@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 9c: 2D Camera
+Chapter 9c: 2D Camera
 
 Topics:
 - Introducing a 2D camera object

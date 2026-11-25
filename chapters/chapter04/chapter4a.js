@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 4a: Learning Topology — POINTS
+Chapter 4a: Learning Topology — POINTS
 
 Topics:
 - Making Points

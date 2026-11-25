@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 15a: Model Matrix — Transformation Composition
+   Chapter 15a: Model Matrix — Transformation Composition
 
    Topics:
    - Building a Model Matrix(within Shader)

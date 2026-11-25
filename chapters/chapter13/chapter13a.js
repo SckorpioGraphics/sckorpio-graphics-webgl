@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 13a: 2D Transformations — Rotation with Sine and Cosine
+   Chapter 13a: 2D Transformations — Rotation with Sine and Cosine
 
    Topics:
    - Rotating a letterF around the origin

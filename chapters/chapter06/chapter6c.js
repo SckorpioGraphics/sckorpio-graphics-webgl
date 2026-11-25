@@ -1,5 +1,5 @@
 /* #############################################################
-CHAPTER 6c: Combined Interleaved Buffer
+Chapter 6c: Combined Interleaved Buffer
 
 Topics:
 - Adding a basic UI to manipulate

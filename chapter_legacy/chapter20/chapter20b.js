@@ -1,5 +1,5 @@
 /* #############################################################
-   CHAPTER 20b: Introducing ALPHA
+   Chapter 20b: Introducing ALPHA
    Topics:
    - Now make vec3 to vec4
    - pass alpha also
