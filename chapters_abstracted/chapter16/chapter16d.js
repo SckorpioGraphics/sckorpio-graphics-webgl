@@ -525,6 +525,15 @@ class GUI {
         squareTransformFolder.add(square.transform, "rotation", 0, 360).name("rotation");
         squareTransformFolder.add(square.transform.scale, 0, -5, 5).name("scaleX");
         squareTransformFolder.add(square.transform.scale, 1, -5, 5).name("scaleY");
+
+        const rectangle = this.renderSystem.getMesh("rectangle");
+        const rectangleFolder = this.gui.addFolder("Rectangle");
+        const rectangleTransformFolder = rectangleFolder.addFolder("Transform");
+        rectangleTransformFolder.add(rectangle.transform.translation, 0, -1000, 1000).name("translationX");
+        rectangleTransformFolder.add(rectangle.transform.translation, 1, -1000, 1000).name("translationY");
+        rectangleTransformFolder.add(rectangle.transform, "rotation", 0, 360).name("rotation");
+        rectangleTransformFolder.add(rectangle.transform.scale, 0, -5, 5).name("scaleX");
+        rectangleTransformFolder.add(rectangle.transform.scale, 1, -5, 5).name("scaleY");
     }
 
     onUpdateGUI() {
