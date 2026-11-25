@@ -766,10 +766,10 @@ class App {
     createTextures() {
         // Textures
         const sckorpioTexture = new Texture({
-            filePath: "chapters_abstracted/chapter16/assets/sckorpio_Texture.png"
+            filePath: "chapters/chapter16/assets/sckorpio_Texture.png"
         });
         const titleTexture = new Texture({
-            filePath: "chapters_abstracted/chapter16/assets/title_Texture.png"
+            filePath: "chapters/chapter16/assets/title_Texture.png"
         });
 
         // Add to RenderSystem

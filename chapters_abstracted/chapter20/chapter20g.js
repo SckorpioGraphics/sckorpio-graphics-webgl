@@ -763,7 +763,7 @@ class App {
     createTextures() {
         // Textures
         const sckorpioTexture = new Texture({
-            filePath: "chapters_abstracted/chapter20/assets/sckorpio_Texture_Transparent.png"
+            filePath: "chapters/chapter20/assets/sckorpio_Texture_Transparent.png"
         });
 
         // Add to RenderSystem
