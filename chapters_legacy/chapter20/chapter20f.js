@@ -160,7 +160,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // =============================================================
 
 const sckorpioTexture = {
-    imagePath: "chapters/chapter20/assets/sckorpio_Texture_512_Transparent.png",
+    imagePath: "chapters_legacy/chapter20/assets/sckorpio_Texture_512_Transparent.png",
 
     image: null,
     handle: null,

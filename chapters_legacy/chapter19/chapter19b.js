@@ -159,7 +159,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 // TEXTURE RESOURCE
 // =============================================================
 const texture = {
-    imagePath: "chapters/chapter19/assets/sckorpio_Texture_64.png",
+    imagePath: "chapters_legacy/chapter19/assets/sckorpio_Texture_64.png",
     image: null,
     handle: null,
     loaded: false,
