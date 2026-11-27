@@ -25,7 +25,7 @@ meshes may use the same Shader instance.
 
 MESH
 -------------------------------------------------------------
-Mesh owns geometry, its VAO/VBO/optional IBO, vertex attribute
+MeshObject owns geometry, its VAO/VBO/optional IBO, vertex attribute
 configuration, and draw call. Configure every attribute in the
 layout; do not assume a fixed vertex format:
 
@@ -42,7 +42,7 @@ index type, topology, count, and offset when the lesson uses them.
 For indexed drawing, drawOffset is a byte offset; for drawArrays it
 is the first vertex.
 
-Use independent Mesh objects for separate drawables. Reuse the
+Use independent MeshObject objects for separate drawables. Reuse the
 shader and geometry options in a loop when objects are similar;
 each mesh still owns its own GPU resources and transforms.
 
@@ -50,7 +50,7 @@ CAMERA AND CONTROLS
 -------------------------------------------------------------
 Add Camera only when the lesson needs view/projection state. Add
 Controls for keyboard or pointer input. Keep both independent of
-Mesh and RenderSystem.
+MeshObject and RenderSystem.
 
 RENDER SYSTEM
 -------------------------------------------------------------
@@ -63,7 +63,7 @@ ANIMATION AND PHYSICS
 -------------------------------------------------------------
 Add AnimationSystem or PhysicsSystem only when a lesson needs it.
 Each system owns its respective animationInfos or physicsInfos and
-updates referenced meshes; keep those calculations out of Mesh.
+updates referenced meshes; keep those calculations out of MeshObject.
 
 APP AND SCENE COMPOSITION
 -------------------------------------------------------------

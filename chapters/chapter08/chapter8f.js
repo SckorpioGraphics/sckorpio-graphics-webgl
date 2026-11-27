@@ -4,7 +4,7 @@ Chapter 8f: Multiple Objects and renderOrder
 Topics:
 - Rendering multiple objects
 - A Grid and a Triangle and Rectagle
-- Add renderOrder in Mesh
+- Add renderOrder in MeshObject
 - Use renderOrder to sort the meshes
 ###############################################################
 */
@@ -120,7 +120,7 @@ class Shader {
 // =============================================================
 // MESH
 // =============================================================
-class Mesh {
+class MeshObject {
     constructor(options = {}) {
         // CPU Data
         this.renderOrder = options.renderOrder || 0;
@@ -211,7 +211,7 @@ class RenderSystem {
         this.gl = null;
         this.clearColor = [];
         this.shaders = {};
-        this.meshes = {};
+        this.meshObjects = {};
     }
 
     initWebgl() {
@@ -246,17 +246,17 @@ class RenderSystem {
         return this.shaders[name];
     }
 
-    addMesh(name, mesh) {
-        this.meshes[name] = mesh;
+    addMeshObject(name, mesh) {
+        this.meshObjects[name] = mesh;
     }
 
-    getMesh(name) {
-        return this.meshes[name];
+    getMeshObject(name) {
+        return this.meshObjects[name];
     }
 
     sortMeshes() {
-        this.meshes = Object.fromEntries(
-            Object.entries(this.meshes)
+        this.meshObjects = Object.fromEntries(
+            Object.entries(this.meshObjects)
                 .sort(([, a], [, b]) => a.renderOrder - b.renderOrder)
         );
     }
@@ -274,8 +274,8 @@ class RenderSystem {
             shader.init(gl);
         }
         // meshes
-        for(const mesh of Object.values(this.meshes)) {
-            mesh.init(gl);
+        for(const meshObject of Object.values(this.meshObjects)) {
+            meshObject.init(gl);
         }
         // sort meshes
         this.sortMeshes();
@@ -295,8 +295,8 @@ class RenderSystem {
         gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
         gl.clear(gl.COLOR_BUFFER_BIT);
         // render meshes
-        for(const mesh of Object.values(this.meshes)){
-            mesh.draw(gl);
+        for(const meshObject of Object.values(this.meshObjects)){
+            meshObject.draw(gl);
         }  
     }
 }
@@ -431,7 +431,7 @@ class App {
 
     createScene() {
         // Meshes
-        const triangle = new Mesh({
+        const triangle = new MeshObject({
             renderOrder: 2,
             shader: this.renderSystem.getShader("basicShader"),
 
@@ -473,7 +473,7 @@ class App {
             drawType: "UNSIGNED_SHORT"
         });
 
-        const rectangle = new Mesh({
+        const rectangle = new MeshObject({
             renderOrder: 0,
             shader: this.renderSystem.getShader("colorVertexShader"),
 
@@ -528,7 +528,7 @@ class App {
             drawType: "UNSIGNED_SHORT"
         });
 
-        const grid = new Mesh({
+        const grid = new MeshObject({
             renderOrder: 1,
             shader: this.renderSystem.getShader("basicShader"),
 
@@ -589,9 +589,9 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("triangle",triangle);
-        this.renderSystem.addMesh("rectangle",rectangle);
-        this.renderSystem.addMesh("grid",grid);
+        this.renderSystem.addMeshObject("triangle",triangle);
+        this.renderSystem.addMeshObject("rectangle",rectangle);
+        this.renderSystem.addMeshObject("grid",grid);
     }
     
     play() {

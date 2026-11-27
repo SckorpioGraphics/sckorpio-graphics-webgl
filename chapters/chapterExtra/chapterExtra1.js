@@ -134,7 +134,7 @@ class RenderSystem {
         this.camera = camera;
         this.shaders = shaders;
         this.textures = textures;
-        this.meshes = meshes;
+        this.meshObjects = meshes;
     }
 
     canvas = null;
@@ -172,17 +172,17 @@ class RenderSystem {
         // Initialize resources
         for (const shader of Object.values(this.shaders)) shader.init(gl);
         for (const texture of Object.values(this.textures)) texture.init(gl);
-        for (const meshOrMeshes of Object.values(this.meshes)) {
+        for (const meshOrMeshes of Object.values(this.meshObjects)) {
             const meshes = Array.isArray(meshOrMeshes) ? meshOrMeshes : [meshOrMeshes];
             for (const mesh of meshes) {
                 if (mesh.textureName) mesh.texture = this.textures[mesh.textureName];
-                mesh.init(gl);
+                meshObject.init(gl);
             }
         }
         return true;
     }
     update(now) {
-        const {line} = this.meshes;
+        const {line} = this.meshObjects;
         const radius =
             Math.sqrt(
                 this.canvas.width ** 2 +
@@ -216,9 +216,9 @@ class RenderSystem {
         gl.uniformMatrix3fv(shader.uniforms.matrix, false, projectionMatrix);
         gl.uniform4fv(shader.uniforms.color, [0.39, 0.33, 0.58, 1.0]);
         // RENDER MESHES
-        for (const meshOrMeshes of Object.values(this.meshes)) {
+        for (const meshOrMeshes of Object.values(this.meshObjects)) {
             const meshes = Array.isArray(meshOrMeshes) ? meshOrMeshes : [meshOrMeshes];
-            for (const mesh of meshes) mesh.draw(gl, this.canvas.width, this.canvas.height);
+            for (const mesh of meshes) meshObject.draw(gl, this.canvas.width, this.canvas.height);
         }
     }
 }

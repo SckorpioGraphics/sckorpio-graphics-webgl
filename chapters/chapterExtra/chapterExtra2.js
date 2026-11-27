@@ -180,7 +180,7 @@ class RenderSystem {
         this.camera = camera;
         this.shaders = shaders;
         this.textures = textures;
-        this.meshes = meshes;
+        this.meshObjects = meshes;
     }
 
     canvas = null;
@@ -218,11 +218,11 @@ class RenderSystem {
         // Initialize resources
         for (const shader of Object.values(this.shaders)) shader.init(gl);
         for (const texture of Object.values(this.textures)) texture.init(gl);
-        for (const meshOrMeshes of Object.values(this.meshes)) {
+        for (const meshOrMeshes of Object.values(this.meshObjects)) {
             const meshes = Array.isArray(meshOrMeshes) ? meshOrMeshes : [meshOrMeshes];
             for (const mesh of meshes) {
                 if (mesh.textureName) mesh.texture = this.textures[mesh.textureName];
-                mesh.init(gl);
+                meshObject.init(gl);
             }
         }
         return true;
@@ -263,9 +263,9 @@ class RenderSystem {
 
         gl.uniformMatrix3fv(shader.uniforms.projectionMatrix, false, projectionMatrix);
         // RENDER MESHES
-        for (const meshOrMeshes of Object.values(this.meshes)) {
+        for (const meshOrMeshes of Object.values(this.meshObjects)) {
             const meshes = Array.isArray(meshOrMeshes) ? meshOrMeshes : [meshOrMeshes];
-            for (const mesh of meshes) mesh.draw(gl, this.canvas.width, this.canvas.height);
+            for (const mesh of meshes) meshObject.draw(gl, this.canvas.width, this.canvas.height);
         }
     }
 }

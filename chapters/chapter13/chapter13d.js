@@ -181,7 +181,7 @@ class Transform {
 // =============================================================
 // MESH
 // =============================================================
-class Mesh {
+class MeshObject {
     constructor(options = {}) {
         // CPU Data
         this.vertexData = options.vertexData;
@@ -288,7 +288,7 @@ class RenderSystem {
         this.clearColor = [0.32, 0.63, 0.67, 1.0];
 
         this.shaders = {};
-        this.meshes = {};
+        this.meshObjects = {};
 
         this.camera = new Camera();
 
@@ -334,12 +334,12 @@ class RenderSystem {
         return this.shaders[name];
     }
 
-    addMesh(name, mesh) {
-        this.meshes[name] = mesh;
+    addMeshObject(name, mesh) {
+        this.meshObjects[name] = mesh;
     }
 
-    getMesh(name) {
-        return this.meshes[name];
+    getMeshObject(name) {
+        return this.meshObjects[name];
     }
 
     setClearColor(r, g, b, a) {
@@ -347,8 +347,8 @@ class RenderSystem {
     }
 
     sortMeshes() {
-        this.meshes = Object.fromEntries(
-            Object.entries(this.meshes)
+        this.meshObjects = Object.fromEntries(
+            Object.entries(this.meshObjects)
                 .sort(([, a], [, b]) => a.renderOrder - b.renderOrder)
         );
     }
@@ -364,8 +364,8 @@ class RenderSystem {
         }
 
         // Initialize Meshes
-        for (const mesh of Object.values(this.meshes)) {
-            mesh.init(gl);
+        for (const meshObject of Object.values(this.meshObjects)) {
+            meshObject.init(gl);
         }
 
         this.sortMeshes();
@@ -406,8 +406,8 @@ class RenderSystem {
         }
 
         // Render meshes
-        for (const mesh of Object.values(this.meshes)) {
-            mesh.draw(gl);
+        for (const meshObject of Object.values(this.meshObjects)) {
+            meshObject.draw(gl);
         }
     }
 }
@@ -424,7 +424,7 @@ class GUI {
     }
 
     createGUIFolder() {
-        const letterF = this.renderSystem.getMesh("letterF");
+        const letterF = this.renderSystem.getMeshObject("letterF");
         const letterFFolder = this.gui.addFolder("LetterF");
 
         // Transform
@@ -650,7 +650,7 @@ class App {
             positions.push(-range, y, range, y);
         }
 
-        const grid = new Mesh({
+        const grid = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
             vertexData: new Float32Array(positions),
 
@@ -672,13 +672,13 @@ class App {
             renderOrder: 0
         });
 
-        this.renderSystem.addMesh("grid", grid);
+        this.renderSystem.addMeshObject("grid", grid);
     }
 
     createAxis() {
         const range = 10000;
 
-        const xAxis = new Mesh({
+        const xAxis = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
 
             vertexData: new Float32Array([
@@ -704,7 +704,7 @@ class App {
             renderOrder: 1
         });
 
-        const yAxis = new Mesh({
+        const yAxis = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
 
             vertexData: new Float32Array([
@@ -730,8 +730,8 @@ class App {
             renderOrder: 1
         });
 
-        this.renderSystem.addMesh("xAxis", xAxis);
-        this.renderSystem.addMesh("yAxis", yAxis);
+        this.renderSystem.addMeshObject("xAxis", xAxis);
+        this.renderSystem.addMeshObject("yAxis", yAxis);
     }
 
     createBaseScene() {
@@ -742,7 +742,7 @@ class App {
     }
 
     createScene() {
-        const letterF = new Mesh({
+        const letterF = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
 
             vertexData: new Float32Array([
@@ -800,7 +800,7 @@ class App {
 
         const size = 10;
 
-        const pivot = new Mesh({
+        const pivot = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
 
             vertexData: new Float32Array([
@@ -828,8 +828,8 @@ class App {
             renderOrder: 3
         });
 
-        this.renderSystem.addMesh("pivot", pivot);
-        this.renderSystem.addMesh("letterF", letterF);
+        this.renderSystem.addMeshObject("pivot", pivot);
+        this.renderSystem.addMeshObject("letterF", letterF);
     }
 
     init() {
@@ -837,8 +837,8 @@ class App {
     }
 
     updateScene() {
-        const letterF = this.renderSystem.getMesh("letterF");
-        const pivot = this.renderSystem.getMesh("pivot");
+        const letterF = this.renderSystem.getMeshObject("letterF");
+        const pivot = this.renderSystem.getMeshObject("pivot");
 
         // Visual pivot position = object translation + local pivot
         pivot.transform.translation[0] =

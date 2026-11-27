@@ -276,7 +276,7 @@ class Transform {
 // =============================================================
 // MESH
 // =============================================================
-class Mesh {
+class MeshObject {
     constructor(options = {}) {
         // CPU Data
         this.vertexData = options.vertexData;
@@ -390,7 +390,7 @@ class RenderSystem {
         this.clearColor = [];
         this.shaders = {};
         this.textures = {};
-        this.meshes = {};
+        this.meshObjects = {};
         this.camera = new Camera();
         this.commonUniforms = {
             projectionMatrix: null,
@@ -438,12 +438,12 @@ class RenderSystem {
         return this.textures[name];
     }
 
-    addMesh(name, mesh) {
-        this.meshes[name] = mesh;
+    addMeshObject(name, mesh) {
+        this.meshObjects[name] = mesh;
     }
 
-    getMesh(name) {
-        return this.meshes[name];
+    getMeshObject(name) {
+        return this.meshObjects[name];
     }
 
     setClearColor(r,g,b,a){
@@ -464,8 +464,8 @@ class RenderSystem {
             texture.init(gl);
         }
         // meshes
-        for(const mesh of Object.values(this.meshes)) {
-            mesh.init(gl);
+        for(const meshObject of Object.values(this.meshObjects)) {
+            meshObject.init(gl);
         }
     }
 
@@ -500,8 +500,8 @@ class RenderSystem {
         }
         
         // render meshes
-        for(const mesh of Object.values(this.meshes)){
-            mesh.draw(gl);
+        for(const meshObject of Object.values(this.meshObjects)){
+            meshObject.draw(gl);
         }  
     }
 }
@@ -519,7 +519,7 @@ class GUI {
     }
 
     createGUIFolder() {
-        const square = this.renderSystem.getMesh("square");
+        const square = this.renderSystem.getMeshObject("square");
         const squareFolder = this.gui.addFolder("Square");
         const squareTransformFolder = squareFolder.addFolder("Transform");
         squareTransformFolder.add(square.transform.translation, 0, -1000, 1000).name("translationX");
@@ -790,7 +790,7 @@ class App {
         const gridVertexData = new Float32Array(gridPositionsData);
         const gridDrawCount = gridPositionsData.length / 2.0;
 
-        const grid = new Mesh({
+        const grid = new MeshObject({
             renderOrder: 1,
 
             shader: this.renderSystem.getShader("basicShader"),
@@ -828,13 +828,13 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("grid",grid);
+        this.renderSystem.addMeshObject("grid",grid);
     }
 
     createAxis() {
         const axisRange = 10000;
 
-        const xAxis = new Mesh({
+        const xAxis = new MeshObject({
             renderOrder: 2,
 
             shader: this.renderSystem.getShader("basicShader"),
@@ -869,7 +869,7 @@ class App {
             drawCount: 2
         });
 
-        const yAxis = new Mesh({
+        const yAxis = new MeshObject({
             renderOrder: 2,
 
             shader: this.renderSystem.getShader("basicShader"),
@@ -911,8 +911,8 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("xAxis",xAxis);
-        this.renderSystem.addMesh("yAxis",yAxis);
+        this.renderSystem.addMeshObject("xAxis",xAxis);
+        this.renderSystem.addMeshObject("yAxis",yAxis);
     }
 
     createBaseScene() {
@@ -926,7 +926,7 @@ class App {
 
     createScene() {
         // Meshes
-        const square = new Mesh({
+        const square = new MeshObject({
             shader: this.renderSystem.getShader("textureShader"),
             texture: this.renderSystem.getTexture("sckorpioTexture"),
 
@@ -987,7 +987,7 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("square",square);
+        this.renderSystem.addMeshObject("square",square);
     }
     
     play() {

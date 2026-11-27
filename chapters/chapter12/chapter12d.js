@@ -199,7 +199,7 @@ class Transform {
 // =============================================================
 // MESH
 // =============================================================
-class Mesh {
+class MeshObject {
     constructor(options = {}) {
         // CPU Data
         this.vertexData = options.vertexData;
@@ -298,7 +298,7 @@ class RenderSystem {
         this.gl = null;
         this.clearColor = [];
         this.shaders = {};
-        this.meshes = {};
+        this.meshObjects = {};
         this.camera = new Camera();
         this.commonUniforms = {
             projectionMatrix: null,
@@ -338,12 +338,12 @@ class RenderSystem {
         return this.shaders[name];
     }
 
-    addMesh(name, mesh) {
-        this.meshes[name] = mesh;
+    addMeshObject(name, mesh) {
+        this.meshObjects[name] = mesh;
     }
 
-    getMesh(name) {
-        return this.meshes[name];
+    getMeshObject(name) {
+        return this.meshObjects[name];
     }
 
     setClearColor(r,g,b,a){
@@ -359,8 +359,8 @@ class RenderSystem {
             shader.init(gl);
         }
         // meshes
-        for(const mesh of Object.values(this.meshes)) {
-            mesh.init(gl);
+        for(const meshObject of Object.values(this.meshObjects)) {
+            meshObject.init(gl);
         }
     }
 
@@ -395,8 +395,8 @@ class RenderSystem {
         }
         
         // render meshes
-        for(const mesh of Object.values(this.meshes)){
-            mesh.draw(gl);
+        for(const meshObject of Object.values(this.meshObjects)){
+            meshObject.draw(gl);
         }  
     }
 }
@@ -414,7 +414,7 @@ class GUI {
     }
 
     createGUIFolder() {
-        const letterF = this.renderSystem.getMesh("letterF");
+        const letterF = this.renderSystem.getMeshObject("letterF");
         const letterFFolder = this.gui.addFolder("LetterF");
 
         // Transform
@@ -613,7 +613,7 @@ class App {
         const gridVertexData = new Float32Array(gridPositionsData);
         const gridDrawCount = gridPositionsData.length / 2.0;
 
-        const grid = new Mesh({
+        const grid = new MeshObject({
             renderOrder: 1,
 
             shader: this.renderSystem.getShader("basicShader"),
@@ -651,13 +651,13 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("grid",grid);
+        this.renderSystem.addMeshObject("grid",grid);
     }
 
     createAxis() {
         const axisRange = 10000;
 
-        const xAxis = new Mesh({
+        const xAxis = new MeshObject({
             renderOrder: 2,
 
             shader: this.renderSystem.getShader("basicShader"),
@@ -692,7 +692,7 @@ class App {
             drawCount: 2
         });
 
-        const yAxis = new Mesh({
+        const yAxis = new MeshObject({
             renderOrder: 2,
 
             shader: this.renderSystem.getShader("basicShader"),
@@ -734,8 +734,8 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("xAxis",xAxis);
-        this.renderSystem.addMesh("yAxis",yAxis);
+        this.renderSystem.addMeshObject("xAxis",xAxis);
+        this.renderSystem.addMeshObject("yAxis",yAxis);
     }
 
     createBaseScene() {
@@ -749,7 +749,7 @@ class App {
 
     createScene() {
         // Meshes
-        const letterF = new Mesh({
+        const letterF = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
 
             /*
@@ -829,7 +829,7 @@ class App {
         });
 
         // Add to RenderSystem
-        this.renderSystem.addMesh("letterF",letterF);
+        this.renderSystem.addMeshObject("letterF",letterF);
     }
     
     play() {

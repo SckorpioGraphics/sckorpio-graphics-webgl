@@ -73,7 +73,7 @@ class Shader {
 // =============================================================
 // MESH
 // =============================================================
-class Mesh {
+class MeshObject {
     constructor(options = {}) {
         // CPU Data
         this.vertexData = options.vertexData;
@@ -146,7 +146,7 @@ class RenderSystem {
         this.gl = null;
         this.clearColor = [];
         this.shaders = {};
-        this.meshes = {};
+        this.meshObjects = {};
     }
 
     initWebgl() {
@@ -181,12 +181,12 @@ class RenderSystem {
         return this.shaders[name];
     }
 
-    addMesh(name, mesh) {
-        this.meshes[name] = mesh;
+    addMeshObject(name, mesh) {
+        this.meshObjects[name] = mesh;
     }
 
-    getMesh(name) {
-        return this.meshes[name];
+    getMeshObject(name) {
+        return this.meshObjects[name];
     }
 
     setClearColor(r,g,b,a){
@@ -202,8 +202,8 @@ class RenderSystem {
             shader.init(gl);
         }
         // meshes
-        for(const mesh of Object.values(this.meshes)) {
-            mesh.init(gl);
+        for(const meshObject of Object.values(this.meshObjects)) {
+            meshObject.init(gl);
         }
     }
 
@@ -221,8 +221,8 @@ class RenderSystem {
         gl.clearColor(this.clearColor[0],this.clearColor[1],this.clearColor[2],this.clearColor[3]);
         gl.clear(gl.COLOR_BUFFER_BIT);
         // render meshes
-        for(const mesh of Object.values(this.meshes)){
-            mesh.draw(gl);
+        for(const meshObject of Object.values(this.meshObjects)){
+            meshObject.draw(gl);
         }  
     }
 }
@@ -283,7 +283,7 @@ class App {
 
     createScene() {
         // Meshes
-        const letterF = new Mesh({
+        const letterF = new MeshObject({
             shader: this.renderSystem.getShader("basicShader"),
 
             vertexData: new Float32Array([
@@ -352,7 +352,7 @@ class App {
             drawType: "UNSIGNED_SHORT"
         });
         // Add to RenderSystem
-        this.renderSystem.addMesh("letterF",letterF);
+        this.renderSystem.addMeshObject("letterF",letterF);
     }
     
     play() {
