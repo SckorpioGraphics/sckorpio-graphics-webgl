@@ -354,8 +354,8 @@ class RenderSystem {
         return this.shaders[name];
     }
 
-    addMeshObject(name, mesh) {
-        this.meshObjects[name] = mesh;
+    addMeshObject(name, meshObject) {
+        this.meshObjects[name] = meshObject;
     }
 
     getMeshObject(name) {

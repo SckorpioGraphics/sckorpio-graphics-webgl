@@ -450,8 +450,8 @@ class RenderSystem {
         return this.textures[name];
     }
 
-    addMeshObject(name, mesh) {
-        this.meshObjects[name] = mesh;
+    addMeshObject(name, meshObject) {
+        this.meshObjects[name] = meshObject;
     }
 
     getMeshObject(name) {
